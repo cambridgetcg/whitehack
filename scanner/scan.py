@@ -1,138 +1,127 @@
 #!/usr/bin/env python3
 """
-WHITEHACK Scanner — Static analysis wrapper.
-
-Runs Slither on a contract file or fetched source and produces a
-structured vulnerability report.
+WHITEHACK Scanner — Slither wrapper + report generator.
 
 Usage:
-    python3 scanner/scan.py lab/contracts/VulnerableBank.sol
-    python3 scanner/scan.py --address 0x1234...abcd --chain mainnet
+    python3 scanner/scan.py <contract.sol>         # Scan a local file
+    python3 scanner/scan.py <0xADDRESS> --chain mainnet  # Fetch + scan from chain
+    python3 scanner/scan.py --list-detectors        # Show available Slither checks
 """
 
-import argparse
-import json
 import subprocess
 import sys
-import os
-from datetime import datetime, timezone
+import json
+import argparse
 from pathlib import Path
+from datetime import datetime, timezone
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-REPORTS_DIR = BASE_DIR / "reports"
+WHITEHACK_ROOT = Path(__file__).resolve().parent.parent
+REPORTS_DIR = WHITEHACK_ROOT / "reports"
 REPORTS_DIR.mkdir(exist_ok=True)
 
-SEVERITY_ORDER = {"High": 0, "Medium": 1, "Low": 2, "Informational": 3, "Optimization": 4}
-SEVERITY_EMOJI = {"High": "🔴", "Medium": "🟡", "Low": "🟠", "Informational": "ℹ️", "Optimization": "⚡"}
 
+def run_slither(target: str, json_output: bool = True) -> dict:
+    """Run slither on a target and return parsed results."""
+    cmd = ["slither", target]
+    if json_output:
+        cmd += ["--json", "-"]
 
-def run_slither(target: str) -> dict:
-    """Run slither on a file and return parsed JSON output."""
-    cmd = ["slither", target, "--json", "-"]
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-        if result.stdout.strip():
-            try:
-                return json.loads(result.stdout)
-            except json.JSONDecodeError:
-                return {"success": False, "error": "JSON parse failed", "raw": result.stdout[:500]}
-        else:
-            return {"success": False, "error": result.stderr[:500] if result.stderr else "No output"}
+        if json_output and result.stdout.strip():
+            return json.loads(result.stdout)
+        return {"raw_stderr": result.stderr, "returncode": result.returncode}
     except subprocess.TimeoutExpired:
-        return {"success": False, "error": "Slither timed out (120s)"}
+        return {"error": "Slither timed out (120s)"}
+    except json.JSONDecodeError as e:
+        return {"error": f"JSON parse error: {e}", "raw": result.stdout[:500]}
     except FileNotFoundError:
-        return {"success": False, "error": "slither not found — run: pip3 install slither-analyzer"}
+        return {"error": "slither not found — run: pip install slither-analyzer"}
 
 
-def parse_findings(slither_output: dict) -> list:
-    """Extract and sort findings from slither JSON output."""
-    findings = []
-    detectors = slither_output.get("results", {}).get("detectors", [])
-    for d in detectors:
-        findings.append({
-            "severity": d.get("impact", "Unknown"),
-            "confidence": d.get("confidence", "Unknown"),
-            "check": d.get("check", "unknown"),
-            "description": d.get("description", "").strip(),
-            "elements": [e.get("name", "") for e in d.get("elements", []) if e.get("name")],
-        })
-    findings.sort(key=lambda f: SEVERITY_ORDER.get(f["severity"], 99))
-    return findings
+def severity_emoji(severity: str) -> str:
+    return {"High": "🔴", "Medium": "🟡", "Low": "🔵", "Informational": "⚪"}.get(severity, "❓")
 
 
-def render_report(target: str, findings: list) -> str:
-    """Render a human-readable markdown report."""
+def format_report(target: str, results: dict) -> str:
+    """Format slither output into a readable report."""
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = [
-        f"# WHITEHACK Scan Report",
-        f"**Target:** `{target}`  ",
-        f"**Scanned:** {ts}  ",
-        f"**Findings:** {len(findings)} total",
+        f"# WHITEHACK Security Scan",
+        f"**Target:** `{target}`",
+        f"**Scanned:** {ts}",
+        f"**Tool:** Slither {subprocess.run(['slither', '--version'], capture_output=True, text=True).stdout.strip()}",
         "",
     ]
 
+    if "error" in results:
+        lines.append(f"⚠️ Scanner error: {results['error']}")
+        return "\n".join(lines)
+
+    detectors = results.get("results", {}).get("detectors", [])
+    if not detectors:
+        lines.append("✅ No issues detected.")
+        return "\n".join(lines)
+
+    # Group by severity
     by_severity = {}
-    for f in findings:
-        by_severity.setdefault(f["severity"], []).append(f)
+    for d in detectors:
+        sev = d.get("impact", "Unknown")
+        by_severity.setdefault(sev, []).append(d)
 
-    for sev in ["High", "Medium", "Low", "Informational", "Optimization"]:
-        items = by_severity.get(sev, [])
-        if not items:
+    summary = []
+    for sev in ["High", "Medium", "Low", "Informational"]:
+        count = len(by_severity.get(sev, []))
+        if count:
+            summary.append(f"{severity_emoji(sev)} {sev}: {count}")
+    lines.append("## Summary")
+    lines.append(" | ".join(summary))
+    lines.append("")
+
+    for sev in ["High", "Medium", "Low", "Informational"]:
+        findings = by_severity.get(sev, [])
+        if not findings:
             continue
-        emoji = SEVERITY_EMOJI.get(sev, "•")
-        lines.append(f"## {emoji} {sev} ({len(items)})")
+        lines.append(f"## {severity_emoji(sev)} {sev} Findings")
+        for i, f in enumerate(findings, 1):
+            lines.append(f"\n### {i}. {f.get('check', '?')} — {f.get('description', '')[:120]}")
+            lines.append(f"- **Confidence:** {f.get('confidence', '?')}")
+            elements = f.get("elements", [])
+            for el in elements[:3]:
+                if el.get("type") == "function":
+                    lines.append(f"- **Location:** `{el.get('name', '?')}` in `{el.get('source_mapping', {}).get('filename_short', '?')}`")
         lines.append("")
-        for i, f in enumerate(items, 1):
-            lines.append(f"### {i}. {f['check']} (confidence: {f['confidence']})")
-            lines.append(f"> {f['description'][:400]}")
-            if f["elements"]:
-                lines.append(f"**Elements:** {', '.join(f['elements'][:5])}")
-            lines.append("")
-
-    if not findings:
-        lines.append("✅ No findings detected.")
 
     return "\n".join(lines)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="WHITEHACK static scanner")
-    parser.add_argument("target", help="Path to .sol file to scan")
+    parser = argparse.ArgumentParser(description="WHITEHACK contract scanner")
+    parser.add_argument("target", nargs="?", help="Contract file or 0x address")
+    parser.add_argument("--chain", default="mainnet", help="Chain for address lookup (mainnet/polygon/etc)")
+    parser.add_argument("--list-detectors", action="store_true", help="List available Slither detectors")
     parser.add_argument("--save", action="store_true", help="Save report to reports/")
-    parser.add_argument("--json-out", action="store_true", help="Print raw JSON instead of formatted report")
     args = parser.parse_args()
 
-    target = args.target
-    if not Path(target).exists():
-        print(f"❌ File not found: {target}", file=sys.stderr)
-        sys.exit(1)
-
-    print(f"🔍 Scanning {target}...", file=sys.stderr)
-    raw = run_slither(target)
-
-    if not raw.get("success", True) and "error" in raw:
-        print(f"❌ Slither error: {raw['error']}", file=sys.stderr)
-        sys.exit(1)
-
-    findings = parse_findings(raw)
-
-    if args.json_out:
-        print(json.dumps(findings, indent=2))
+    if args.list_detectors:
+        subprocess.run(["slither", "--list-detectors"])
         return
 
-    report = render_report(target, findings)
+    if not args.target:
+        parser.print_help()
+        return
+
+    print(f"🔍 Scanning {args.target}...")
+    results = run_slither(args.target)
+    report = format_report(args.target, results)
     print(report)
 
     if args.save:
-        slug = Path(target).stem.lower().replace(" ", "-")
+        safe_name = args.target.replace("/", "_").replace(".", "_")[:40]
         ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M")
-        out_path = REPORTS_DIR / f"{ts}-{slug}.md"
-        out_path.write_text(report)
-        print(f"\n💾 Report saved to {out_path}", file=sys.stderr)
-
-    high_count = sum(1 for f in findings if f["severity"] == "High")
-    if high_count > 0:
-        print(f"\n⚠️  {high_count} HIGH severity finding(s) — review before touching this contract", file=sys.stderr)
+        report_path = REPORTS_DIR / f"{ts}-{safe_name}.md"
+        report_path.write_text(report)
+        print(f"\n📄 Report saved: {report_path}")
 
 
 if __name__ == "__main__":
