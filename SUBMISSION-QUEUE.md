@@ -67,6 +67,57 @@ Unlock schedule: each submitted report unlocks the next slot 24h later
 | Inverse FiRM | 399 findings | All FPs |
 | Lombard Finance | Gamma: M-02, M-03 staged | Queue Mar 19-20 |
 
+## WAVE 1 MULTI-PLATFORM SCAN RESULTS (2026-03-18 PM)
+
+### HackerOne Targets
+| Target | Max Bounty | Scan Result | Verdict |
+|--------|-----------|-------------|---------|
+| Uniswap v4-core | $2.25M | 323 slither findings, all FPs (FullMath/BitMath assembly). Manual review: flash accounting, hooks, ERC6909 — all sound. 5 prior audits. | No exploitable bug |
+| Account Abstraction (ERC-4337) | $250k | Hardhat compilation issues, manual review done. Gas accounting discrepancy in postOpReverted path, EIP-7702 init replay (documented as "by design"). | No reportable bug |
+
+### HackenProof Targets
+| Target | Max Bounty | Scan Result | Verdict |
+|--------|-----------|-------------|---------|
+| Citrea Bridge | $250k | Rust ZK rollup. 43 Solidity files (Bridge.sol, BitcoinLightClient.sol). N-of-N Schnorr trust model is sound. No critical at Solidity level. | No reportable bug |
+| DeltaPrime v2 | $250k | Diamond pattern lending. **2 valid findings**: WH-DELTA-001 (Medium: PRIME debt liquidation underflow), WH-DELTA-002 (Low: liquidation div-by-zero) | **2 reports drafted** |
+| 1inch cross-chain-swap | $500k | Escrow-based cross-chain swaps. Time-separated phases prevent exploitation. No reentrancy vector (balance depletion + phase separation). | No reportable bug |
+
+### Bugcrowd Targets
+| Target | Max Bounty | Scan Result | Verdict |
+|--------|-----------|-------------|---------|
+| Coinbase SmartWallet | TBD | ERC-4337 wallet. Cross-chain upgrade replay risk (Medium but likely known). Factory msg.value stranding (Low). | Borderline — not submitting |
+
+### Repos Cloned
+- ~/Desktop/whitehack/targets/uniswap-v4/repo (Uniswap v4-core)
+- ~/Desktop/whitehack/targets/account-abstraction/repo (ERC-4337 AA)
+- ~/Desktop/whitehack/targets/citrea/repo (Citrea Bitcoin ZK rollup)
+- ~/Desktop/whitehack/targets/deltaprime/repo (DeltaPrime contracts-v2)
+- ~/Desktop/whitehack/targets/1inch-limit-order/repo (1inch limit-order-protocol)
+- ~/Desktop/whitehack/targets/1inch-cross-chain/repo (1inch cross-chain-swap)
+- ~/Desktop/whitehack/targets/coinbase-smart-wallet/repo (Coinbase SmartWallet)
+
+## WAVE 2 DEEP SCAN RESULTS (2026-03-18 evening)
+
+### HackerOne Targets
+| Target | Max Bounty | Scan Result | Verdict |
+|--------|-----------|-------------|---------|
+| Uniswap v4-core (deep) | $2.25M | Full manual review: PoolManager, Pool.sol, Hooks.sol, Position.sol, ERC6909, ProtocolFees, transient storage libs. Delta accounting invariant + NonzeroDeltaCount is rock-solid. Hook deltas properly isolated per pool. settleFor griefing is by design. | **Confirmed: No exploitable bug** |
+| Account Abstraction v0.9 (deep) | $250k | Full manual review: EntryPoint, StakeManager, NonceManager, SenderCreator, UserOperationLib. nonReentrant blocks EIP-7702 bundlers (by design). Paymaster magic-byte collision 1/2^64 (informational). Gas penalty system correct. | **Confirmed: No reportable bug** |
+
+### HackenProof Targets
+| Target | Max Bounty | Scan Result | Verdict |
+|--------|-----------|-------------|---------|
+| 1inch Limit Order Protocol v4 | $500k | Full manual review: OrderMixin._fill, OrderLib, all 17 extensions, FeeTaker, PermitAndCall. CEI followed consistently. Reentrancy via permit detected for remaining orders. Extension hash binding (160-bit) sound. 80-bit address truncation still 2^80 brute-force. | **No exploitable bug** |
+
+### Bugcrowd Targets
+| Target | Max Bounty | Scan Result | Verdict |
+|--------|-----------|-------------|---------|
+| Coinbase SmartWallet (deep) | TBD | Full manual review: CoinbaseSmartWallet, MultiOwnable, ERC1271, Factory. address(0) owner blocked by Solady ecrecover guard. Cross-chain TOCTOU non-exploitable post-Dencun. removeLastOwner by design. 4 prior audits (Cantina x2, Certora, C4) — 0 findings. | **Confirmed: No exploitable bug** |
+
+### Additional Repos Cloned (Wave 2)
+- ~/Desktop/whitehack/targets/1inch-lop/repo (1inch limit-order-protocol v4)
+- ~/Desktop/whitehack/targets/coinbase-wallet/repo (Coinbase smart-wallet)
+
 ## NEXT TARGETS (fresh, less audited)
 - Variational ($100k, Mar 16 — contracts may be private)
 - Ern ($50k, Scroll, ernorg GitHub appears private)
@@ -86,3 +137,10 @@ Unlock schedule: each submitted report unlocks the next slot 24h later
 | Wed 25 | WH-AXL-002 | Axelar | Medium | Alpha |
 
 8 reports, 4 programs, 8 days. Pipeline is full through next Wednesday.
+
+## HACKENPROOF QUEUE (no rate limit — submit now)
+
+| # | Report | Severity | Platform | Est. Payout | Ready? |
+|---|--------|---------|---------|------------|--------|
+| 1 | WH-DELTA-001 DeltaPrime debt underflow (blocks liquidation) | Medium | HackenProof | $4k-10k | ✅ YES |
+| 2 | WH-DELTA-002 DeltaPrime division by zero (liquidator disincentive) | Low | HackenProof | $1k-2k | ✅ YES |

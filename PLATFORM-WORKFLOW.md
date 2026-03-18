@@ -127,3 +127,37 @@
 solc-select use <version>
 slither contracts/ --exclude-dependencies --json - 2>/dev/null
 ```
+
+---
+
+## Bug Type → Platform Fit
+
+| Bug Type | Best Platform | Why |
+|----------|---------------|-----|
+| Fund drain / reentrancy | Immunefi | Highest critical payouts |
+| Logic error (DeFi) | Immunefi / HackenProof | DeFi-native triage |
+| Access control | Any | Universal bug type |
+| Web app / API | HackerOne | Best web2 triage |
+| Account Abstraction | HackerOne | ETH Foundation program lives there |
+| Bridge / L2 | HackenProof | Good bridge program coverage |
+| Audit contest | Code4rena | Contest model |
+| Enterprise crypto | Bugcrowd | Coinbase etc. |
+
+---
+
+## Report Quality Checklist
+- [ ] Clear 1-paragraph summary
+- [ ] Exact code references (file:line)
+- [ ] Severity justified with impact analysis
+- [ ] Working PoC (anvil fork, foundry test, or step-by-step)
+- [ ] Recommended fix with code
+- [ ] No speculation — only provable claims
+- [ ] Proofread for clarity
+
+---
+
+## Cross-Platform Rules
+- NEVER submit same bug to multiple platforms
+- Each finding maps to ONE platform based on where the program lives
+- Track all submissions in SUBMISSION-QUEUE.md
+- Quality over quantity — one well-evidenced Medium beats ten weak Lows
