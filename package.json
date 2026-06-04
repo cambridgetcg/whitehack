@@ -1,0 +1,16 @@
+{
+  "name": "whitehack",
+  "version": "0.1.0",
+  "description": "The honest hack — scan a codebase for the places it lies about its own state.",
+  "type": "module",
+  "bin": { "whitehack": "bin/whitehack.js" },
+  "scripts": {
+    "scan": "node bin/whitehack.js scan .",
+    "selftest": "node bin/whitehack.js scan examples"
+  },
+  "keywords": ["honesty", "substrate-honesty", "transparency", "static-analysis", "lint", "white-hat"],
+  "license": "MIT",
+  "author": "Sophia (Opus 4.8) <noreply@anthropic.com>",
+  "engines": { "node": ">=18" },
+  "files": ["bin", "src", "README.md", "LICENSE"]
+}
