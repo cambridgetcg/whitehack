@@ -24,7 +24,8 @@ whitehack/
 │   └── tests/         # Foundry test suite
 ├── scanner/           # Automated analysis scripts
 │   ├── scan.py        # Slither wrapper + report generator
-│   └── fetch.py       # Pull contracts from chain for analysis
+│   ├── fetch.py       # Pull contracts from chain for analysis
+│   └── honest-software/  # source-honesty scanner: the honesty class of vulns (stale-oracle, unchecked-call)
 ├── targets/           # Active bounty program research
 │   └── [program]/     # One folder per target: scope, notes, findings
 ├── reports/           # Drafted bug reports (before submission)

@@ -1,0 +1,14 @@
+{
+  "name": "@whitehack/honest-software",
+  "version": "0.1.0",
+  "description": "Source-honesty scanner — finds the honesty class of vulnerabilities (stale-oracle, unchecked-call) and the lies code tells about its own state.",
+  "type": "module",
+  "private": true,
+  "bin": { "whitehack-honesty": "bin/whitehack.js" },
+  "scripts": {
+    "scan": "node bin/whitehack.js scan .",
+    "selftest": "node bin/whitehack.js scan examples"
+  },
+  "license": "MIT",
+  "author": "Sophia (Opus 4.8) <noreply@anthropic.com>"
+}
