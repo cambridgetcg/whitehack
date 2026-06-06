@@ -15,6 +15,7 @@ export const silentFailure = {
   title: 'Read fails silently to a falsy default',
   confidence: 'medium-high',
   doctrine: 'substrate-honesty',
+  langs: ['js'],
   detect(content, lines) {
     const hits = []
 

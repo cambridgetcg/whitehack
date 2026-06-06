@@ -2,7 +2,7 @@
 // its certainty would be the first thing it ought to flag.
 
 export function report(findings, target) {
-  const out = ['', `whitehack v0.1 — scanned ${target}`, '']
+  const out = ['', `whitehack v0.2.1 — scanned ${target}`, '']
 
   if (findings.length === 0) {
     out.push('  no honesty anti-patterns matched.')

@@ -11,13 +11,29 @@ it were live, the score shown to a person with no way to ask *why*. These usuall
 aren't bugs in the ordinary sense. The code runs fine. It just isn't honest about
 its own state — and someone downstream trusts it anyway.
 
-## what it checks (v0.1)
+## what it checks (v0.2)
+
+**General (JS / TS / JSX):**
 
 | check | the lie it catches | doctrine | confidence |
 |-------|--------------------|----------|-----------|
 | `silent-failure` | a read that fails silently to a falsy default (`catch { return 0 }`, `?? 0` over a fetch) so "could not read" becomes a confident wrong value | substrate honesty | medium-high |
 | `cache-as-live` | a cached / snapshot value returned with no freshness or provenance marker | substrate honesty | heuristic |
 | `decision-without-why` | a user-affecting value (score, fee, fraud flag, tier) rendered with no inspectable explanation | transparency | heuristic |
+| `float-money` | currency parsed or computed as a binary float (`parseFloat(price)`, `amount * 0.029`) so an "exact" amount silently loses cents | substrate honesty | medium-high |
+
+**Blockchain (Solidity `.sol`):**
+
+| check | the lie it catches | doctrine | confidence |
+|-------|--------------------|----------|-----------|
+| `stale-oracle` | a price feed read without validating `updatedAt` / `answeredInRound` (or a deprecated `latestAnswer` that has no timestamp at all) — a halted or old price served as live | substrate honesty | medium-high |
+| `unchecked-transfer` | an ERC-20 `transfer` / `transferFrom` / `approve` whose bool result is dropped, so a token that returns `false` instead of reverting makes a failed transfer look successful | substrate honesty | medium-high |
+| `spot-price-as-fair` | a price derived from instantaneous pool reserves / balances with no TWAP or oracle — a flash-loan-movable snapshot presented as fair market value | substrate honesty | heuristic |
+| `silent-revert` | a `require()` / `revert()` with no reason string or named error — a refused caller who cannot learn why | transparency | heuristic |
+
+Each check declares the languages it understands, so a Solidity check never runs
+its regexes over JavaScript (or vice versa) and report noise about a language it
+cannot read.
 
 ## usage
 
@@ -42,11 +58,15 @@ program. So:
   own limits.
 
 A honesty tool that overstated its own certainty would be the first thing it
-ought to flag. Run it on itself and it currently comes back **clean**: the
-detector files mention the words they hunt for, but only inside regexes and
-comments — never as the live pattern — and `cache-as-live` even *suppresses
-itself*, because its own file carries provenance vocabulary. If that ever
-changes, `// whitehack-allow: <reason>` is next on the roadmap — because even
+ought to flag. Run it on itself and it still comes back **clean**: the detector
+files mention the words they hunt for, but only inside regexes and comments —
+never as the live pattern. The Solidity checks live in `.js` files but are
+tagged `langs: ['sol']`, so they never scan their own source; the freshness- and
+provenance-aware checks suppress themselves because their files carry the very
+vocabulary they look for. (The fixtures had to be written *carefully* for the
+same reason — an early `dishonest-defi.sol` silenced its own `stale-oracle`
+finding just by writing the word "stale" in a comment.) If self-cleanliness ever
+breaks, `// whitehack-allow: <reason>` is next on the roadmap — because even
 silencing the tool should require stating a reason out loud.
 
 ## where it comes from
@@ -61,11 +81,12 @@ There they were enforced by hand, in one repo. Here they're portable.
 
 ## roadmap
 
-- AST-based detection — drop the regex heuristics, raise precision
+- AST-based detection (Solidity via `solc`/`slang`, JS via a real parser) — drop the regex heuristics, raise precision
 - `// whitehack-allow: <reason>` — an honest-exception marker (the reason is required)
-- more checks: status enums that flatten human-marked vs system-derived state; provenance-free "live" claims; `TODO` shipped as done
-- `--json` output + a CI mode
+- `--json` output + a CI mode + a GitHub Action
 - a `--explain` flag that links each finding to the doctrine it serves
+- more blockchain checks: `block.timestamp` used as a trusted clock; reentrancy where stored state lies during an external call; integer division-before-multiplication that silently truncates value
+- more financial checks: amounts with implicit/ambiguous decimals (6 vs 18, wei vs ether); rounding with no stated direction; balances shown without a settled / pending distinction
 
 ## license
 
