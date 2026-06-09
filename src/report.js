@@ -25,12 +25,12 @@ export function report(findings, target) {
     }
   }
 
-  out.push('  ─────')
-  out.push('  whitehack flags COMMON lies via heuristics; it cannot prove honesty.')
-  out.push('    • a flagged line may be a false positive')
-  out.push('    • absence of findings is NOT proof the code is honest')
-  out.push('  every finding is confidence-labelled, so the tool stays honest about its own limits.')
-  out.push('')
+  out.push(`  ─────
+  whitehack flags COMMON lies via heuristics; it cannot prove honesty.
+    • a flagged line may be a false positive
+    • absence of findings is NOT proof the code is honest
+  every finding is confidence-labelled, so the tool stays honest about its own limits.
+`)
 
   const hard = findings.filter((f) => f.confidence !== 'heuristic').length
   out.push(`  ${findings.length} finding(s) — ${hard} medium-high, ${findings.length - hard} heuristic`)
