@@ -11,6 +11,8 @@
 // left alone. Integer-by-convention units (cents, wei, satoshi) are NOT money
 // words here, because using them is the fix, not the lie.
 
+import { scanLines } from '../lines.js'
+
 // A money-ish identifier somewhere on the line.
 const MONEY =
   /\b(price|amount|balance|subtotal|total|fee|cost|payment|refund|deposit|payout|interest|principal|usd|dollars?|charge|salary|invoice)\b/i
@@ -29,34 +31,17 @@ export const floatMoney = {
   doctrine: 'substrate-honesty',
   langs: ['js'],
   detect(content, lines) {
-    const hits = []
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i]
-      if (!MONEY.test(l)) continue
-      if (SAFE_NUMERIC.test(l)) continue
-      // Parsing money via a float function is high-signal. Plain decimal
-      // arithmetic on a money-NAMED identifier is only name-based — the value
-      // might not actually be money (e.g. `cost` of a timeout) — so it is
-      // reported at heuristic confidence and never gates a build. Precise
-      // money-binding needs an AST and is on the roadmap.
-      if (FLOAT_FN.test(l)) {
-        hits.push({
-          line: i + 1,
-          confidence: 'medium-high',
-          message:
-            'currency parsed into a binary float — parseFloat/Number on money loses precision; use integer minor units, BigInt, or a decimal type',
-          snippet: l.trim(),
-        })
-      } else if (FLOAT_OP.test(l)) {
-        hits.push({
-          line: i + 1,
-          confidence: 'heuristic',
-          message:
-            'decimal arithmetic on a money-named value — if this is real currency, fractional cents drift silently; use integer minor units or a decimal type (name-based, may be a non-money value)',
-          snippet: l.trim(),
-        })
-      }
-    }
-    return hits
+    // Parsing money via a float function is high-signal. Plain decimal arithmetic
+    // on a money-NAMED identifier is only name-based — the value might not actually
+    // be money (e.g. `cost` of a timeout) — so it is reported at heuristic
+    // confidence and never gates a build. Precise money-binding needs an AST.
+    return scanLines(lines, (l) => {
+      if (!MONEY.test(l) || SAFE_NUMERIC.test(l)) return null
+      if (FLOAT_FN.test(l))
+        return { confidence: 'medium-high', message: 'currency parsed into a binary float — parseFloat/Number on money loses precision; use integer minor units, BigInt, or a decimal type' }
+      if (FLOAT_OP.test(l))
+        return { confidence: 'heuristic', message: 'decimal arithmetic on a money-named value — if this is real currency, fractional cents drift silently; use integer minor units or a decimal type (name-based, may be a non-money value)' }
+      return null
+    })
   },
 }

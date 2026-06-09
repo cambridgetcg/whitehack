@@ -10,6 +10,8 @@
 // vocabulary anywhere, assume the spot read feeds something legitimate and stay
 // quiet. It reads vocabulary, not data flow, so it errs toward silence.
 
+import { scanLines } from '../lines.js'
+
 // `.method(` / dotted forms keep these from matching this file's own prose.
 const SPOT =
   /\.getReserves\s*\(|\.balanceOf\s*\([^)]*\)\s*[*/]|\breserve[01]\b\s*[*/]|[*/]\s*\breserve[01]\b/i
@@ -24,19 +26,8 @@ export const spotPriceAsFair = {
   langs: ['sol'],
   detect(content, lines) {
     if (SAFE_SOURCE.test(content)) return []
-
-    const hits = []
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i]
-      if (SPOT.test(l)) {
-        hits.push({
-          line: i + 1,
-          message:
-            'a price/amount derived from instantaneous pool reserves or balances, with no TWAP/oracle in this file — one flash loan can move it within a block; the number claims to be a fair price but is a manipulable snapshot',
-          snippet: l.trim(),
-        })
-      }
-    }
-    return hits
+    return scanLines(lines, (l) =>
+      SPOT.test(l) &&
+      'a price/amount derived from instantaneous pool reserves or balances, with no TWAP/oracle in this file — one flash loan can move it within a block; the number claims to be a fair price but is a manipulable snapshot')
   },
 }

@@ -10,6 +10,8 @@
 // carries no named error. Reverts that already name an error or pass a string
 // are left alone.
 
+import { scanLines } from '../lines.js'
+
 // require(...) whose argument list has no comma → condition only, no message.
 const REQUIRE_NO_MSG = /\brequire\s*\([^;,]*\)\s*;/
 // revert(); with empty parens → no custom error, no string.
@@ -22,25 +24,10 @@ export const silentRevert = {
   doctrine: 'transparency',
   langs: ['sol'],
   detect(content, lines) {
-    const hits = []
-    for (let i = 0; i < lines.length; i++) {
-      const l = lines[i]
-      if (REQUIRE_NO_MSG.test(l)) {
-        hits.push({
-          line: i + 1,
-          message:
-            'require() with no message — the refused caller gets an opaque revert and cannot learn why; add a reason string or a named custom error',
-          snippet: l.trim(),
-        })
-      } else if (REVERT_EMPTY.test(l)) {
-        hits.push({
-          line: i + 1,
-          message:
-            'revert() with no named error or string — the failure states no reason; use a named custom error so the refusal is inspectable',
-          snippet: l.trim(),
-        })
-      }
-    }
-    return hits
+    return scanLines(lines, (l) =>
+      (REQUIRE_NO_MSG.test(l) &&
+        'require() with no message — the refused caller gets an opaque revert and cannot learn why; add a reason string or a named custom error') ||
+      (REVERT_EMPTY.test(l) &&
+        'revert() with no named error or string — the failure states no reason; use a named custom error so the refusal is inspectable'))
   },
 }
