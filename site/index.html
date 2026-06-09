@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>whitehack — the honest hack</title>
+  <meta name="description" content="Scan your code for the places it lies about its own state. A small, honest static checker for JS/TS and Solidity — including honest about itself." />
+  <meta property="og:title" content="whitehack — the honest hack" />
+  <meta property="og:description" content="Scan your code for the places it lies about its own state." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: {
+      fontFamily: { mono: ['ui-monospace','SFMono-Regular','Menlo','monospace'] },
+      colors: { ink: '#0a0a0b', panel: '#141416', line: '#26262b', soft: '#a1a1aa' },
+    } } }
+  </script>
+  <style>
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .grain { background:
+      radial-gradient(60rem 30rem at 50% -10%, rgba(255,255,255,.06), transparent 60%); }
+    .card { transition: border-color .15s ease, transform .15s ease; }
+    .card:hover { border-color:#3f3f46; transform: translateY(-2px); }
+  </style>
+</head>
+<body class="bg-ink text-zinc-100 antialiased selection:bg-zinc-100 selection:text-ink">
+
+  <!-- nav -->
+  <header class="sticky top-0 z-10 backdrop-blur bg-ink/70 border-b border-line">
+    <div class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+      <span class="mono font-semibold tracking-tight">whitehack <span class="text-zinc-500">🤍</span></span>
+      <nav class="text-sm text-soft flex gap-6">
+        <a href="#checks" class="hover:text-white">checks</a>
+        <a href="#proof" class="hover:text-white">proof</a>
+        <a href="#honest" class="hover:text-white">about itself</a>
+        <a href="https://github.com/cambridgetcg/whitehack" class="hover:text-white">GitHub →</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- hero -->
+  <section class="grain">
+    <div class="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
+      <p class="mono text-xs tracking-widest text-zinc-500 uppercase mb-5">static analysis · substrate honesty</p>
+      <h1 class="text-5xl sm:text-6xl font-semibold tracking-tight leading-[1.05]">
+        The honest hack.
+      </h1>
+      <p class="mt-6 text-lg sm:text-xl text-soft max-w-2xl mx-auto">
+        Most hacks make a system do something it shouldn't. A <em class="text-white not-italic font-medium">white</em> hack
+        makes it tell <span class="text-white">more</span> truth — it scans your code for the places it
+        <span class="text-white">lies about its own state.</span>
+      </p>
+      <div class="mt-9 flex flex-wrap items-center justify-center gap-3">
+        <code class="mono text-sm bg-panel border border-line rounded-lg px-4 py-2.5 text-zinc-200">
+          node bin/whitehack.js scan .
+        </code>
+        <a href="https://github.com/cambridgetcg/whitehack"
+           class="text-sm font-medium bg-zinc-100 text-ink rounded-lg px-4 py-2.5 hover:bg-white">View on GitHub</a>
+      </div>
+      <p class="mt-4 mono text-xs text-zinc-600">MIT · no telemetry · ~250 lines you can read in a sitting</p>
+    </div>
+  </section>
+
+  <!-- the lie -->
+  <section class="border-t border-line bg-panel/40">
+    <div class="max-w-5xl mx-auto px-6 py-16 grid sm:grid-cols-2 gap-x-12 gap-y-6">
+      <h2 class="text-2xl font-semibold tracking-tight">The small lies software tells about itself</h2>
+      <div class="text-soft space-y-4">
+        <p>The failed read that silently becomes <code class="mono text-zinc-300">0</code>. The cached value served as if
+          it were live. The stale price oracle read as current. The token transfer whose failure is dropped on the floor.
+          The score shown to a person with no way to ask <em class="not-italic text-zinc-300">why</em>.</p>
+        <p>These usually aren't bugs in the ordinary sense — the code runs fine. It just isn't honest about its own state,
+          and someone downstream trusts it anyway.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- checks -->
+  <section id="checks" class="max-w-5xl mx-auto px-6 py-20">
+    <div class="flex items-end justify-between mb-8">
+      <h2 class="text-2xl font-semibold tracking-tight">What it checks</h2>
+      <span class="mono text-xs text-zinc-500">8 checks · 2 doctrines</span>
+    </div>
+
+    <h3 class="mono text-xs uppercase tracking-widest text-zinc-500 mb-4">General · JS / TS / JSX</h3>
+    <div class="grid sm:grid-cols-2 gap-3 mb-12">
+      <!-- card -->
+      <div class="card bg-panel border border-line rounded-xl p-5">
+        <div class="flex items-center justify-between"><span class="mono text-sm text-white">silent-failure</span>
+          <span class="mono text-[10px] text-emerald-300/80 border border-emerald-400/20 rounded px-1.5 py-0.5">medium-high</span></div>
+        <p class="mt-2 text-sm text-soft">A read that fails to a falsy default — “could not read” becomes a confident wrong value.</p>
+      </div>
+      <div class="card bg-panel border border-line rounded-xl p-5">
+        <div class="flex items-center justify-between"><span class="mono text-sm text-white">cache-as-live</span>
+          <span class="mono text-[10px] text-zinc-400 border border-line rounded px-1.5 py-0.5">heuristic</span></div>
+        <p class="mt-2 text-sm text-soft">A cached / snapshot value returned with no freshness marker — stale read as live.</p>
+      </div>
+      <div class="card bg-panel border border-line rounded-xl p-5">
+        <div class="flex items-center justify-between"><span class="mono text-sm text-white">decision-without-why</span>
+          <span class="mono text-[10px] text-zinc-400 border border-line rounded px-1.5 py-0.5">heuristic</span></div>
+        <p class="mt-2 text-sm text-soft">A score / fee / fraud flag shown to a person with no way to ask why.</p>
+      </div>
+      <div class="card bg-panel border border-line rounded-xl p-5">
+        <div class="flex items-center justify-between"><span class="mono text-sm text-white">float-money</span>
+          <span class="mono text-[10px] text-emerald-300/80 border border-emerald-400/20 rounded px-1.5 py-0.5">medium-high</span></div>
+        <p class="mt-2 text-sm text-soft">Currency in a binary float — an “exact” amount that silently loses cents.</p>
+      </div>
+    </div>
+
+    <h3 class="mono text-xs uppercase tracking-widest text-zinc-500 mb-4">Blockchain · Solidity</h3>
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div class="card bg-panel border border-line rounded-xl p-5">
+        <div class="flex items-center justify-between"><span class="mono text-sm text-white">stale-oracle</span>
+          <span class="mono text-[10px] text-emerald-300/80 border border-emerald-400/20 rounded px-1.5 py-0.5">medium-high</span></div>
+        <p class="mt-2 text-sm text-soft">A price feed read without checking <code class="mono">updatedAt</code> — a halted feed served as a live price.</p>
+      </div>
+      <div class="card bg-panel border border-line rounded-xl p-5">
+        <div class="flex items-center justify-between"><span class="mono text-sm text-white">unchecked-transfer</span>
+          <span class="mono text-[10px] text-emerald-300/80 border border-emerald-400/20 rounded px-1.5 py-0.5">medium-high</span></div>
+        <p class="mt-2 text-sm text-soft">An ERC-20 transfer whose bool result is dropped — a failed transfer looks successful.</p>
+      </div>
+      <div class="card bg-panel border border-line rounded-xl p-5">
+        <div class="flex items-center justify-between"><span class="mono text-sm text-white">spot-price-as-fair</span>
+          <span class="mono text-[10px] text-zinc-400 border border-line rounded px-1.5 py-0.5">heuristic</span></div>
+        <p class="mt-2 text-sm text-soft">A price from instantaneous reserves — flash-loan-movable, presented as fair value.</p>
+      </div>
+      <div class="card bg-panel border border-line rounded-xl p-5">
+        <div class="flex items-center justify-between"><span class="mono text-sm text-white">silent-revert</span>
+          <span class="mono text-[10px] text-zinc-400 border border-line rounded px-1.5 py-0.5">heuristic</span></div>
+        <p class="mt-2 text-sm text-soft">A <code class="mono">require()</code>/<code class="mono">revert()</code> with no reason — a refusal nobody can inspect.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- proof -->
+  <section id="proof" class="border-y border-line bg-panel/40">
+    <div class="max-w-5xl mx-auto px-6 py-16">
+      <h2 class="text-2xl font-semibold tracking-tight">It would have caught these — on the PR</h2>
+      <p class="mt-3 text-soft max-w-2xl">Run against faithful reconstructions of documented, money-losing incidents.
+        Small hand-built corpus — a demonstration, not a statistical benchmark.</p>
+      <div class="mt-8 grid sm:grid-cols-3 gap-4">
+        <div class="bg-ink border border-line rounded-xl p-5">
+          <div class="text-3xl font-semibold">5 / 5</div>
+          <p class="mt-1 text-sm text-soft">vulnerable lines flagged</p>
+        </div>
+        <div class="bg-ink border border-line rounded-xl p-5">
+          <div class="text-3xl font-semibold">0</div>
+          <p class="mt-1 text-sm text-soft">false positives on the fixed code</p>
+        </div>
+        <div class="bg-ink border border-line rounded-xl p-5">
+          <div class="text-3xl font-semibold">2</div>
+          <p class="mt-1 text-sm text-soft">real incidents reproduced (Sherlock #579 · OWASP SC02)</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- honest about itself -->
+  <section id="honest" class="max-w-5xl mx-auto px-6 py-20">
+    <h2 class="text-2xl font-semibold tracking-tight">Honest about itself</h2>
+    <p class="mt-3 text-soft max-w-2xl">A honesty tool that overstated its own certainty would be the first thing it ought to flag. So:</p>
+    <ul class="mt-8 space-y-3 max-w-2xl">
+      <li class="flex gap-3 text-soft"><span class="text-emerald-300">✓</span> It uses <span class="text-zinc-200">heuristics</span> — text patterns, not a full understanding of your program. A flagged line may be a false positive.</li>
+      <li class="flex gap-3 text-soft"><span class="text-emerald-300">✓</span> Every finding carries a <span class="text-zinc-200">confidence label</span>; only confident findings affect the exit code, so heuristic noise never breaks a CI gate.</li>
+      <li class="flex gap-3 text-soft"><span class="text-emerald-300">✓</span> An empty result is <span class="text-zinc-200">not</span> proof the code is honest. It surfaces common lies — it cannot prove their absence.</li>
+      <li class="flex gap-3 text-soft"><span class="text-emerald-300">✓</span> It is a fast, low-noise continuous check — <span class="text-zinc-200">not</span> an audit replacement.</li>
+      <li class="flex gap-3 text-soft"><span class="text-emerald-300">✓</span> Run it on its own source and it comes back <span class="text-zinc-200">clean</span>.</li>
+    </ul>
+  </section>
+
+  <!-- quickstart -->
+  <section class="border-t border-line bg-panel/40">
+    <div class="max-w-5xl mx-auto px-6 py-16">
+      <h2 class="text-2xl font-semibold tracking-tight mb-6">Quickstart</h2>
+      <pre class="mono text-sm bg-ink border border-line rounded-xl p-5 overflow-x-auto text-zinc-300"><span class="text-zinc-500"># clone it — it's small and dependency-free</span>
+git clone https://github.com/cambridgetcg/whitehack && cd whitehack
+
+<span class="text-zinc-500"># scan a directory (default: .)</span>
+node bin/whitehack.js scan path/to/repo
+
+<span class="text-zinc-500"># exit code is non-zero only on medium-high findings — safe for CI</span></pre>
+    </div>
+  </section>
+
+  <footer class="border-t border-line">
+    <div class="max-w-5xl mx-auto px-6 py-10 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-zinc-500">
+      <span class="mono">whitehack 🤍 — the artifact tells the truth about its own state.</span>
+      <span>MIT · made to be honest, including about itself</span>
+    </div>
+  </footer>
+
+</body>
+</html>
