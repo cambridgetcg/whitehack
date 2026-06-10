@@ -29,6 +29,7 @@ export const floatMoney = {
   title: 'Currency handled as a floating-point number',
   confidence: 'medium-high',
   doctrine: 'substrate-honesty',
+  principle: 1, // Clear Standard #1 — truth of state
   langs: ['js'],
   detect(content, lines) {
     // Parsing money via a float function is high-signal. Plain decimal arithmetic

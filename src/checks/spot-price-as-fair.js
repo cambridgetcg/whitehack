@@ -23,6 +23,7 @@ export const spotPriceAsFair = {
   title: 'Spot reserves/balance used as a fair price',
   confidence: 'heuristic',
   doctrine: 'substrate-honesty',
+  principle: 1, // Clear Standard #1 — truth of state
   langs: ['sol'],
   detect(content, lines) {
     if (SAFE_SOURCE.test(content)) return []

@@ -13,6 +13,7 @@ export const decisionWithoutWhy = {
   title: 'User-affecting decision shown with no "why"',
   confidence: 'heuristic',
   doctrine: 'transparency',
+  principle: 3, // Clear Standard #3 — inspectable decisions
   langs: ['js'],
   detect(content, lines) {
     const looksUI = /<[A-Za-z]/.test(content) || /className=|return\s*\(\s*</.test(content)

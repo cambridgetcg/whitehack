@@ -17,7 +17,8 @@ export function report(findings, target) {
       out.push(`  ${file}`)
       for (const f of list) {
         const mark = f.confidence === 'heuristic' ? '·' : '!'
-        out.push(`    ${mark} L${f.line}  ${f.title}  (${f.doctrine} · ${f.confidence})`)
+        const cs = f.principle ? ` · CS#${f.principle}` : ''
+        out.push(`    ${mark} L${f.line}  ${f.title}  (${f.doctrine} · ${f.confidence}${cs})`)
         out.push(`        ${f.message}`)
         out.push(`        > ${f.snippet}`)
       }

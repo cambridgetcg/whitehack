@@ -32,6 +32,7 @@ export const uncheckedTransfer = {
   title: 'ERC-20 transfer result ignored',
   confidence: 'medium-high',
   doctrine: 'substrate-honesty',
+  principle: 2, // Clear Standard #2 — visible failure
   langs: ['sol'],
   detect(content, lines) {
     const hits = []

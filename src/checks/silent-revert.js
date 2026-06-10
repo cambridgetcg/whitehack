@@ -22,6 +22,7 @@ export const silentRevert = {
   title: 'Failure reverts with no stated reason',
   confidence: 'heuristic',
   doctrine: 'transparency',
+  principle: 3, // Clear Standard #3 — inspectable decisions
   langs: ['sol'],
   detect(content, lines) {
     return scanLines(lines, (l) =>

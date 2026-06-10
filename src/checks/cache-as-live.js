@@ -17,6 +17,7 @@ export const cacheAsLive = {
   title: 'Cached value may be served as if live',
   confidence: 'heuristic',
   doctrine: 'substrate-honesty',
+  principle: 4, // Clear Standard #4 — stated freshness
   langs: ['js'],
   detect(content, lines) {
     // If the file anywhere carries a freshness/provenance vocabulary, assume it

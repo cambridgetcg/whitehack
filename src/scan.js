@@ -73,6 +73,7 @@ export async function scan(root) {
           title: check.title,
           confidence: hit.confidence || check.confidence,
           doctrine: check.doctrine,
+          principle: check.principle,
           message: hit.message,
           snippet: hit.snippet,
         })

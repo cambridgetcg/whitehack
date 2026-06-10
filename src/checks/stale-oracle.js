@@ -29,6 +29,7 @@ export const staleOracle = {
   title: 'Price feed read without a staleness check',
   confidence: 'medium-high',
   doctrine: 'substrate-honesty',
+  principle: 4, // Clear Standard #4 — stated freshness
   langs: ['sol'],
   detect(content, lines) {
     const hits = []

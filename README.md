@@ -35,6 +35,24 @@ Each check declares the languages it understands, so a Solidity check never runs
 its regexes over JavaScript (or vice versa) and report noise about a language it
 cannot read.
 
+## conformance to the Clear Standard
+
+whitehack is the conformance linter for [the Clear Standard](https://github.com/cambridgetcg/clear-standard) —
+six principles for systems that tell the truth about their own state. Every check
+enforces a specific principle, and every finding cites it (`CS#n`):
+
+| Clear Standard principle | whitehack checks |
+|--------------------------|------------------|
+| **#1 — truth of state** | `float-money`, `spot-price-as-fair` |
+| **#2 — visible failure** | `silent-failure`, `unchecked-transfer` |
+| **#3 — inspectable decisions** | `decision-without-why`, `silent-revert` |
+| **#4 — stated freshness** | `cache-as-live`, `stale-oracle` |
+| **#5 — honest names** | *(human judgement — not machine-checkable)* |
+| **#6 — labelled certainty** | *whitehack **embodies** this — it labels its own confidence rather than checking yours* |
+
+So a finding isn't an arbitrary nag — it names the principle the code broke. The
+standard makes the linter principled; the linter makes the standard checkable.
+
 ## usage
 
 ```sh
