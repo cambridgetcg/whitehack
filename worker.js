@@ -1,17 +1,3 @@
-// whitehack playground — Cloudflare Worker
-// Serves the static playground.html as a single-page Worker.
-// Deployed with: npx wrangler deploy --name whitehack-playground
-export default {
-  async fetch(request) {
-    return new Response(HTML, {
-      headers: {
-        'content-type': 'text/html; charset=utf-8',
-        'cache-control': 'public, max-age=300',
-      },
-    });
-  },
-};
-
 const HTML = `<!doctype html>
 <html lang="en">
 <head>
@@ -211,6 +197,7 @@ const HTML = `<!doctype html>
       <a href="https://github.com/cambridgetcg/whitehack#checks">checks</a>
       <a href="https://github.com/cambridgetcg/whitehack#readme">about</a>
       <a href="playground.html">playground</a>
+      <a href="https://whitehack-learn.axiepro.workers.dev">learn why →</a>
       <a href="https://github.com/cambridgetcg/whitehack">GitHub →</a>
     </nav>
   </div>
@@ -281,10 +268,10 @@ function scanLines(lines, claim) {
 
 // ── silent-failure (js) ──────────────────────────────────────────────────────
 {
-  const FALSY = /\breturn\s+(0|\[\]|\{\}|null|''|""|false)\s*(;|\/\/|$)/;
-  const SAFE_DEFAULT = /(\?\?|\|\|)\s*(0|\[\]|''|"")/;
-  const GUARD = /\b(throw|console\.|logger?\.|report\(|rethrow|process\.exit|captureException|Sentry|warn\(|error\()/;
-  const READ = /(await\s|fetch\(|\.get\(|\.query\(|readFile|\.count\(|\.find\(|\.load\(|\.read\()/;
+  const FALSY = /\\breturn\\s+(0|\\[\\]|\\{\\}|null|''|""|false)\\s*(;|\\/\\/|$)/;
+  const SAFE_DEFAULT = /(\\?\\?|\\|\\|)\\s*(0|\\[\\]|''|"")/;
+  const GUARD = /\\b(throw|console\\.|logger?\\.|report\\(|rethrow|process\\.exit|captureException|Sentry|warn\\(|error\\()/;
+  const READ = /(await\\s|fetch\\(|\\.get\\(|\\.query\\(|readFile|\\.count\\(|\\.find\\(|\\.load\\(|\\.read\\()/;
   CHECKS.push({
     id: 'silent-failure', title: 'Read fails silently to a falsy default',
     confidence: 'medium-high', doctrine: 'substrate-honesty', principle: 2, langs: ['js'],
@@ -292,7 +279,7 @@ function scanLines(lines, claim) {
       const hits = [];
       for (let i = 0; i < lines.length; i++) {
         const idx = lines[i].indexOf('catch');
-        if (idx === -1 || !/\bcatch\b/.test(lines[i])) continue;
+        if (idx === -1 || !/\\bcatch\\b/.test(lines[i])) continue;
         let depth = 0, started = false; const body = [];
         for (let j = i; j < Math.min(lines.length, i + 30); j++) {
           const seg = j === i ? lines[j].slice(idx) : lines[j];
@@ -303,7 +290,7 @@ function scanLines(lines, claim) {
           body.push({ n: j + 1, l: lines[j] });
           if (started && depth <= 0) break;
         }
-        const text = body.map(b => b.l).join('\n');
+        const text = body.map(b => b.l).join('\\n');
         if (GUARD.test(text)) continue;
         const falsy = body.find(b => FALSY.test(b.l));
         if (falsy) hits.push({ line: falsy.n, message: 'catch returns a falsy default and neither logs nor rethrows — a failure becomes a confident wrong value', snippet: falsy.l.trim() });
@@ -320,14 +307,14 @@ function scanLines(lines, claim) {
 // ── cache-as-live (js) ────────────────────────────────────────────────────────
 {
   const CACHE = /(cache|snapshot|memoiz|stale|lastKnown|fallbackValue|prevValue)/i;
-  const PROVENANCE = /\b(asOf|fetchedAt|updatedAt|cachedAt|stale|provenance|freshness|ttl|revalidat|_meta|timestamp|lastUpdated|retrievedAt)\b/i;
+  const PROVENANCE = /\\b(asOf|fetchedAt|updatedAt|cachedAt|stale|provenance|freshness|ttl|revalidat|_meta|timestamp|lastUpdated|retrievedAt)\\b/i;
   CHECKS.push({
     id: 'cache-as-live', title: 'Cached value may be served as if live',
     confidence: 'heuristic', doctrine: 'substrate-honesty', principle: 4, langs: ['js'],
     detect(content, lines) {
       if (PROVENANCE.test(content)) return [];
       return scanLines(lines, l =>
-        /\breturn\b/.test(l) && CACHE.test(l) && !PROVENANCE.test(l) &&
+        /\\breturn\\b/.test(l) && CACHE.test(l) && !PROVENANCE.test(l) &&
         'a cached/snapshot value is returned and this file carries no freshness/provenance marker — the caller cannot tell live from stale');
     }
   });
@@ -335,13 +322,13 @@ function scanLines(lines, claim) {
 
 // ── decision-without-why (js) ─────────────────────────────────────────────────
 {
-  const DECISION = /\b(trust_?score|trustScore|fraud_?(score|flag|signal)|commission(_?rate)?|risk_?score|credit_?score|payout_?hold|tier|fee)\b/i;
-  const WHY = /\b(why|explain|explanation|methodology|reason|provenance|tooltip|whyLink|disclos|appeal|how_?it_?works|howItWorks)\b/i;
+  const DECISION = /\\b(trust_?score|trustScore|fraud_?(score|flag|signal)|commission(_?rate)?|risk_?score|credit_?score|payout_?hold|tier|fee)\\b/i;
+  const WHY = /\\b(why|explain|explanation|methodology|reason|provenance|tooltip|whyLink|disclos|appeal|how_?it_?works|howItWorks)\\b/i;
   CHECKS.push({
     id: 'decision-without-why', title: 'User-affecting decision shown with no "why"',
     confidence: 'heuristic', doctrine: 'transparency', principle: 3, langs: ['js'],
     detect(content, lines) {
-      const looksUI = /<[A-Za-z]/.test(content) || /className=|return\s*\(\s*</.test(content);
+      const looksUI = /<[A-Za-z]/.test(content) || /className=|return\\s*\\(\\s*</.test(content);
       if (!looksUI) return [];
       const hits = [];
       const whyNear = (i) => {
@@ -351,7 +338,7 @@ function scanLines(lines, claim) {
       };
       for (let i = 0; i < lines.length; i++) {
         const l = lines[i];
-        if (DECISION.test(l) && /\{[^}]*\}/.test(l) && !whyNear(i))
+        if (DECISION.test(l) && /\\{[^}]*\\}/.test(l) && !whyNear(i))
           hits.push({ line: i + 1, message: 'a user-affecting value is rendered with no nearby explanation — the subject cannot inspect the decision', snippet: l.trim() });
       }
       return hits;
@@ -361,10 +348,10 @@ function scanLines(lines, claim) {
 
 // ── float-money (js) ──────────────────────────────────────────────────────────
 {
-  const MONEY = /\b(price|amount|balance|subtotal|total|fee|cost|payment|refund|deposit|payout|interest|principal|usd|dollars?|charge|salary|invoice)\b/i;
-  const FLOAT_FN = /\b(parseFloat|Number)\s*\(/;
-  const FLOAT_OP = /\d+\.\d+\s*[-+*/]|[-+*/]\s*\d+\.\d+/;
-  const SAFE_NUMERIC = /\b(Decimal|BigNumber|bignumber|dinero|BigInt|parseUnits|formatUnits)\b|\.(times|plus|minus|dividedBy|mul|div|add|sub)\s*\(/;
+  const MONEY = /\\b(price|amount|balance|subtotal|total|fee|cost|payment|refund|deposit|payout|interest|principal|usd|dollars?|charge|salary|invoice)\\b/i;
+  const FLOAT_FN = /\\b(parseFloat|Number)\\s*\\(/;
+  const FLOAT_OP = /\\d+\\.\\d+\\s*[-+*/]|[-+*/]\\s*\\d+\\.\\d+/;
+  const SAFE_NUMERIC = /\\b(Decimal|BigNumber|bignumber|dinero|BigInt|parseUnits|formatUnits)\\b|\\.(times|plus|minus|dividedBy|mul|div|add|sub)\\s*\\(/;
   CHECKS.push({
     id: 'float-money', title: 'Currency handled as a floating-point number',
     confidence: 'medium-high', doctrine: 'substrate-honesty', principle: 1, langs: ['js'],
@@ -383,9 +370,9 @@ function scanLines(lines, claim) {
 
 // ── stale-oracle (sol) ────────────────────────────────────────────────────────
 {
-  const DEPRECATED = /\.(latestAnswer|getAnswer)\s*\(/;
-  const ROUND_DATA = /\.(latestRoundData|getRoundData)\s*\(/;
-  const STALENESS = /\b(updatedAt|answeredInRound|roundId|staleness|stale|heartbeat|sequencer|secondsSince|maxAge|maxDelay|maxStale)\b|block\.timestamp\s*-/i;
+  const DEPRECATED = /\\.(latestAnswer|getAnswer)\\s*\\(/;
+  const ROUND_DATA = /\\.(latestRoundData|getRoundData)\\s*\\(/;
+  const STALENESS = /\\b(updatedAt|answeredInRound|roundId|staleness|stale|heartbeat|sequencer|secondsSince|maxAge|maxDelay|maxStale)\\b|block\\.timestamp\\s*-/i;
   CHECKS.push({
     id: 'stale-oracle', title: 'Price feed read without a staleness check',
     confidence: 'medium-high', doctrine: 'substrate-honesty', principle: 4, langs: ['sol'],
@@ -412,9 +399,9 @@ function scanLines(lines, claim) {
 
 // ── unchecked-transfer (sol) ──────────────────────────────────────────────────
 {
-  const ERC20_CALL = /\.(transferFrom|approve)\s*\(|\.transfer\s*\([^)]*,/;
-  const CONSUMED_INLINE = /\brequire\s*\(|\breturn\b|\bassert\s*\(|\bif\s*\(|&&|\|\||\bsafe|\btry\b/;
-  const ASSIGNED = /(?:\b(?:bool|var)\s+)?([A-Za-z_$]\w*)\s*=\s*[A-Za-z_$][\w$.\[\]()]*\.(?:transfer|transferFrom|approve)\s*\(/;
+  const ERC20_CALL = /\\.(transferFrom|approve)\\s*\\(|\\.transfer\\s*\\([^)]*,/;
+  const CONSUMED_INLINE = /\\brequire\\s*\\(|\\breturn\\b|\\bassert\\s*\\(|\\bif\\s*\\(|&&|\\|\\||\\bsafe|\\btry\\b/;
+  const ASSIGNED = /(?:\\b(?:bool|var)\\s+)?([A-Za-z_$]\\w*)\\s*=\\s*[A-Za-z_$][\\w$.\\[\\]()]*\\.(?:transfer|transferFrom|approve)\\s*\\(/;
   CHECKS.push({
     id: 'unchecked-transfer', title: 'ERC-20 transfer result ignored',
     confidence: 'medium-high', doctrine: 'substrate-honesty', principle: 2, langs: ['sol'],
@@ -426,8 +413,8 @@ function scanLines(lines, claim) {
         const m = l.match(ASSIGNED);
         if (m) {
           const v = m[1];
-          const after = l.slice(m.index + m[0].length) + '\n' + lines.slice(i + 1).join('\n');
-          const used = new RegExp('\\b' + v + '\\b').test(after);
+          const after = l.slice(m.index + m[0].length) + '\\n' + lines.slice(i + 1).join('\\n');
+          const used = new RegExp('\\\\b' + v + '\\\\b').test(after);
           if (!used) hits.push({ line: i + 1, message: 'transfer/approve result is assigned to \`' + v + '\` but \`' + v + '\` is never checked afterward — a token that returns false instead of reverting makes a failed transfer look successful; require() the result or use SafeERC20', snippet: l.trim() });
           continue;
         }
@@ -441,8 +428,8 @@ function scanLines(lines, claim) {
 
 // ── spot-price-as-fair (sol) ──────────────────────────────────────────────────
 {
-  const SPOT = /\.getReserves\s*\(|\.balanceOf\s*\([^)]*\)\s*[*/]|\breserve[01]\b\s*[*/]|[*/]\s*\breserve[01]\b/i;
-  const SAFE_SOURCE = /\b(twap|cumulative|observe|consult|priceCumulative|latestRoundData|getRoundData|oracle|priceFeed|chainlink|medianize)\b/i;
+  const SPOT = /\\.getReserves\\s*\\(|\\.balanceOf\\s*\\([^)]*\\)\\s*[*/]|\\breserve[01]\\b\\s*[*/]|[*/]\\s*\\breserve[01]\\b/i;
+  const SAFE_SOURCE = /\\b(twap|cumulative|observe|consult|priceCumulative|latestRoundData|getRoundData|oracle|priceFeed|chainlink|medianize)\\b/i;
   CHECKS.push({
     id: 'spot-price-as-fair', title: 'Spot reserves/balance used as a fair price',
     confidence: 'heuristic', doctrine: 'substrate-honesty', principle: 1, langs: ['sol'],
@@ -457,8 +444,8 @@ function scanLines(lines, claim) {
 
 // ── silent-revert (sol) ───────────────────────────────────────────────────────
 {
-  const REQUIRE_NO_MSG = /\brequire\s*\([^;,]*\)\s*;/;
-  const REVERT_EMPTY = /\brevert\s*\(\s*\)\s*;/;
+  const REQUIRE_NO_MSG = /\\brequire\\s*\\([^;,]*\\)\\s*;/;
+  const REVERT_EMPTY = /\\brevert\\s*\\(\\s*\\)\\s*;/;
   CHECKS.push({
     id: 'silent-revert', title: 'Failure reverts with no stated reason',
     confidence: 'heuristic', doctrine: 'transparency', principle: 3, langs: ['sol'],
@@ -474,7 +461,7 @@ function scanLines(lines, claim) {
 // scan engine
 // ─────────────────────────────────────────────────────────────────────────────
 function scan(code, lang) {
-  const lines = code.split('\n');
+  const lines = code.split('\\n');
   const findings = [];
   for (const check of CHECKS) {
     if (check.langs && !check.langs.includes(lang)) continue;
@@ -639,3 +626,11 @@ setTimeout(() => scanBtn.click(), 200);
 </script>
 </body>
 </html>`;
+
+export default {
+  async fetch(request) {
+    return new Response(HTML, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    });
+  }
+};
