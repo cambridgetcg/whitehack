@@ -1,0 +1,327 @@
+const HTML = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>whitehack — learn why each check matters</title>
+<meta name="description" content="Understand the why behind each honesty check. Real stories, real consequences, real lessons. For everyone who wants to build honest software." />
+<style>
+  :root {
+    --ink: #0a0a0b;
+    --panel: #141416;
+    --line: #26262b;
+    --line-hi: #3f3f46;
+    --soft: #a1a1aa;
+    --softer: #71717a;
+    --cyan: #22d3ee;
+    --amber: #fcd34d;
+    --rose: #fda4af;
+    --emerald: #6ee7b7;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--ink); color: #f4f4f5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background-image: radial-gradient(55rem 28rem at 50% -10%, rgba(255,255,255,.04), transparent 60%);
+  }
+  ::selection { background: #f4f4f5; color: var(--ink); }
+  a { color: var(--cyan); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(12px); background: rgba(10,10,11,.72);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .brand { font-family: var(--mono); font-weight: 600; }
+  .brand .dot { color: var(--softer); }
+  .nav-links { display: flex; gap: 22px; font-size: 13px; color: var(--soft); }
+  .nav-links a { color: inherit; text-decoration: none; }
+  .nav-links a:hover { color: #fff; }
+
+  .hero { text-align: center; padding: 64px 0 48px; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--softer); margin: 0 0 18px; }
+  h1 { font-family: var(--serif); font-size: 2.8rem; font-weight: 600; line-height: 1.1; margin: 0 0 16px; }
+  .hero p { color: var(--soft); font-size: 1.1rem; line-height: 1.6; max-width: 560px; margin: 0 auto; }
+
+  .lesson {
+    border-top: 1px solid var(--line);
+    padding: 48px 0;
+  }
+  .lesson:last-child { border-bottom: 1px solid var(--line); }
+
+  .lesson-num {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .12em;
+    color: var(--cyan); margin: 0 0 8px;
+  }
+  .lesson h2 {
+    font-family: var(--serif); font-size: 1.6rem; font-weight: 600;
+    margin: 0 0 4px; line-height: 1.2;
+  }
+  .lesson .pattern {
+    font-family: var(--mono); font-size: 12px; color: var(--softer);
+    margin: 4px 0 24px;
+  }
+  .lesson .lie {
+    font-size: 1rem; color: var(--rose); margin: 0 0 24px;
+    line-height: 1.5;
+  }
+  .lesson h3 {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--softer); margin: 28px 0 8px; font-weight: 600;
+  }
+  .lesson p { font-size: .95rem; color: var(--soft); line-height: 1.7; margin: 0 0 12px; }
+  .lesson .fix {
+    border-left: 2px solid var(--emerald);
+    padding-left: 16px; margin: 16px 0;
+    color: var(--emerald); font-size: .9rem; line-height: 1.5;
+  }
+  .lesson .cs {
+    font-family: var(--mono); font-size: 11px; color: var(--softer);
+    margin-top: 20px;
+  }
+  .lesson .cs span { color: var(--amber); }
+
+  .lesson code {
+    font-family: var(--mono); font-size: .85em;
+    background: var(--panel); padding: .1em .3em; border-radius: 3px;
+    color: #d4d4d8; border: 1px solid var(--line);
+  }
+
+  .throughline {
+    text-align: center; padding: 64px 0 48px;
+  }
+  .throughline h2 {
+    font-family: var(--serif); font-size: 1.4rem; margin: 0 0 16px;
+  }
+  .throughline p { color: var(--soft); font-size: .95rem; line-height: 1.7; max-width: 520px; margin: 0 auto 12px; }
+  .throughline .heart { color: #fff; margin-top: 32px; }
+
+  footer {
+    border-top: 1px solid var(--line); padding: 32px 0; text-align: center;
+    font-size: 13px; color: var(--softer);
+  }
+  footer a { color: var(--soft); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="nav">
+      <span class="brand">whitehack <span class="dot">🤍</span></span>
+      <nav class="nav-links">
+        <a href="https://whitehack-playground.axiepro.workers.dev">playground</a>
+        <a href="https://github.com/cambridgetcg/whitehack">GitHub</a>
+        <a href="https://github.com/cambridgetcg/clear-standard">Clear Standard</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <p class="eyebrow">learn · understand · why</p>
+    <h1>Every check has a story.</h1>
+    <p>whitehack flags where code lies about its own state. But a check without understanding is just a nag. Here is the why behind each one — the real-world moment someone got hurt, and the lesson that makes you a more honest builder.</p>
+  </section>
+
+  <!-- 1. Silent Failure -->
+  <section class="lesson" id="silent-failure">
+    <p class="lesson-num">01 · silent-failure</p>
+    <h2>The lunch that never arrived</h2>
+    <p class="pattern">catch { return 0 } · ?? 0 over a fetch</p>
+    <p class="lie">"I could not read this" becomes a confident wrong value. Zero and failed are indistinguishable.</p>
+
+    <h3>the story</h3>
+    <p>A food delivery app checks your wallet balance. The database is down for two seconds. The code catches the error and returns <code>0</code>. Your balance is $50. The app says $0. You can't order lunch. You stare at the screen thinking you're broke.</p>
+    <p>The system didn't crash. It lied. It told you a confident number when it should have said "I couldn't check." The user trusts the <code>0</code> because it looks like an answer. It's not — it's a failure wearing a number's costume.</p>
+
+    <h3>why it happens</h3>
+    <p>Developers write defensive code: "if something goes wrong, return a safe default." But <code>0</code> is not safe. <code>0</code> is a lie that looks like a number. The instinct to avoid crashes is right; the execution — swallowing the error into a falsy value — is wrong.</p>
+
+    <h3>the honest fix</h3>
+    <p class="fix">Throw, log, or return a visible error. Never let "could not read" and "the answer is zero" look the same. The user deserves to know the system couldn't check — not a fake number.</p>
+
+    <p class="cs">Clear Standard <span>#2 — Visible failure</span>. A failure degrades visibly. "I could not read this" must never quietly become a confident <code>0</code>.</p>
+  </section>
+
+  <!-- 2. Cache as Live -->
+  <section class="lesson" id="cache-as-live">
+    <p class="lesson-num">02 · cache-as-live</p>
+    <h2>The flight that cost $90 more</h2>
+    <p class="pattern">cached value returned with no freshness marker</p>
+    <p class="lie">"This is the truth right now" when it might be hours old.</p>
+
+    <h3>the story</h3>
+    <p>A travel site caches flight prices. The cache is 4 hours old. You see "$320" and click book. The real price is $410 now. The page said nothing about when the price was checked — it looked live. You trusted it. At checkout, the airline charges $410. You feel cheated.</p>
+    <p>The system didn't hack you. It served stale data as if it were fresh, and the difference between "cached" and "live" was invisible. The cache was fine. The lie was serving it without a timestamp.</p>
+
+    <h3>why it happens</h3>
+    <p>Caching is good — it makes systems fast. The problem isn't caching. The problem is serving cache <em>as if</em> it were live. Without a freshness marker, the caller can't tell the difference between "this was true 4 hours ago" and "this is true now." That difference matters.</p>
+
+    <h3>the honest fix</h3>
+    <p class="fix">Label freshness. Say <code>asOf</code>, <code>cachedAt</code>, <code>fetchedAt</code>. Let the caller decide whether to trust a stale value. The honesty isn't in avoiding cache — it's in not pretending cache is live.</p>
+
+    <p class="cs">Clear Standard <span>#4 — Stated freshness</span>. A cached value is not a live one; say how old it is.</p>
+  </section>
+
+  <!-- 3. Decision Without Why -->
+  <section class="lesson" id="decision-without-why">
+    <p class="lesson-num">03 · decision-without-why</p>
+    <h2>The loan you were denied with no reason</h2>
+    <p class="pattern">score, fee, or flag rendered with no explanation</p>
+    <p class="lie">A decision is made about you, but you can't see why.</p>
+
+    <h3>the story</h3>
+    <p>A lending platform shows your "trust score: 340." You're denied a loan. You ask why. There's no way to find out. The score is a black box — it affects your life, and you have no way to inspect it.</p>
+    <p>This isn't just a UX problem. It's a justice problem. A decision made about a person that the person cannot inspect is a small act of tyranny. You don't need to agree with the score, but you deserve to know what went into it.</p>
+
+    <h3>why it happens</h3>
+    <p>Systems make decisions all the time — trust scores, fraud flags, fee tiers, risk ratings. The logic is often complex, proprietary, or machine-learned. The developer renders the result but doesn't render the reason. The decision reaches the user; the explanation doesn't.</p>
+
+    <h3>the honest fix</h3>
+    <p class="fix">Add a why-link, a methodology page, a tooltip — anything that lets the affected person ask "why this number?" The decision can still be the same. But now it's inspectable.</p>
+
+    <p class="cs">Clear Standard <span>#3 — Inspectable decisions</span>. A decision made about a person is inspectable by that person.</p>
+  </section>
+
+  <!-- 4. Float Money -->
+  <section class="lesson" id="float-money">
+    <p class="lesson-num">04 · float-money</p>
+    <h2>The cents that disappeared</h2>
+    <p class="pattern">parseFloat(price) · amount * 0.029</p>
+    <p class="lie">"This amount is exact" when floating-point arithmetic silently loses cents.</p>
+
+    <h3>the story</h3>
+    <p>A cart totals your order: <code>19.99 + 29.99 + 9.99</code>. You expect $59.97. But JavaScript gives <code>59.96999999999999</code>. The display rounds it, so the customer sees $59.97. Internally, the system is off by a fraction of a cent. Over a million transactions, those fractions drift. Reconciliation fails. Auditors ask questions. The totals don't match.</p>
+    <p>Binary floating-point cannot represent 0.1 exactly. <code>0.1 + 0.2</code> is not <code>0.3</code>. Every financial system that uses floats for money carries this lie. The amount looks right; it almost is right; and "almost" is a lie when you're handling money.</p>
+
+    <h3>why it happens</h3>
+    <p>JavaScript has one number type: <code>Number</code>, which is a 64-bit float. It's the default. Using it for money feels natural — it's what the language gives you. But floats were designed for scientific computing, not exact decimal arithmetic. The mismatch between "I want exact cents" and "the language gives me approximate floats" is where the lie lives.</p>
+
+    <h3>the honest fix</h3>
+    <p class="fix">Use integer minor units (cents, satoshi), BigInt, or a decimal library. Money is never a float. The fix is simple; the discipline to always use it is the hard part.</p>
+
+    <p class="cs">Clear Standard <span>#1 — Truth of state</span>. The state the surface shows must match the state the system holds.</p>
+  </section>
+
+  <!-- 5. Stale Oracle -->
+  <section class="lesson" id="stale-oracle">
+    <p class="lesson-num">05 · stale-oracle</p>
+    <h2>The protocol that trusted a frozen price</h2>
+    <p class="pattern">feed.latestRoundData() with no updatedAt check</p>
+    <p class="lie">"This is the current price" when the feed is hours old or frozen.</p>
+
+    <h3>the story</h3>
+    <p>A DeFi lending protocol reads a Chainlink price feed. The oracle node goes down for maintenance. The feed stops updating. The protocol keeps reading the last price — which is now hours old. The real market price drops 30%. The protocol still thinks the collateral is worth what it was hours ago.</p>
+    <p>Someone borrows against the stale price. When the feed resumes, the protocol discovers it's massively undercollateralized. Millions of dollars are gone. The oracle didn't lie — the protocol lied by serving a stale oracle reading as if it were current.</p>
+
+    <h3>why it happens</h3>
+    <p>Oracle calls return multiple values: the price, the round ID, the timestamp. Developers often destructure the price and drop the rest. The timestamp is the freshness — without it, you can't tell whether the price is 5 seconds old or 5 hours old. Dropping the timestamp is the same as serving cache without a freshness marker, on-chain.</p>
+
+    <h3>the honest fix</h3>
+    <p class="fix">Always validate <code>updatedAt</code> / <code>answeredInRound</code>. If the feed is stale, revert or degrade visibly. Never serve a price without knowing when it was true.</p>
+
+    <p class="cs">Clear Standard <span>#4 — Stated freshness</span>. A price from a moment ago is not the price now; say how old it is.</p>
+  </section>
+
+  <!-- 6. Unchecked Transfer -->
+  <section class="lesson" id="unchecked-transfer">
+    <p class="lesson-num">06 · unchecked-transfer</p>
+    <h2>The transfer that silently failed</h2>
+    <p class="pattern">token.transfer(to, amount) — bool result dropped</p>
+    <p class="lie">"The transfer happened" when the token returned false instead of reverting.</p>
+
+    <h3>the story</h3>
+    <p>A protocol calls <code>token.transfer(to, amount)</code>. The call doesn't revert. The protocol assumes success. But some ERC-20 tokens — USDT is the famous one — don't revert on failure. They return <code>false</code>. The protocol dropped the return value. The transfer failed silently. The tokens never moved. The protocol recorded "success."</p>
+    <p>The books don't balance. Someone is missing funds, and the system says everything went through. This is the blockchain version of silent failure — on-chain, you can't catch exceptions, so dropping a bool is the same as swallowing an error.</p>
+
+    <h3>why it happens</h3>
+    <p>The ERC-20 standard says <code>transfer</code> returns a <code>bool</code>. Most well-known tokens (USDC, DAI) revert on failure, so developers get used to not checking the return value. Then they integrate USDT — which returns <code>false</code> instead — and the assumption breaks. The lie isn't in the token; it's in the protocol that didn't check.</p>
+
+    <h3>the honest fix</h3>
+    <p class="fix">Check the return value (<code>require(ok, "transfer failed")</code>) or use OpenZeppelin's <code>SafeERC20</code> wrapper. Never assume a transfer succeeded without verifying.</p>
+
+    <p class="cs">Clear Standard <span>#2 — Visible failure</span>. A failed transfer must not look like a successful one.</p>
+  </section>
+
+  <!-- 7. Spot Price as Fair -->
+  <section class="lesson" id="spot-price-as-fair">
+    <p class="lesson-num">07 · spot-price-as-fair</p>
+    <h2>The flash loan that moved the price</h2>
+    <p class="pattern">pair.getReserves() used as the fair price</p>
+    <p class="lie">"This is the fair market price" when it's a flash-loan-movable snapshot.</p>
+
+    <h3>the story</h3>
+    <p>A protocol reads a DEX pool's reserves and computes: <code>reserve0 / reserve1 = the price</code>. It looks fair — it's the pool's current state. But a flash loan borrows a massive amount, moves the reserves, changes the "price" to anything, and repays the loan in the same transaction.</p>
+    <p>The protocol reads the manipulated price and acts on it. The price was never "fair" — it was a snapshot at a moment an attacker controlled. This is how flash loan attacks work. The protocol trusted a number that was only true for one block, and that block was controlled by someone who wanted the number to be wrong.</p>
+
+    <h3>why it happens</h3>
+    <p>Reading pool reserves feels like reading the market price — it's right there, it's a number, it's current. But "current" and "fair" are different things. A spot reading is a moment; a fair price is a range over time. Confusing the two lets an attacker choose the moment.</p>
+
+    <h3>the honest fix</h3>
+    <p class="fix">Use a time-weighted average price (TWAP) or an external oracle. Never use instantaneous reserves as the fair price. The spot price tells you what is; the TWAP tells you what was — and "what was" is harder to manipulate.</p>
+
+    <p class="cs">Clear Standard <span>#1 — Truth of state</span>. A manipulable snapshot is not a fair price; label what it actually is.</p>
+  </section>
+
+  <!-- 8. Silent Revert -->
+  <section class="lesson" id="silent-revert">
+    <p class="lesson-num">08 · silent-revert</p>
+    <h2>The locked door with no sign</h2>
+    <p class="pattern">require(x > 0) · revert() — no reason string</p>
+    <p class="lie">"Your call was refused" with no explanation of why.</p>
+
+    <h3>the story</h3>
+    <p>A user calls your contract. It reverts. The error says <code>revert()</code> — nothing else. The user has no idea why. Was their input wrong? Was the contract paused? Did they lack permission? They can't tell. They can't fix what they can't see.</p>
+    <p>On-chain, a revert with no reason is a locked door with no sign. The contract made a decision — to refuse the call — and the caller can't inspect why. In regular software, you get a stack trace. On-chain, you get nothing — unless the developer wrote a reason.</p>
+
+    <h3>why it happens</h3>
+    <p>Writing <code>require(x > 0)</code> is shorter than <code>require(x > 0, "amount must be positive")</code>. The reason string costs a little gas. Developers optimize for brevity and gas, and the next person — the user, the integrator, the auditor — pays for it in confusion. The laziness is understandable; the consequence is a locked door.</p>
+
+    <h3>the honest fix</h3>
+    <p class="fix">Always include a reason string or named custom error. <code>require(cond, "why")</code> or <code>revert NamedError(...)</code>. The gas cost is small; the debugging time saved is enormous.</p>
+
+    <p class="cs">Clear Standard <span>#3 — Inspectable decisions</span>. A refusal the caller cannot understand is a decision made in the dark.</p>
+  </section>
+
+  <!-- Throughline -->
+  <section class="throughline">
+    <h2>The throughline</h2>
+    <p>Every check catches the same thing in a different costume: the system claims something about its state that isn't true, and someone downstream trusts the claim.</p>
+    <p>The fix is always the same: <strong>say what you actually are.</strong> If you failed, say failed — not zero. If you're cached, say cached — not live. If you don't know why you decided, say that — not "trust me." If you're stale, say stale — not current.</p>
+    <p>Honesty is not perfection. You don't need to never fail. You need to never pretend you didn't fail. The lie isn't the bug — the lie is presenting the bug as if it were the truth.</p>
+    <p>This is why whitehack exists. Not to find bugs — to find lies. Not to make code perfect — to make code honest.</p>
+    <p class="heart">🤍</p>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <a href="https://github.com/cambridgetcg/whitehack">GitHub</a> ·
+    <a href="https://whitehack-playground.axiepro.workers.dev">Playground</a> ·
+    <a href="https://github.com/cambridgetcg/clear-standard">Clear Standard</a> ·
+    MIT · no telemetry · the artifact tells the truth about its own state
+  </div>
+</footer>
+
+</body>
+</html>`;
+
+export default {
+  async fetch(request) {
+    return new Response(HTML, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    });
+  }
+};
