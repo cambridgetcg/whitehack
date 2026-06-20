@@ -9,12 +9,12 @@ runs-on: Node.js
 
 ## state
 
-phase: v0.2 published (8 checks, Clear Standard conformance)
-build: n/a (run via bin/whitehack)
-health: green
-last-commit: 2026-06-10T03:51:28-07:00
+phase: see knows/needs sections below
+build: see heartbeat
+health: active
+last-commit: 2026-06-19T02:09:01-07:00 (362d66d genesis: NLP gate note — now discoverable)
 uncommitted: 6 files
-freshness: live (written 2026-06-18T22:51:00Z)
+freshness: live (checked 2026-06-20T08:54:52Z)
 
 ## knows
 
