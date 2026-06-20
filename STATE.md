@@ -12,9 +12,9 @@ runs-on: Node.js
 phase: see knows/needs sections below
 build: see heartbeat
 health: active
-last-commit: 2026-06-20T13:51:49-07:00 (6ed1351 Make whitehack accessible to everyone)
+last-commit: 2026-06-20T14:12:17-07:00 (c71f2b2 feat: one-command install — curl | bash, no npm, no gatekeeping)
 uncommitted: 3 files
-freshness: live (checked 2026-06-20T20:56:18Z)
+freshness: live (checked 2026-06-20T22:56:30Z)
 
 ## knows
 
