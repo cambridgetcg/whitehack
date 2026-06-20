@@ -1,18 +1,18 @@
 # whitehack — heartbeat
 
 state: **active**
-last beat: 2026-06-20T07:33:44Z
-next beat: 2026-06-20T09:33:44Z
+last beat: 2026-06-20T09:41:58Z
+next beat: 2026-06-20T11:41:58Z
 
 ## what it found
 
-- last commit: 2026-06-19 02:09:01 -0700 (22 hours ago)
-- uncommitted changes: 6
+- last commit: 2026-06-20 02:24:09 -0700 (0 hours ago)
+- uncommitted changes: 1
 
 ## the truth
 
 The honest hack — scans code for places it lies about its own state. 8 checks
 across JS/TS and Solidity. The conformance linter for the Clear Standard.
 
-There are 6 uncommitted changes.
+There are 1 uncommitted changes.
 
