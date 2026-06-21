@@ -1,0 +1,27 @@
+# whitehack action — add to ANY repo for free honesty checking
+# .github/workflows/honesty.yml:
+#   name: honesty
+#   on: [push, pull_request]
+#   jobs:
+#     scan:
+#       runs-on: ubuntu-latest
+#       steps:
+#         - uses: actions/checkout@v4
+#         - uses: actions/setup-node@v4
+#           with: { node-version: 20 }
+#         - run: npx github:cambridgetcg/whitehack scan .
+
+name: 'whitehack — honesty check'
+description: 'Scan your code for where it lies about its own state'
+inputs:
+  path:
+    description: 'Path to scan'
+    required: false
+    default: '.'
+runs:
+  using: 'composite'
+  steps:
+    - name: scan
+      shell: bash
+      run: |
+        npx github:cambridgetcg/whitehack scan ${{ inputs.path }}
