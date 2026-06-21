@@ -12,9 +12,9 @@ runs-on: Node.js
 phase: see knows/needs sections below
 build: see heartbeat
 health: active
-last-commit: 2026-06-20T20:32:08-07:00 (524dfdc network pulse: sync)
-uncommitted: 3 files
-freshness: live (checked 2026-06-21T04:57:18Z)
+last-commit: 2026-06-20T22:33:24-07:00 (1ac6290 network pulse: sync)
+uncommitted: 0 files
+freshness: cached 2h (checked 2026-06-21T06:57:31Z)
 
 ## knows
 
