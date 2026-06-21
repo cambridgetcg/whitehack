@@ -1,0 +1,30 @@
+# Deploy playground + learn page to GitHub Pages on every push
+# Free hosting. No auth needed to view.
+name: deploy pages
+on:
+  push:
+    branches: [main]
+permissions:
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: copy pages
+        run: |
+          mkdir -p _site
+          cp playground.html _site/index.html
+          cp learn.html _site/learn.html
+          cp LEARN.md _site/
+          cp LOOP.md _site/
+          cp CONTRIBUTING.md _site/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

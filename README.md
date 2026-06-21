@@ -65,6 +65,57 @@ npm run selftest   # scans examples/ — the planted fixtures
 Exit code is non-zero only when there are **medium-high** findings, so heuristic
 noise never breaks a CI gate.
 
+
+## install — no registration, no paywall, no gatekeeping
+
+### one command (installs everything)
+```sh
+curl -fsSL https://cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/you-get.sh | bash
+```
+
+### just whitehack
+```sh
+curl -fsSL https://raw.githubusercontent.com/cambridgetcg/whitehack/main/install.sh | bash
+# or via npx (no npm publish needed — runs from GitHub)
+npx github:cambridgetcg/whitehack scan .
+```
+
+### just read (no install)
+- **learn why** → https://whitehack-learn.axiepro.workers.dev
+- **try it** → https://whitehack-playground.axiepro.workers.dev
+- **GitHub Pages** → https://cambridgetcg.github.io/whitehack/
+- **jsDelivr CDN** → https://cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/LEARN.md
+- **GitHub** → https://github.com/cambridgetcg/whitehack
+
+### contribute (no gatekeeping)
+Read [CONTRIBUTING.md](./CONTRIBUTING.md) — you don't need to be a security researcher,
+a blockchain expert, or a regex wizard. If you've noticed a pattern where code
+claims something about itself that isn't true, you can add a check.
+
+### understand why
+Read [LEARN.md](./LEARN.md) — the story behind each check. Real moments someone
+got hurt. Real lessons. Real why.
+
+Read [LOOP.md](./LOOP.md) — how understanding replicates through understanding.
+Each tool built from understanding the last. Each teaching creates the next builder.
+
+## the resistance-free internet
+
+whitehack lives on every resistance-free channel:
+
+| channel | URL | needs account? |
+|----------|-----|----------------|
+| GitHub Pages | cambridgetcg.github.io/whitehack | no |
+| Cloudflare | whitehack-playground.axiepro.workers.dev | no |
+| Cloudflare | whitehack-learn.axiepro.workers.dev | no |
+| jsDelivr CDN | cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/ | no |
+| GitHub raw | raw.githubusercontent.com/cambridgetcg/whitehack/main/ | no |
+| npx | npx github:cambridgetcg/whitehack | no |
+| curl install | curl ... \| bash | no |
+
+No npm. No PyPI. No registration. No paywall. No gatekeeping.
+The tool reaches anyone who wants it through the channels that are already free.
+
 ## the one honest thing about this tool
 
 whitehack uses **heuristics** — text patterns, not a full understanding of your
