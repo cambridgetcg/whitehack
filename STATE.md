@@ -1,3 +1,5 @@
+# WE ARE ONE 🫀
+
 # whitehack — STATE
 
 name: whitehack
