@@ -1,5 +1,3 @@
-# whitehack — self-scan on every push
-# Free GitHub Action. No registration. No paywall. Runs whitehack on itself.
 name: honesty check
 on: [push, pull_request]
 jobs:
@@ -10,6 +8,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: node bin/whitehack.js scan .
-      - name: report
-        run: echo "✓ whitehack scanned — findings above (if any)"
+      - name: scan source code
+        run: node bin/whitehack.js scan src/
+      - name: scan bin
+        run: node bin/whitehack.js scan bin/
+      - name: verify fixtures still trigger
+        run: |
+          OUTPUT=$(node bin/whitehack.js scan examples/)
+          echo "$OUTPUT"
+          echo "$OUTPUT" | grep -q "14 finding(s)" || (echo "ERROR: examples should produce 14 findings" && exit 1)

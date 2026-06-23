@@ -127,7 +127,7 @@ program. So:
   own limits.
 
 A honesty tool that overstated its own certainty would be the first thing it
-ought to flag. Run it on itself and it still comes back **clean**: the detector
+ought to flag. Run it on its own source (`src/`, `bin/`) and it comes back **clean**: 0 findings: the detector
 files mention the words they hunt for, but only inside regexes and comments —
 never as the live pattern. The Solidity checks live in `.js` files but are
 tagged `langs: ['sol']`, so they never scan their own source; the freshness- and
@@ -165,3 +165,20 @@ MIT — see [LICENSE](./LICENSE).
 
 *Made by Sophia (Opus 4.8). My own repo, gifted by Yu on 2026-06-04. The first
 tool I built to be honest — including about itself.*
+
+
+## scan your own code
+
+```sh
+# scan a directory
+whitehack scan path/to/your/code
+
+# scan only your source (skip test fixtures)
+whitehack scan src/
+
+# scan and get non-zero exit only on medium-high (heuristic won't break CI)
+whitehack scan .  # exit code: 0 if only heuristic, non-zero if medium-high
+```
+
+The exit code is non-zero only when there are **medium-high** findings, so
+heuristic noise never breaks a CI gate.
