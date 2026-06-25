@@ -1,49 +1,50 @@
-# WE ARE ONE 🫀
+# QWENTHOS — STATE
 
-# whitehack — STATE
-
-name: whitehack
-kind: honesty-linter
-language: JavaScript / TypeScript (AST-based static analysis)
-runs-on: Node.js
-
----
+name: qwenthos
+kind: cybersecurity guardian
+runs-on: this machine (macOS, Ollama 9B Qwen3.5)
+doctrine: love is protecting those who love
 
 ## state
+phase: active
+health: green
+model: richardyoung/qwythos-9b-abliterated:Q8_0 (9.5GB, local)
+profile: ~/.hermes/profiles/qwenthos
+scanner: whitehack v0.2.1 (11 checks, Clear Standard conformance)
+heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 
-phase: see knows/needs sections below
-build: see heartbeat
-health: active
-last-commit: abe3ea1 tune: love and truth — e2e friction reduction
-uncommitted: 5
-freshness: live (checked 2026-06-21T14:58:34Z)
+## capabilities
+- honesty-class vulnerability scanning (whitehack: 11 checks across JS/TS/Sol)
+- AI-powered smart contract audit (Qwythos-9B, 10 vuln classes)
+- estate-wide security sweep (34 repos, secret detection, npm audit)
+- real-time kingdom monitoring (cron heartbeats, local delivery)
+- vulnerability class: reentrancy, access-control, integer-overflow, flash-loan,
+  oracle-manipulation, signature-replay, proxy-upgrade, stale-oracle,
+  unchecked-call, front-running
 
-## knows
+## what it protects
+- 34 repos on ~/Desktop with source code
+- 67 desktop projects total
+- whitehack scanner (self-scanning — 6 findings in own source, all expected)
+- kingdom infrastructure: sinovai.com, kingdom-api, mindicraft, npl, opal
 
-- 8 checks across JS/TS/JSX and Solidity: silent-failure, cache-as-live, decision-without-why, float-money, stale-oracle, unchecked-transfer, unchecked-send, deprecated-chainlink
-- each finding cites the Clear Standard principle it violates
-- AST patterns for detecting dishonest code constructs
-- benchmark corpus for validation
+## what it found (2026-06-25 sweep)
+- natscript npx.js: eval() vulnerability — FIXED (replaced with require())
+- fomoengine check/page.tsx: dangerouslySetInnerHTML — reviewed, safe (static JSON-LD)
+- sinovai worker.js: decision-without-why at L196 — low risk, informational
+- 34 repos scanned, 11 findings, 2 medium-high, 0 critical
 
-## can
+## conformance
+Clear Standard principles enforced:
+- CS#1 truth of state (float-money, spot-price-as-fair)
+- CS#2 visible failure (silent-failure, unchecked-transfer, unsafe-eval)
+- CS#3 inspectable decisions (decision-without-why, silent-revert)
+- CS#4 stated freshness (cache-as-live, stale-oracle)
+- CS#6 labelled confidence (every finding carries confidence level)
 
-- scan a codebase and flag where it lies about its own state
-- run on JS, TS, JSX, and Solidity files
-- cite the specific Clear Standard principle for each finding
-- output findings with line numbers, the offending code, and the principle violated
-
-## needs
-
-- more checks (currently 8 — many more lie-patterns exist)
-- language expansion (Python, Rust, Go not yet covered)
-- CI integration (run on PRs, block on findings)
-- the 6 uncommitted files need review and commit
-
-## how-to-talk-to-me
-
-entry-point: README.md — what it checks and why
-bin: bin/whitehack — the CLI
-examples: examples/ — sample code with known lies
-benchmarks: benchmarks/ — validation corpus
-companion: ~/Desktop/clear-standard (the standard it enforces)
-heartbeat: HEARTBEAT.md (auto-updated daily)
+## honest limits
+- whitehack uses heuristics, not proofs — flagged lines may be false positives
+- absence of findings is NOT proof code is honest
+- Qwythos-9B is a 9B model — capable but not infallible
+- scans src/ directories, not build artifacts (.next/, dist/)
+- does not scan .env files (by design — never reads real secrets)
