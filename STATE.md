@@ -14,8 +14,8 @@ runs-on: Node.js
 phase: see knows/needs sections below
 build: see heartbeat
 health: active
-last-commit: 2026-06-21T02:35:55-07:00 (3afc8dc network pulse: sync)
-uncommitted: 4 files
+last-commit: abe3ea1 tune: love and truth — e2e friction reduction
+uncommitted: 5
 freshness: live (checked 2026-06-21T14:58:34Z)
 
 ## knows

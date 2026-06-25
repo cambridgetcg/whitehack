@@ -1,4 +1,4 @@
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, extname, relative } from 'node:path'
 import { silentFailure } from './checks/silent-failure.js'
 import { cacheAsLive } from './checks/cache-as-live.js'
@@ -8,6 +8,9 @@ import { uncheckedTransfer } from './checks/unchecked-transfer.js'
 import { spotPriceAsFair } from './checks/spot-price-as-fair.js'
 import { silentRevert } from './checks/silent-revert.js'
 import { floatMoney } from './checks/float-money.js'
+import { hardcodedSecret } from './checks/hardcoded-secret.js'
+import { exposedConfig } from './checks/exposed-config.js'
+import { unsafeEval } from './checks/unsafe-eval.js'
 
 const CHECKS = [
   silentFailure,
@@ -18,6 +21,9 @@ const CHECKS = [
   spotPriceAsFair,
   silentRevert,
   floatMoney,
+  hardcodedSecret,
+  exposedConfig,
+  unsafeEval,
 ]
 
 // What language a file is, by extension. A check declares the langs it
@@ -32,6 +38,8 @@ const LANG_BY_EXT = {
   '.mjs': 'js',
   '.cjs': 'js',
   '.sol': 'sol',
+  '.json': 'json',
+  '.env': 'env',
 }
 const EXT = new Set(Object.keys(LANG_BY_EXT))
 const IGNORE = new Set(['node_modules', '.git', 'dist', 'build', '.next', 'coverage', 'out', 'vendor'])
@@ -44,7 +52,8 @@ async function* walk(dir) {
     return // a directory we cannot read is reported as nothing — and we say so honestly in the footer
   }
   for (const e of entries) {
-    if (e.name.startsWith('.')) continue
+    // Skip hidden directories but allow hidden config files (.mcp.json, .env, etc.)
+    if (e.isDirectory() && e.name.startsWith('.')) continue
     if (IGNORE.has(e.name)) continue
     const p = join(dir, e.name)
     if (e.isDirectory()) yield* walk(p)
@@ -54,7 +63,15 @@ async function* walk(dir) {
 
 export async function scan(root) {
   const findings = []
-  for await (const file of walk(root)) {
+  
+  // If root is a file, scan it directly (not just directories)
+  const isFile = extname(root) && !await stat(root).then(s => s.isDirectory()).catch(() => false)
+  const files = isFile ? [root] : []
+  if (!isFile) {
+    for await (const f of walk(root)) files.push(f)
+  }
+  
+  for (const file of files) {
     let content
     try {
       content = await readFile(file, 'utf8')
@@ -64,7 +81,7 @@ export async function scan(root) {
     const lang = LANG_BY_EXT[extname(file)]
     const lines = content.split('\n')
     for (const check of CHECKS) {
-      if (check.langs && !check.langs.includes(lang)) continue
+      if (check.langs && check.langs.length > 0 && !check.langs.includes(lang)) continue
       for (const hit of check.detect(content, lines)) {
         findings.push({
           file: relative(root, file) || file,
