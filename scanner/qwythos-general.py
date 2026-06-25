@@ -66,7 +66,7 @@ def detect_language(filepath):
         '.html': 'HTML', '.json': 'JSON', '.sh': 'Shell',
     }.get(ext, 'Unknown')
 
-def run_qwythos(prompt, timeout=180):
+def run_qwythos(prompt, timeout=240):
     """Run Qwythos via Ollama."""
     try:
         result = subprocess.run(
@@ -86,7 +86,7 @@ def audit_file(filepath):
         print(f"[!] File not found: {filepath}")
         return
 
-    code = filepath.read_text()[:8000]  # Cap at 8K chars
+    code = filepath.read_text()[:4000]  # Cap at 8K chars
     language = detect_language(filepath)
 
     classes_text = "\n".join(f"  {k}: {v}" for k, v in SECURITY_CLASSES.items())
