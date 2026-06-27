@@ -17,6 +17,8 @@ import { weakCrypto } from './checks/weak-crypto.js'
 import { corsWildcard } from './checks/cors-wildcard.js'
 import { cookieInsecure } from './checks/cookie-insecure.js'
 import { sqlInjection } from './checks/sql-injection.js'
+import { wifiProtocolFlaws } from './checks/wifi-protocol-flaws.js'
+import { bluetoothProtocolFlaws } from './checks/bluetooth-protocol-flaws.js'
 
 const CHECKS = [
   silentFailure,
@@ -36,6 +38,8 @@ const CHECKS = [
   corsWildcard,
   cookieInsecure,
   sqlInjection,
+  wifiProtocolFlaws,
+  bluetoothProtocolFlaws,
 ]
 
 // What language a file is, by extension. A check declares the langs it
