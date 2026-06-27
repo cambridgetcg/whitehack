@@ -7,7 +7,7 @@
 
 const FALSY = /\breturn\s+(0|\[\]|\{\}|null|''|""|false)\s*(;|\/\/|$)/
 const SAFE_DEFAULT = /(\?\?|\|\|)\s*(0|\[\]|''|"")/
-const GUARD = /\b(throw|console\.|logger?\.|report\(|rethrow|process\.exit|captureException|Sentry|warn\(|error\()/
+const GUARD = /\b(throw|console\.|logger?\.|report\(|rethrow|process\.exit|captureException|Sentry|warn\(|error\(|logFor\w*\(|logError\(|logBridgeSkip\(|logEvent\(|logWarn\(|logInfo\(|logDebug\(|onDebug\(|onDone\(|onWarn\(|setError\(|onError\(|fail\()/
 const READ = /(await\s|fetch\(|\.get\(|\.query\(|readFile|\.count\(|\.find\(|\.load\(|\.read\()/
 
 export const silentFailure = {

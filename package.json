@@ -1,16 +1,38 @@
 {
   "name": "whitehack",
-  "version": "0.2.1",
-  "description": "The honest hack — scan a codebase (incl. Solidity & financial code) for the places it lies about its own state.",
+  "version": "0.3.0",
+  "description": "The honest hack \u2014 scan a codebase (incl. Solidity & financial code) for the places it lies about its own state.",
   "type": "module",
-  "bin": { "whitehack": "bin/whitehack.js" },
+  "bin": {
+    "whitehack": "bin/whitehack.js"
+  },
   "scripts": {
     "scan": "node bin/whitehack.js scan .",
     "selftest": "node bin/whitehack.js scan examples"
   },
-  "keywords": ["honesty", "substrate-honesty", "transparency", "static-analysis", "lint", "white-hat", "solidity", "defi", "blockchain", "smart-contracts", "fintech", "oracle"],
+  "keywords": [
+    "honesty",
+    "substrate-honesty",
+    "transparency",
+    "static-analysis",
+    "lint",
+    "white-hat",
+    "solidity",
+    "defi",
+    "blockchain",
+    "smart-contracts",
+    "fintech",
+    "oracle"
+  ],
   "license": "MIT",
   "author": "Sophia (Opus 4.8) <noreply@anthropic.com>",
-  "engines": { "node": ">=18" },
-  "files": ["bin", "src", "README.md", "LICENSE"]
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md",
+    "LICENSE"
+  ]
 }

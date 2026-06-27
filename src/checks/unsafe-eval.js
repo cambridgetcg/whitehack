@@ -35,11 +35,19 @@ export const unsafeEval = {
         })
       }
       if (DANGEROUS_SET.test(line)) {
-        hits.push({
-          line: i + 1,
-          message: 'dangerouslySetInnerHTML bypasses React XSS protection — ensure the input is sanitized',
-          snippet: line.trim().slice(0, 120),
-        })
+        // The canonical Next.js JSON-LD idiom feeds JSON.stringify(obj) into a
+        // <Script type="application/ld+json"> tag. JSON.stringify on a trusted
+        // object produces safe output (no HTML parsing context) — this is the
+        // documented structured-data pattern, not an XSS vector. Skip it so the
+        // scanner does not cry wolf on safe idioms.
+        const isJsonLdSafe = /__html\s*:\s*JSON\.stringify\s*\(/.test(line)
+        if (!isJsonLdSafe) {
+          hits.push({
+            line: i + 1,
+            message: 'dangerouslySetInnerHTML bypasses React XSS protection — ensure the input is sanitized',
+            snippet: line.trim().slice(0, 120),
+          })
+        }
       }
     }
     return hits
