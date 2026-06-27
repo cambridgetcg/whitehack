@@ -397,6 +397,60 @@ Examples:
     
     all_findings = []
     
+    if args.report:
+        # Summarize all existing Qwythos reports in the reports directory
+        reports_dir = Path(__file__).parent.parent / "reports"
+        report_files = sorted(reports_dir.glob("QWYTHOS-*.md"))
+        if not report_files:
+            print(f"\n{'='*60}")
+            print("  No Qwythos reports found in", reports_dir)
+            print(f"{'='*60}")
+            return
+
+        print(f"\n{'='*60}")
+        print(f"  QWYTHOS REPORT SUMMARY — {len(report_files)} reports")
+        print(f"  {datetime.now().isoformat()}")
+        print(f"{'='*60}\n")
+
+        sev_pattern = re.compile(
+            r"(?:Severity:\s*|###\s*\d+\.\s*)(CRITICAL|HIGH|MEDIUM|LOW|INFO)",
+            re.IGNORECASE,
+        )
+        total_by_sev = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "INFO": 0}
+        total_vulns = 0
+        affected_files = set()
+
+        for rf in report_files:
+            content = rf.read_text(errors="replace")
+            # Count via both formats: "**Vulnerability #" and "### N. SEVERITY"
+            vuln_count = content.count("**Vulnerability #")
+            heading_matches = re.findall(
+                r"###\s+\d+\.\s+(CRITICAL|HIGH|MEDIUM|LOW|INFO)", content, re.IGNORECASE
+            )
+            if vuln_count == 0 and heading_matches:
+                vuln_count = len(heading_matches)
+            total_vulns += vuln_count
+            for m in sev_pattern.finditer(content):
+                sev = m.group(1).upper()
+                total_by_sev[sev] = total_by_sev.get(sev, 0) + 1
+            # Try to extract the scanned file path (supports *File: `...` and *Target: ...*)
+            file_match = re.search(r"\*(?:File|Target):\s*(?:`([^`]+)`|([^\n]+))\*", content)
+            if file_match:
+                affected_files.add(file_match.group(1) or file_match.group(2))
+            status = "✓ Clean" if "No findings" in content else f"{vuln_count} finding(s)"
+            print(f"  {rf.name:55s}  {status}")
+
+        print(f"\n{'='*60}")
+        print(f"  TOTAL VULNERABILITIES: {total_vulns}")
+        for sev in ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"]:
+            if total_by_sev.get(sev, 0):
+                color = SEV_COLORS.get(sev, "")
+                print(f"  {color}{sev}: {total_by_sev[sev]}{RESET}")
+        if affected_files:
+            print(f"  AFFECTED FILES: {len(affected_files)}")
+        print(f"{'='*60}")
+        return
+
     if args.rewardspro:
         all_findings.extend(scan_rewardspro())
     elif args.estate:
