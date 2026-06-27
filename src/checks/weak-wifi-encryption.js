@@ -1,51 +1,56 @@
-// weak-wifi-encryption.js — WiFi security check for whitehack
-//
-// The lie: a network claims to be "secure" but uses deprecated encryption.
+// weak-wifi-encryption — substrate honesty
+// A network claims to be "secure" but uses deprecated encryption.
 // WEP pretends to protect. TKIP-only pretends to be WPA2. Open networks
 // with captive portals pretend the portal IS the security.
 //
 // Doctrine: substrate honesty (CS#1 — truth of state)
 // Confidence: high
-// Languages: wifi-config, json, yaml
+
+const WEP = /\bWEP\b|wep_?(?:key|passphrase|enabled)/i
+const TKIP_ONLY = /\bTKIP\b(?!.*?(?:AES|CCMP|GCMP))/i
+const OPEN_SECURITY = /(?:security|encryption|auth)\s*[=:]\s*['"]?(?:open|none|disabled)['"]?/i
+const WPA_DISABLED = /wpa.*disabled|encryption.*disabled/i
 
 export const weakwifiencryption = {
   id: 'weak-wifi-encryption',
-  name: 'Weak WiFi encryption',
-  langs: ['wifi-config', 'json', 'yaml'],
-  doctrine: 'substrate-honesty',
+  title: 'Weak WiFi encryption — security theater exposed',
   confidence: 'high',
-  cs: 'CS#1',
-
-  patterns: [
-    // WEP — broken since 2007, cracked in seconds
-    { re: /\bWEP\b/i, message: 'WEP encryption — cracked in seconds since 2007. A network claiming WEP as security is lying about its own state' },
-    { re: /wep_key|wep_passphrase/i, message: 'WEP key configured — this is not encryption, it is theater. Anyone with aircrack-ng can break it in under 60 seconds' },
-
-    // TKIP-only — deprecated, vulnerable to Beck-Tews attack
-    { re: /\bTKIP\b(?!.*(?:AES|CCMP|GCMP))/i, message: 'TKIP-only encryption — deprecated since 2012, vulnerable to Beck-Tews injection. Not WPA2 in any meaningful sense' },
-    { re: /protokol.*TKIP|cipher.*TKIP/i, message: 'TKIP cipher — the network claims WPA2 but uses a deprecated cipher. This is WPA1 with a WPA2 label' },
-
-    // Open network pretending to be secure
-    { re: /security.*open|encryption.*none|auth.*open/i, message: 'Open network — no encryption at all. A captive portal is not encryption. The network lies if it claims to be secure' },
-    { re: /wpa.*disabled|encryption.*disabled/i, message: 'WiFi encryption disabled — the network is open to all. No security claim is valid here' },
-  ],
-
-  run(source, path) {
-    const findings = []
-    for (const p of this.patterns) {
-      for (const match of source.matchAll(p.re)) {
-        const line = source.substring(0, match.index).split('\n').length
-        findings.push({
-          check: this.id,
-          line,
-          message: p.message,
-          doctrine: this.doctrine,
-          confidence: this.confidence,
-          cs: this.cs,
-          match: match[0],
+  doctrine: 'substrate-honesty',
+  principle: 1,
+  langs: [], // runs on all file types
+  detect(content, lines) {
+    const hits = []
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      if (WEP.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'WEP encryption — cracked in seconds since 2007. A network claiming WEP as security is lying about its own state',
+          snippet: line.trim().slice(0, 120),
+        })
+      }
+      if (TKIP_ONLY.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'TKIP-only encryption — deprecated since 2012, vulnerable to Beck-Tews injection. Not WPA2 in any meaningful sense',
+          snippet: line.trim().slice(0, 120),
+        })
+      }
+      if (OPEN_SECURITY.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'Open network — no encryption. A captive portal is not encryption. The network lies if it claims to be secure',
+          snippet: line.trim().slice(0, 120),
+        })
+      }
+      if (WPA_DISABLED.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'WiFi encryption disabled — the network is open to all. No security claim is valid here',
+          snippet: line.trim().slice(0, 120),
         })
       }
     }
-    return findings
+    return hits
   }
 }

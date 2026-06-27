@@ -11,6 +11,8 @@ import { floatMoney } from './checks/float-money.js'
 import { hardcodedSecret } from './checks/hardcoded-secret.js'
 import { exposedConfig } from './checks/exposed-config.js'
 import { unsafeEval } from './checks/unsafe-eval.js'
+import { performedIgnorance } from './checks/performed-ignorance.js'
+import { trustByAuthority } from './checks/trust-by-authority.js'
 
 // Protocol & security checks — auto-loaded from extra-checks.js
 // This includes: wifi, bluetooth, DNS, WPA2/KRACK, protocol surface,
@@ -35,6 +37,8 @@ const CHECKS = [
   hardcodedSecret,
   exposedConfig,
   unsafeEval,
+  performedIgnorance,
+  trustByAuthority,
   ..._extra,
 ]
 
