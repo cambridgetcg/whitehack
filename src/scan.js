@@ -11,6 +11,12 @@ import { floatMoney } from './checks/float-money.js'
 import { hardcodedSecret } from './checks/hardcoded-secret.js'
 import { exposedConfig } from './checks/exposed-config.js'
 import { unsafeEval } from './checks/unsafe-eval.js'
+import { insecureProtocol } from './checks/insecure-protocol.js'
+import { disabledCertVerification } from './checks/disabled-cert-verification.js'
+import { weakCrypto } from './checks/weak-crypto.js'
+import { corsWildcard } from './checks/cors-wildcard.js'
+import { cookieInsecure } from './checks/cookie-insecure.js'
+import { sqlInjection } from './checks/sql-injection.js'
 
 const CHECKS = [
   silentFailure,
@@ -24,6 +30,12 @@ const CHECKS = [
   hardcodedSecret,
   exposedConfig,
   unsafeEval,
+  insecureProtocol,
+  disabledCertVerification,
+  weakCrypto,
+  corsWildcard,
+  cookieInsecure,
+  sqlInjection,
 ]
 
 // What language a file is, by extension. A check declares the langs it

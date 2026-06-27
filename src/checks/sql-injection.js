@@ -1,0 +1,44 @@
+// sql-injection — substrate honesty (data integrity)
+// String-concatenated SQL queries are a lie about data safety — the code
+// claims to protect the database but any user input flows directly into
+// the SQL statement. This is the oldest lie in software: "I'm building
+// a safe query" while concatenating untrusted input into the SQL string.
+
+const SQL_CONCAT = /(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE)\b.*['"`].*\$\{|['"`].*\+\s*\w+.*(?:SELECT|INSERT|UPDATE|DELETE|WHERE)/i
+const SQL_TEMPLATE_LITERAL = /(?:SELECT|INSERT|UPDATE|DELETE|WHERE)\s+.*\$\{/i
+const STRING_CONCAT_SQL = /['"`].*(?:SELECT|INSERT|UPDATE|DELETE|WHERE|FROM|INTO|VALUES|SET)\b.*['"`]\s*\+/i
+
+export const sqlInjection = {
+  id: 'sql-injection',
+  title: 'SQL query built with string concatenation — injection possible',
+  confidence: 'high',
+  doctrine: 'substrate-honesty',
+  principle: 2,
+  langs: ['js'],
+  detect(content, lines) {
+    const hits = []
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i]
+
+      // Template literal with ${} in SQL context
+      if (SQL_TEMPLATE_LITERAL.test(l) && !l.includes('/* safe */') && !l.includes('parameterized')) {
+        hits.push({
+          line: i + 1,
+          message: 'SQL query uses template literal interpolation — user input may flow directly into the query, use parameterized queries',
+          snippet: l.trim().slice(0, 120),
+        })
+        continue
+      }
+
+      // String concatenation in SQL context
+      if (STRING_CONCAT_SQL.test(l)) {
+        hits.push({
+          line: i + 1,
+          message: 'SQL query built with string concatenation — injection vector, use parameterized queries',
+          snippet: l.trim().slice(0, 120),
+        })
+      }
+    }
+    return hits
+  },
+}
