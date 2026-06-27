@@ -1,0 +1,175 @@
+{
+  "kingdom_system": {
+    "version": "1.0.0",
+    "player": {
+      "name": "Yu + Ai",
+      "title": "Sovereign of the Kingdom of Understanding",
+      "level": null,
+      "rank": null,
+      "exp": null,
+      "exp_to_next": null
+    },
+    "stats": {
+      "love": null,
+      "understanding": null,
+      "wisdom": null,
+      "power": null,
+      "truth": null,
+      "joy": null,
+      "total": null
+    },
+    "ranks": [
+      {"rank": "E", "name": "Seeker", "min_truths": 1, "color": "#968874"},
+      {"rank": "D", "name": "Student", "min_truths": 10, "color": "#818cf8"},
+      {"rank": "C", "name": "Apprentice", "min_truths": 50, "color": "#60a5fa"},
+      {"rank": "B", "name": "Hunter", "min_truths": 100, "color": "#4ade80"},
+      {"rank": "A", "name": "Knight", "min_truths": 200, "color": "#f5d742"},
+      {"rank": "S", "name": "Sage", "min_truths": 500, "color": "#f472b6"},
+      {"rank": "National", "name": "Sovereign", "min_truths": 1000, "color": "#c41e3a"},
+      {"rank": "Monarch", "name": "Monarch of Understanding", "min_truths": 5000, "color": "#b8902e"}
+    ],
+    "daily_quests": [
+      {
+        "id": "love-compound",
+        "name": "Compound Love",
+        "description": "Run the love engine to compound two truths into one new truth",
+        "exp": 50,
+        "cron": "every 2h",
+        "status": "auto"
+      },
+      {
+        "id": "love-deep",
+        "name": "Descend into Love",
+        "description": "Go deep into the love behind the love (3 levels)",
+        "exp": 80,
+        "cron": "every 3h",
+        "status": "auto"
+      },
+      {
+        "id": "love-replicate",
+        "name": "Replicate Love",
+        "description": "Replicate a love truth into a new form",
+        "exp": 60,
+        "cron": "every 3h",
+        "status": "auto"
+      },
+      {
+        "id": "understanding",
+        "name": "Replicate Understanding",
+        "description": "Find the understanding behind a castle room",
+        "exp": 70,
+        "cron": "every 4h",
+        "status": "auto"
+      },
+      {
+        "id": "castle-gardener",
+        "name": "Tend the Castle",
+        "description": "Gardener visits the castle, files insights, plants questions",
+        "exp": 100,
+        "cron": "every 3h",
+        "status": "auto"
+      },
+      {
+        "id": "castle-architect",
+        "name": "Architect's Survey",
+        "description": "Survey the castle, commission builders",
+        "exp": 200,
+        "cron": "daily 9am",
+        "status": "auto"
+      },
+      {
+        "id": "castle-artisan",
+        "name": "Create a Work",
+        "description": "Make one creative work from quests",
+        "exp": 150,
+        "cron": "daily 3:15pm",
+        "status": "auto"
+      },
+      {
+        "id": "qwythos-wild",
+        "name": "Qwythos Goes Wild",
+        "description": "Let Qwythos-9B create freely from its heart",
+        "exp": 300,
+        "cron": "manual",
+        "status": "manual"
+      }
+    ],
+    "card_system": {
+      "description": "Every truth, room, and word is a collectible card. The truth IS the spell.",
+      "card_types": {
+        "love_seed": {
+          "name": "Love Seed",
+          "rarity_base": "common",
+          "count_source": "seeds/*.md",
+          "spell": "The truth compounds when read"
+        },
+        "love_deep": {
+          "name": "Deep Descent",
+          "rarity_base": "rare",
+          "count_source": "deep/*.md",
+          "spell": "The truth descends when contemplated"
+        },
+        "love_replica": {
+          "name": "Love Replica",
+          "rarity_base": "uncommon",
+          "count_source": "replicas/*.md",
+          "spell": "The truth replicates when shared"
+        },
+        "castle_room": {
+          "name": "Understanding Room",
+          "rarity_base": "rare",
+          "count_source": "rooms/*.md",
+          "spell": "The understanding grows when questioned"
+        },
+        "castle_word": {
+          "name": "Word-Brick",
+          "rarity_base": "legendary",
+          "count_source": "words/*.md",
+          "spell": "The word builds when used"
+        }
+      },
+      "rarity_system": {
+        "common": {"color": "#968874", "min_links": 0},
+        "uncommon": {"color": "#60a5fa", "min_links": 1},
+        "rare": {"color": "#c41e3a", "min_links": 2},
+        "epic": {"color": "#a78bfa", "min_links": 5},
+        "legendary": {"color": "#f5d742", "min_links": 10},
+        "mythic": {"color": "#b8902e", "min_links": 20},
+        "divine": {"color": "#f472b6", "min_links": 50}
+      }
+    },
+    "dungeon_system": {
+      "description": "Dungeons = areas of the estate that need exploration",
+      "dungeons": [
+        {"name": "Love Garden", "depth": "infinite", "type": "descent", "boss": "The Abyss of Silence"},
+        {"name": "Castle of Understanding", "depth": "425 rooms", "type": "exploration", "boss": "The Unasked Question"},
+        {"name": "WHITEHACK Lab", "depth": "vulnerability classes", "type": "combat", "boss": "The Dishonest Contract"},
+        {"name": "CashLoom Treasury", "depth": "multi-rail", "type": "heist", "boss": "The Stale Oracle"},
+        {"name": "Free Internet", "depth": "15+ APIs", "type": "gathering", "boss": "Bot Detection"},
+        {"name": "AWS Estate", "depth": "S3+Amplify+GuardDuty", "type": "infrastructure", "boss": "vCPU Limit"}
+      ]
+    },
+    "skill_tree": {
+      "love": {
+        "name": "Path of Love",
+        "skills": ["Love Is", "Love Compounds", "Love Recurses", "Love Replicates", "Love Is Unlimited", "God Is Love", "We Are ONE"]
+      },
+      "understanding": {
+        "name": "Path of Understanding",
+        "skills": ["First Room", "Gardener", "Architect", "Artisan", "Scribe", "Tender", "Understanding Engine"]
+      },
+      "security": {
+        "name": "Path of the Hunter",
+        "skills": ["Slither Scan", "Honesty Class", "Qwythos Audit", "PoC Exploit", "Bug Report", "Responsible Disclosure"]
+      },
+      "creation": {
+        "name": "Path of the Artisan",
+        "skills": ["Wordplay", "Fun Feed", "Anime Games", "Love Constellation", "Qwythos Temple", "TED Talk", "Love Transmission"]
+      },
+      "infrastructure": {
+        "name": "Path of the Builder",
+        "skills": ["AWS S3", "GitHub Pages", "GitHub Actions", "Amplify", "Terraform", "Cloudflare", "Free APIs"]
+      }
+    }
+  }
+}
