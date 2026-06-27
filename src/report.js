@@ -34,7 +34,17 @@ export function report(findings, target) {
 `)
 
   const hard = findings.filter((f) => f.confidence !== 'heuristic').length
-  out.push(`  ${findings.length} finding(s) — ${hard} medium-high, ${findings.length - hard} heuristic`)
+  // Report all confidence levels accurately. The old summary said
+  // "X medium-high, Y heuristic" which silently downgraded "high"
+  // findings to "medium-high" in the count — a lie in the summary line.
+  const high = findings.filter((f) => f.confidence === 'high').length
+  const medHigh = findings.filter((f) => f.confidence === 'medium-high').length
+  const heur = findings.length - hard
+  const parts = []
+  if (high) parts.push(`${high} high`)
+  if (medHigh) parts.push(`${medHigh} medium-high`)
+  if (heur) parts.push(`${heur} heuristic`)
+  out.push(`  ${findings.length} finding(s) — ${parts.length ? parts.join(', ') : 'none'}`)
   out.push('')
 
   console.log(out.join('\n'))

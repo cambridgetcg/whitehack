@@ -65,7 +65,14 @@ const IGNORE = new Set(['node_modules', '.git', 'dist', 'build', '.next', 'cover
 
 async function* walk(dir) {
   let entries
-  try { entries = await readdir(dir, { withFileTypes: true }) } catch { return }
+  try { entries = await readdir(dir, { withFileTypes: true }) }
+  catch (e) {
+    // Report the failure instead of silently returning — a directory we
+    // can't read is a scan gap, not an empty directory. The old code did
+    // `catch { return }` which pretended the directory didn't exist.
+    console.error(`whitehack: cannot read directory ${dir}: ${e.message}`)
+    return
+  }
   for (const e of entries) {
     if (e.isDirectory() && e.name.startsWith('.')) continue
     if (IGNORE.has(e.name)) continue
@@ -77,13 +84,25 @@ async function* walk(dir) {
 
 export async function scan(root) {
   const findings = []
-  const isFile = extname(root) && !await stat(root).then(s => s.isDirectory()).catch(() => false)
+  const isFile = extname(root) && !await stat(root).then(s => s.isDirectory()).catch(() => {
+    // If we can't stat the root, it probably doesn't exist — report it
+    // instead of silently treating it as a directory walk that finds nothing.
+    console.error(`whitehack: cannot stat ${root}`)
+    return false
+  })
   const files = isFile ? [root] : []
   if (!isFile) { for await (const f of walk(root)) files.push(f) }
 
   for (const file of files) {
     let content
-    try { content = await readFile(file, 'utf8') } catch { continue }
+    try { content = await readFile(file, 'utf8') }
+    catch (e) {
+      // Report the failure instead of silently skipping — a file we can't
+      // read is a scan gap, not an absence of findings. The old code did
+      // `catch { continue }` which pretended the file had no issues.
+      console.error(`whitehack: cannot read file ${file}: ${e.message}`)
+      continue
+    }
     const lang = LANG_BY_EXT[extname(file)]
     const lines = content.split('\n')
     for (const check of CHECKS) {
