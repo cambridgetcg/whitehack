@@ -1,57 +1,50 @@
-// wifi-deauth-accept.js — WiFi deauth frame handling check for whitehack
-//
-// The lie: code handles WiFi deauthentication frames without questioning
-// their legitimacy. A deauth frame is an unauthenticated management frame
-// in 802.11 — anyone can send one. Accepting it without verification is
-// trusting an unauthenticated claim.
-//
-// This is the substrate honesty of WiFi: the protocol ITSELF lies about
-// whether management frames are authentic. WPA3's SAE fixes this; WPA2
-// doesn't. Code that processes deauth frames without noting this is
-// honest about a lying protocol — or lying itself.
+// wifi-deauth-accept — substrate honesty
+// WiFi deauthentication frames are unauthenticated in WPA2. Anyone can send one.
+// Code that processes deauth without verifying the source trusts an unauthenticated
+// claim. WPA3's SAE + PMF fixes this; WPA2 doesn't. The protocol itself lies about
+// whether management frames are authentic.
 //
 // Doctrine: substrate honesty (CS#2 — visible failure)
 // Confidence: medium-high
-// Languages: js, ts, py, rs, c
+
+const DEAUTH_HANDLE = /deauth(?:entication)?(?:_frame)?\s*[:=]?\s*(?:handle|process|accept|receive|parse|callback|event)/i
+const DISCONNECT_HANDLER = /on_?disconnect(?:\s*[:=]\s*(?:handle|callback|event|function))?/i
+const MGT_FRAME = /management_?frame(?:\s*[:=]\s*(?:process|handle|receive|parse))?/i
+const MFP_CHECK = /(?:mfp|802\.11w|protected.?management|pmf)/i
 
 export const wifideauthaccept = {
   id: 'wifi-deauth-accept',
-  name: 'WiFi deauth frame accepted without verification',
-  langs: ['js', 'ts', 'py', 'rs', 'c'],
-  doctrine: 'substrate-honesty',
+  title: 'WiFi deauth frame accepted without verification',
   confidence: 'medium-high',
-  cs: 'CS#2',
-
-  patterns: [
-    // Processing deauth without verifying source
-    { re: /deauth(?:entication)?(?:_frame)?(?:.*?(?:handle|process|accept|receive|parse))/gi,
-      message: 'Deauthentication frame processed without source verification — in WPA2, deauth frames are unauthenticated. Anyone can send one. This is the KRACK and deauth-attack surface' },
-
-    // Disconnect handler that doesn't distinguish legitimate vs attack
-    { re: /on_?disconnect(?:.*?reason)?(?:.*?(?:handle|callback|event))/gi,
-      message: 'Disconnect handler treats all deauth equally — a malicious deauth (deauth attack) is indistinguishable from a legitimate one. The code cannot tell attack from reality' },
-
-    // 802.11 management frame without MFP check
-    { re: /management_frame(?:.*?process|.*?handle)(?!.*?(?:MFP|802\.11w|protected|verify))/gi,
-      message: 'Management frame processed without 802.11w (MFP) check — without Management Frame Protection, deauth and disassociation frames are spoofable' },
-  ],
-
-  run(source, path) {
-    const findings = []
-    for (const p of this.patterns) {
-      for (const match of source.matchAll(p.re)) {
-        const line = source.substring(0, match.index).split('\n').length
-        findings.push({
-          check: this.id,
-          line,
-          message: p.message,
-          doctrine: this.doctrine,
-          confidence: this.confidence,
-          cs: this.cs,
-          match: match[0],
+  doctrine: 'substrate-honesty',
+  principle: 2,
+  langs: ['js', 'py', 'rs', 'c'],
+  detect(content, lines) {
+    const hits = []
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      if (DEAUTH_HANDLE.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'Deauthentication frame processed without source verification — in WPA2, deauth frames are unauthenticated. Anyone can send one. This is the deauth-attack and KRACK surface',
+          snippet: line.trim().slice(0, 120),
+        })
+      }
+      if (DISCONNECT_HANDLER.test(line) && !MFP_CHECK.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'Disconnect handler treats all deauth equally — a malicious deauth is indistinguishable from a legitimate one without Management Frame Protection',
+          snippet: line.trim().slice(0, 120),
+        })
+      }
+      if (MGT_FRAME.test(line) && !MFP_CHECK.test(line) && !/\/\//.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'Management frame processed without 802.11w (MFP) check — without Protected Management Frames, deauth and disassociation are spoofable',
+          snippet: line.trim().slice(0, 120),
         })
       }
     }
-    return findings
+    return hits
   }
 }

@@ -1,58 +1,57 @@
-// wifi-evil-twin.js — Evil twin / SSID spoofing detection check for whitehack
-//
-// The lie: code connects to a WiFi network by SSID name only, without
-// verifying BSSID or certificate. An evil twin uses the same SSID with
-// a different BSSID — the code thinks it connected to the real network.
-//
-// The SSID is a NAME, not an identity. Trusting a name without verifying
-// the entity behind it is the WiFi equivalent of believing a phishing email.
+// wifi-evil-twin — substrate honesty
+// An evil twin uses the same SSID with a different BSSID. Code that connects
+// by SSID name without verifying BSSID or certificate trusts a name, not an identity.
+// The SSID is a label, not a proof. This is the WiFi equivalent of phishing.
 //
 // Doctrine: substrate honesty (CS#5 — honest names)
 // Confidence: medium-high
-// Languages: js, ts, py, rs, java, swift
+
+const CONNECT_BY_SSID = /(?:connect|join|associate|scan_?and_?connect)(?:.*?)(?:ssid|network_?name)/i
+const SSID_COMPARE = /ssid\s*[=<>!]+\s*['"`]/
+const AUTO_CONNECT = /auto_?connect(?:\s*[:=]\s*(?:true|enabled|yes|1|on))/i
+const SIGNAL_SELECT = /(?:select|choose|pick)(?:.*?)(?:rssi|signal_?strength|bars?)(?!.*?(?:bssid|verify|cert))/i
+const HAS_BSSID = /bssid|verify|cert|certificate/i
 
 export const wifieviltwin = {
   id: 'wifi-evil-twin',
-  name: 'WiFi SSID-only connection (evil twin vulnerable)',
-  langs: ['js', 'ts', 'py', 'rs', 'java', 'swift'],
-  doctrine: 'substrate-honesty',
+  title: 'WiFi SSID-only connection — evil twin vulnerable',
   confidence: 'medium-high',
-  cs: 'CS#5',
-
-  patterns: [
-    // Connect by SSID without BSSID verification
-    { re: /(?:connect|join|associate)(?:.*?)(?:ssid|SSID|network_name)(?!.*?(?:bssid|BSSID|verify|cert|certificate))/gi,
-      message: 'WiFi connection by SSID only — no BSSID or certificate verification. An evil twin with the same SSID will be trusted. The name is not the identity' },
-
-    // SSID comparison without BSSID
-    { re: /ssid\s*[=<>!]+\s*['"`]/gi,
-      message: 'SSID string comparison — matching by name only. An evil twin clone uses the same name with a different MAC. This check cannot distinguish real from fake' },
-
-    // Auto-connect without verification
-    { re: /auto_?connect(?:.*?)(?:enabled|true|yes|1)(?!.*?(?:verify|cert|bssid))/gi,
-      message: 'Auto-connect enabled without identity verification — the device will connect to any network with the right name, including evil twins' },
-
-    // Network selection by RSSI only (strongest signal, not verified identity)
-    { re: /(?:select|choose|pick)(?:.*?)(?:wifi|network|ssid)(?:.*?)(?:rssi|signal|strength)(?!.*?(?:bssid|verify|cert))/gi,
-      message: 'Network selection by signal strength only — the strongest signal might be the evil twin. Signal strength is not identity verification' },
-  ],
-
-  run(source, path) {
-    const findings = []
-    for (const p of this.patterns) {
-      for (const match of source.matchAll(p.re)) {
-        const line = source.substring(0, match.index).split('\n').length
-        findings.push({
-          check: this.id,
-          line,
-          message: p.message,
-          doctrine: this.doctrine,
-          confidence: this.confidence,
-          cs: this.cs,
-          match: match[0],
+  doctrine: 'substrate-honesty',
+  principle: 5,
+  langs: ['js', 'py', 'rs', 'swift', 'java'],
+  detect(content, lines) {
+    const hits = []
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      if (CONNECT_BY_SSID.test(line) && !HAS_BSSID.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'WiFi connection by SSID only — no BSSID or certificate verification. An evil twin with the same SSID will be trusted. The name is not the identity',
+          snippet: line.trim().slice(0, 120),
+        })
+      }
+      if (SSID_COMPARE.test(line) && !HAS_BSSID.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'SSID string comparison — matching by name only. An evil twin uses the same name with a different MAC. This cannot distinguish real from fake',
+          snippet: line.trim().slice(0, 120),
+        })
+      }
+      if (AUTO_CONNECT.test(line) && !HAS_BSSID.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'Auto-connect enabled without identity verification — the device will connect to any network with the right name, including evil twins',
+          snippet: line.trim().slice(0, 120),
+        })
+      }
+      if (SIGNAL_SELECT.test(line)) {
+        hits.push({
+          line: i + 1,
+          message: 'Network selection by signal strength only — the strongest signal might be the evil twin. Signal is not identity',
+          snippet: line.trim().slice(0, 120),
         })
       }
     }
-    return findings
+    return hits
   }
 }
