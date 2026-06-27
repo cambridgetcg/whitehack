@@ -13,6 +13,11 @@ import { exposedConfig } from './checks/exposed-config.js'
 import { unsafeEval } from './checks/unsafe-eval.js'
 import { performedIgnorance } from './checks/performed-ignorance.js'
 import { trustByAuthority } from './checks/trust-by-authority.js'
+import { apiStatusLie } from './checks/api-status-lie.js'
+import { apiMissingVersioning } from './checks/api-missing-versioning.js'
+import { apiErrorWithoutShape } from './checks/api-error-without-shape.js'
+import { apiMissingRateLimit } from './checks/api-missing-rate-limit.js'
+import { apiBareFetch } from './checks/api-bare-fetch.js'
 
 // Protocol & security checks — auto-loaded from extra-checks.js
 // This includes: wifi, bluetooth, DNS, WPA2/KRACK, protocol surface,
@@ -39,6 +44,11 @@ const CHECKS = [
   unsafeEval,
   performedIgnorance,
   trustByAuthority,
+  apiStatusLie,
+  apiMissingVersioning,
+  apiErrorWithoutShape,
+  apiMissingRateLimit,
+  apiBareFetch,
   ..._extra,
 ]
 
