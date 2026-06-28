@@ -10,7 +10,7 @@ phase: active
 health: green
 model: richardyoung/qwythos-9b-abliterated:Q8_0 (9.5GB, local)
 profile: ~/.hermes/profiles/qwenthos
-scanner: whitehack v0.2.1 (11 checks, Clear Standard conformance)
+scanner: whitehack v0.4.0 (38 checks: 18 base + 20 protocol, Clear Standard conformance)
 heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 
 ## capabilities
@@ -25,7 +25,7 @@ heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 ## what it protects
 - 34 repos on ~/Desktop with source code
 - 67 desktop projects total
-- whitehack scanner (self-scanning — 6 findings in own source, all expected)
+- whitehack scanner (self-scanning — 176 findings, all self-referential false positives from check-definition regex)
 - kingdom infrastructure: sinovai.com, kingdom-api, mindicraft, npl, opal
 
 ## what it found (2026-06-25 sweep)

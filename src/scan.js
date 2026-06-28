@@ -20,9 +20,10 @@ import { apiMissingRateLimit } from './checks/api-missing-rate-limit.js'
 import { apiBareFetch } from './checks/api-bare-fetch.js'
 
 // Protocol & security checks — auto-loaded from extra-checks.js
-// This includes: wifi, bluetooth, DNS, WPA2/KRACK, protocol surface,
-// insecure protocol, cert verification, weak crypto, CORS, cookies,
-// SQL injection, paired stranger, and more.
+// This includes: wifi (protocol flaws, evil twin, KRACK, PMK exposure, deauth,
+// weak encryption, WPA2-krack), bluetooth (protocol flaws, paired stranger),
+// DNS plaintext, password auth, insecure protocol, cert verification, weak
+// crypto, CORS, cookies, SQL injection, protocol surface.
 let _extra = []
 try { _extra = (await import('./checks/extra-checks.js')).default } catch (e) {
   // If extra-checks fails to load, we still run the base checks

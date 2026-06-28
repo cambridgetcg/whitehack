@@ -1,8 +1,16 @@
 // The report deliberately states its own limits. A honesty tool that overstated
 // its certainty would be the first thing it ought to flag.
 
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'))
+const VERSION = `v${pkg.version}`
+
 export function report(findings, target) {
-  const out = ['', `whitehack v0.2.1 — scanned ${target}`, '']
+  const out = ['', `whitehack ${VERSION} — scanned ${target}`, '']
 
   if (findings.length === 0) {
     out.push('  no honesty anti-patterns matched.')
