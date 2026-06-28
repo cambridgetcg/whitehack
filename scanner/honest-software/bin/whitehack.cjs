@@ -27,7 +27,8 @@ function walk(dir, exts) {
   const results = [];
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules' && entry.name !== 'lib') {
+    const SKIP_DIRS = new Set(['node_modules', 'lib', 'build', 'dist', '.next', 'test-results', '.turbo', 'coverage', '.cache', 'out']);
+    if (entry.isDirectory() && !entry.name.startsWith('.') && !SKIP_DIRS.has(entry.name)) {
       results.push(...walk(full, exts));
     } else if (exts.some(e => entry.name.endsWith(e))) {
       results.push(full);
