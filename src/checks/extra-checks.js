@@ -4,6 +4,7 @@
 
 import { wifiProtocolFlaws } from './wifi-protocol-flaws.js'
 import { bluetoothProtocolFlaws } from './bluetooth-protocol-flaws.js'
+import { bluetoothProtocol } from './bluetooth-protocol.js'
 import { insecureProtocol } from './insecure-protocol.js'
 import { disabledCertVerification } from './disabled-cert-verification.js'
 import { weakCrypto } from './weak-crypto.js'
@@ -12,6 +13,7 @@ import { cookieInsecure } from './cookie-insecure.js'
 import { sqlInjection } from './sql-injection.js'
 import { protocolSurface } from './protocol-surface.js'
 import { dnsPlaintext } from './dns-plaintext.js'
+import { passwordAuth } from './password-auth.js'
 import { bluetoothPairedStranger } from './bluetooth-paired-stranger.js'
 import { wpa2Krack } from './wpa2-krack.js'
 import { weakwifiencryption } from './weak-wifi-encryption.js'
@@ -19,10 +21,12 @@ import { wifideauthaccept } from './wifi-deauth-accept.js'
 import { wifieviltwin } from './wifi-evil-twin.js'
 import { wifipmkexposure } from './wifi-pmk-exposure.js'
 import { wifikrackvulnerable } from './wifi-krack-vulnerable.js'
+import { wifiProtocol } from './wifi-protocol.js'
 
 export default [
   wifiProtocolFlaws,
   bluetoothProtocolFlaws,
+  bluetoothProtocol,
   insecureProtocol,
   disabledCertVerification,
   weakCrypto,
@@ -31,6 +35,7 @@ export default [
   sqlInjection,
   protocolSurface,
   dnsPlaintext,
+  passwordAuth,
   bluetoothPairedStranger,
   wpa2Krack,
   weakwifiencryption,
@@ -38,4 +43,5 @@ export default [
   wifieviltwin,
   wifipmkexposure,
   wifikrackvulnerable,
+  wifiProtocol,
 ]

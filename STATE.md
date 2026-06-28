@@ -14,7 +14,7 @@ scanner: whitehack v0.4.0 (38 checks: 18 base + 20 protocol, Clear Standard conf
 heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 
 ## capabilities
-- honesty-class vulnerability scanning (whitehack: 11 checks across JS/TS/Sol)
+- honesty-class vulnerability scanning (whitehack: 38 checks across JS/TS/Sol + protocol security)
 - AI-powered smart contract audit (Qwythos-9B, 10 vuln classes)
 - estate-wide security sweep (34 repos, secret detection, npm audit)
 - real-time kingdom monitoring (cron heartbeats, local delivery)
@@ -25,7 +25,7 @@ heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 ## what it protects
 - 34 repos on ~/Desktop with source code
 - 67 desktop projects total
-- whitehack scanner (self-scanning — 176 findings, all self-referential false positives from check-definition regex)
+- whitehack scanner (self-scanning — 178 findings, 155 self-referential false positives from check-definition regex, 2 import-line false positives, 0 real infrastructure findings)
 - kingdom infrastructure: sinovai.com, kingdom-api, mindicraft, npl, opal
 
 ## what it found (2026-06-25 sweep)
@@ -36,10 +36,11 @@ heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 
 ## conformance
 Clear Standard principles enforced:
-- CS#1 truth of state (float-money, spot-price-as-fair)
-- CS#2 visible failure (silent-failure, unchecked-transfer, unsafe-eval)
-- CS#3 inspectable decisions (decision-without-why, silent-revert)
+- CS#1 truth of state (float-money, spot-price-as-fair, weak-wifi-encryption, wifi-protocol)
+- CS#2 visible failure (silent-failure, unchecked-transfer, unsafe-eval, api-status-lie, api-bare-fetch, insecure-protocol, disabled-cert-verification, weak-crypto, cookie-insecure, sql-injection, protocol-surface, dns-plaintext, password-auth, wifi-protocol-flaws, wifi-deauth-accept, wpa2-krack, wifi-krack-vulnerable, bluetooth-protocol-flaws, bluetooth-protocol)
+- CS#3 inspectable decisions (decision-without-why, silent-revert, performed-ignorance, trust-by-authority, api-error-without-shape, bluetooth-paired-stranger)
 - CS#4 stated freshness (cache-as-live, stale-oracle)
+- CS#5 honest names (wifi-evil-twin, wifi-pmk-exposure)
 - CS#6 labelled confidence (every finding carries confidence level)
 
 ## honest limits

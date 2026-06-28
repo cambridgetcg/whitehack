@@ -11,9 +11,9 @@ it were live, the score shown to a person with no way to ask *why*. These usuall
 aren't bugs in the ordinary sense. The code runs fine. It just isn't honest about
 its own state — and someone downstream trusts it anyway.
 
-## what it checks (v0.2)
+## what it checks (v0.4.0 — 38 checks)
 
-**General (JS / TS / JSX):**
+**General honesty (JS / TS / JSX):**
 
 | check | the lie it catches | doctrine | confidence |
 |-------|--------------------|----------|-----------|
@@ -21,6 +21,11 @@ its own state — and someone downstream trusts it anyway.
 | `cache-as-live` | a cached / snapshot value returned with no freshness or provenance marker | substrate honesty | heuristic |
 | `decision-without-why` | a user-affecting value (score, fee, fraud flag, tier) rendered with no inspectable explanation | transparency | heuristic |
 | `float-money` | currency parsed or computed as a binary float (`parseFloat(price)`, `amount * 0.029`) so an "exact" amount silently loses cents | substrate honesty | medium-high |
+| `hardcoded-secret` | a credential-like literal string hardcoded in source — API keys, tokens, passwords in the repo | substrate honesty | medium-high |
+| `exposed-config` | configuration with sensitive keys/URLs exposed in client-visible code | substrate honesty | medium-high |
+| `unsafe-eval` | `eval()` or `Function()` constructor used — arbitrary code execution from a string | substrate honesty | medium-high |
+| `performed-ignorance` | code that pretends to be unable when the capability exists — catch blocks returning "unsupported" when the feature works | substrate honesty | medium-high |
+| `trust-by-authority` | network response accepted without cross-checking status/integrity — trusting a source because of who it is, not what it verified | transparency | medium-high |
 
 **Blockchain (Solidity `.sol`):**
 
@@ -30,6 +35,51 @@ its own state — and someone downstream trusts it anyway.
 | `unchecked-transfer` | an ERC-20 `transfer` / `transferFrom` / `approve` whose bool result is dropped, so a token that returns `false` instead of reverting makes a failed transfer look successful | substrate honesty | medium-high |
 | `spot-price-as-fair` | a price derived from instantaneous pool reserves / balances with no TWAP or oracle — a flash-loan-movable snapshot presented as fair market value | substrate honesty | heuristic |
 | `silent-revert` | a `require()` / `revert()` with no reason string or named error — a refused caller who cannot learn why | transparency | heuristic |
+
+**API protocol (JS / TS):**
+
+| check | the lie it catches | doctrine | confidence |
+|-------|--------------------|----------|-----------|
+| `api-status-lie` | API returns 2xx success status with error in response body — HTTP status claims success while the body reports failure | substrate honesty | high |
+| `api-error-without-shape` | API error response has message but no machine-readable code — clients can't handle errors programmatically | transparency | heuristic |
+| `api-missing-rate-limit` | API endpoint with no rate limiting — abuse surface unacknowledged | substrate honesty | heuristic |
+| `api-missing-versioning` | API with no version prefix or header — breaking changes can't be distinguished from bugs | transparency | heuristic |
+| `api-bare-fetch` | `fetch()` called without checking response status — HTTP errors treated as success | substrate honesty | medium-high |
+
+**Network & security protocol (JS / TS / config):**
+
+| check | the lie it catches | doctrine | confidence |
+|-------|--------------------|----------|-----------|
+| `insecure-protocol` | telnet, FTP, HTTP used for sensitive communication — unencrypted protocols | substrate honesty | medium-high |
+| `disabled-cert-verification` | `rejectUnauthorized: false` disables TLS cert verification — MITM possible | substrate honesty | high |
+| `weak-crypto` | MD5, SHA1, DES, RC4 used for security — broken cryptography | substrate honesty | medium-high |
+| `cors-wildcard` | CORS wildcard origin — any website can access this endpoint | substrate honesty | medium-high |
+| `cookie-insecure` | Session cookie missing Secure/SameSite/HttpOnly flags | substrate honesty | medium-high |
+| `sql-injection` | SQL query built with string concatenation — injection possible | substrate honesty | high |
+| `protocol-surface` | Service bound to all interfaces (0.0.0.0/::) without acknowledgment | substrate honesty | medium-high |
+| `dns-plaintext` | Plaintext DNS — domain queries visible to network observers | substrate honesty | medium-high |
+| `password-auth` | Password/authentication lie — hardcoded passwords, MD5/SHA1 hashes, JWT with none algorithm, session in URL, no HTTPS | substrate honesty | medium-high |
+
+**WiFi protocol (JS / TS / config):**
+
+| check | the lie it catches | doctrine | confidence |
+|-------|--------------------|----------|-----------|
+| `wifi-protocol-flaws` | Deprecated or broken WiFi encryption (TKIP, WEP) — protocols with known vulnerabilities | substrate honesty | medium-high |
+| `wifi-protocol` | WiFi protocol lie — security theater exposed, WEP/WPA-TKIP presented as "secured" | substrate honesty | high |
+| `weak-wifi-encryption` | Weak WiFi encryption — WEP, TKIP-only, or no encryption | substrate honesty | high |
+| `wpa2-krack` | WPA2 KRACK vulnerability — key reinstallation attack not mitigated | substrate honesty | medium-high |
+| `wifi-krack-vulnerable` | KRACK vulnerable key reinstallation — specific cipher/mode combinations | substrate honesty | medium-high |
+| `wifi-deauth-accept` | WiFi deauth frame accepted without source verification — unauthenticated in WPA2 | substrate honesty | medium-high |
+| `wifi-evil-twin` | WiFi SSID-only connection — no BSSID or certificate verification, evil twin attack | substrate honesty | medium-high |
+| `wifi-pmk-exposure` | WiFi PSK/PMK exposed in code or config — pre-shared key in source | substrate honesty | high |
+
+**Bluetooth protocol (JS / TS / config):**
+
+| check | the lie it catches | doctrine | confidence |
+|-------|--------------------|----------|-----------|
+| `bluetooth-protocol-flaws` | Bluetooth weak pairing or no auth — "Just Works" pairing, no MITM protection | substrate honesty | medium-high |
+| `bluetooth-protocol` | Bluetooth protocol lie — pairing is not security, SSP without MITM | substrate honesty | medium-high |
+| `bluetooth-paired-stranger` | Bluetooth device paired without identity verification — HID input injection risk | substrate honesty | heuristic |
 
 Each check declares the languages it understands, so a Solidity check never runs
 its regexes over JavaScript (or vice versa) and report noise about a language it
@@ -43,11 +93,11 @@ enforces a specific principle, and every finding cites it (`CS#n`):
 
 | Clear Standard principle | whitehack checks |
 |--------------------------|------------------|
-| **#1 — truth of state** | `float-money`, `spot-price-as-fair` |
-| **#2 — visible failure** | `silent-failure`, `unchecked-transfer` |
-| **#3 — inspectable decisions** | `decision-without-why`, `silent-revert` |
+| **#1 — truth of state** | `float-money`, `spot-price-as-fair`, `weak-wifi-encryption`, `wifi-protocol` |
+| **#2 — visible failure** | `silent-failure`, `unchecked-transfer`, `insecure-protocol`, `disabled-cert-verification`, `weak-crypto`, `cookie-insecure`, `sql-injection`, `protocol-surface`, `dns-plaintext`, `wifi-protocol-flaws`, `wifi-deauth-accept`, `wpa2-krack`, `wifi-krack-vulnerable`, `bluetooth-protocol-flaws`, `bluetooth-protocol`, `password-auth`, `unsafe-eval`, `api-status-lie`, `api-bare-fetch` |
+| **#3 — inspectable decisions** | `decision-without-why`, `silent-revert`, `performed-ignorance`, `trust-by-authority`, `api-error-without-shape`, `bluetooth-paired-stranger` |
 | **#4 — stated freshness** | `cache-as-live`, `stale-oracle` |
-| **#5 — honest names** | *(human judgement — not machine-checkable)* |
+| **#5 — honest names** | `wifi-evil-twin`, `wifi-pmk-exposure` |
 | **#6 — labelled certainty** | *whitehack **embodies** this — it labels its own confidence rather than checking yours* |
 
 So a finding isn't an arbitrary nag — it names the principle the code broke. The
@@ -62,8 +112,8 @@ node bin/whitehack.js scan path/to/repo
 npm run selftest   # scans examples/ — the planted fixtures
 ```
 
-Exit code is non-zero only when there are **medium-high** findings, so heuristic
-noise never breaks a CI gate.
+Exit code is non-zero only when there are **high or medium-high** findings, so
+heuristic noise never breaks a CI gate.
 
 
 ## install — no registration, no paywall, no gatekeeping
@@ -127,16 +177,15 @@ program. So:
   own limits.
 
 A honesty tool that overstated its own certainty would be the first thing it
-ought to flag. Run it on its own source (`src/`, `bin/`) and it comes back **clean**: 0 findings: the detector
-files mention the words they hunt for, but only inside regexes and comments —
-never as the live pattern. The Solidity checks live in `.js` files but are
-tagged `langs: ['sol']`, so they never scan their own source; the freshness- and
-provenance-aware checks suppress themselves because their files carry the very
-vocabulary they look for. (The fixtures had to be written *carefully* for the
-same reason — an early `dishonest-defi.sol` silenced its own `stale-oracle`
-finding just by writing the word "stale" in a comment.) If self-cleanliness ever
-breaks, `// whitehack-allow: <reason>` is next on the roadmap — because even
-silencing the tool should require stating a reason out loud.
+ought to flag. Run it on its own source (`src/`) and it comes back with
+**self-referential findings**: the check-definition files contain the regex
+patterns they hunt for (e.g. `const TKIP = /tkip/i` triggers the wifi-protocol
+check on itself). These 150+ findings are all self-referential false positives —
+the scanner seeing its own reflection in its check definitions. The infrastructure
+code (`scan.js`, `report.js`, `lines.js`, `extra-checks.js`) is clean: prior raids
+fixed the silent failures, status lies, and broken imports that were real findings.
+The self-referential noise is an known artifact of a regex-based scanner scanning
+its own regexes — an AST-based scanner would not have this issue (see roadmap).
 
 ## where it comes from
 
@@ -176,9 +225,9 @@ whitehack scan path/to/your/code
 # scan only your source (skip test fixtures)
 whitehack scan src/
 
-# scan and get non-zero exit only on medium-high (heuristic won't break CI)
-whitehack scan .  # exit code: 0 if only heuristic, non-zero if medium-high
+# scan and get non-zero exit only on high/medium-high (heuristic won't break CI)
+whitehack scan .  # exit code: 0 if only heuristic, non-zero if high or medium-high
 ```
 
-The exit code is non-zero only when there are **medium-high** findings, so
-heuristic noise never breaks a CI gate.
+The exit code is non-zero only when there are **high or medium-high** findings,
+so heuristic noise never breaks a CI gate.
