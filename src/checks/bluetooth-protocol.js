@@ -11,9 +11,9 @@
 // a question the protocol doesn't answer.
 
 const JUST_WORKS=/(?:just.?works|no.?mitm|pairing.?method\s*[:=]\s*['"]?just)/i
-const LEGACY_PAIRING=/(?:legacy.?pairing|pin.?code|e0|stream.?cipher)\s*[:=]/i
+const LEGACY_PAIRING=/(?:legacy.?pairing|pin.?code|e0\s+stream|stream.?cipher)\s*[:=]/i
 const BT_HID_UNENCRYPTED=/(?:hid|keyboard|mouse)\s*[:=].*(?:unencrypted|none|off|disabled)/i
-const BT_CLASSIC_E0=/(?:e0|encrypt.*(?:classic|br.edr))/i
+const BT_CLASSIC_E0=/(?:e0\s*(?:stream|cipher|classic)|classic.*e0|e0.*encrypt|encrypt.*e0|br.?edr.*e0)/i
 const SECURE_CONN_DISABLED=/(?:secure.?connections)\s*[:=]\s*(?:false|disabled|0|off)/i
 
 export const bluetoothProtocol = {

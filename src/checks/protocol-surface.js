@@ -15,7 +15,13 @@
 // We don't hide from the network. We understand it. We bind to localhost
 // when we don't need external access. We acknowledge when we do.
 
-const BIND_ALL = /(?:0\.0\.0\.0|::|\*)\s*[:,)\]]/g
+// Match 0.0.0.0 or :: as a bind target. The \b prevents matching
+// 0.0.0.0 inside longer strings like UUIDs or hex. The :: must be
+// preceded by whitespace, quote, or start-of-string to avoid matching
+// it inside ::nsmiddleware, :::stardust, or other double-colon syntax.
+// Removed bare \* — it matched `*]`, `*:`, `*)` in regex syntax, markdown
+// bold (**Word**), and route patterns ([a-z]*$), none of which are bind calls.
+const BIND_ALL = /(?:\b0\.0\.0\.0\b|(?<=^|[\s'"`{(,])::(?:[,)\]\s}"`]|$))/g
 const BIND_LOCALHOST = /127\.0\.0\.1|localhost/g
 const LISTEN_ALL = /\.listen\s*\(\s*(?:0|process\.env\.PORT|port|PORT)\b/g
 const OLLAMA_HOST = /OLLAMA_HOST|host\s*[:=]\s*['"]0\.0\.0\.0['"]/i

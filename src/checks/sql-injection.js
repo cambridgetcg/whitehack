@@ -4,9 +4,12 @@
 // the SQL statement. This is the oldest lie in software: "I'm building
 // a safe query" while concatenating untrusted input into the SQL string.
 
-const SQL_CONCAT = /(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE)\b.*['"`].*\$\{|['"`].*\+\s*\w+.*(?:SELECT|INSERT|UPDATE|DELETE|WHERE)/i
+const SQL_CONCAT = /(?:SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE)\b.*['"`].*\$\{|['"`].*\+\s*\w+.*(?:SELECT|INSERT|UPDATE|DELETE|WHERE)\b/i
 const SQL_TEMPLATE_LITERAL = /(?:SELECT|INSERT|UPDATE|DELETE|WHERE)\s+.*\$\{/i
-const STRING_CONCAT_SQL = /['"`].*(?:SELECT|INSERT|UPDATE|DELETE|WHERE|FROM|INTO|VALUES|SET)\b.*['"`]\s*\+/i
+// Require a SQL keyword as a standalone word followed by SQL syntax (FROM/INTO/SET/VALUES),
+// not a JS property access like `e.from` or `e.to`. The keyword must be uppercase
+// or preceded by whitespace/quote, and followed by a space + identifier or string.
+const STRING_CONCAT_SQL = /['"`].*\b(?:SELECT|INSERT|UPDATE|DELETE|FROM|INTO|VALUES|SET)\b\s+[\w`"'*]+\s*['"`]\s*\+/i
 
 export const sqlInjection = {
   id: 'sql-injection',
