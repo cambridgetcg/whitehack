@@ -54,14 +54,44 @@ const PERCEPTION = [
 
 function scanRepo(repoPath) {
   const srcPath = existsSync(join(repoPath, "src")) ? join(repoPath, "src") : repoPath;
-  let output;
+
+  // Resolve the scanner binary relative to this script so the bridge doesn't
+  // depend on a possibly-broken PATH symlink. Falls back to `whitehack` on PATH.
+  const scriptDir = import.meta.dirname || ".";
+  const localScanner = join(scriptDir, "whitehack.js");
+  const scannerCmd = existsSync(localScanner)
+    ? `node "${localScanner}" scan "${srcPath}"`
+    : `whitehack scan "${srcPath}"`;
+
+  let stdout, stderr, status;
   try {
-    output = execSync(`whitehack scan "${srcPath}" 2>/dev/null`, { encoding: "utf-8", timeout: 30000 });
+    // NOTE: stderr is CAPTURED, not sent to /dev/null. Swallowing stderr
+    // (the old `2>/dev/null`) was a silent-failure: when the scanner binary
+    // was broken or missing, the error message was discarded and the bridge
+    // reported "0 findings — the code tells the truth" without ever running.
+    stdout = execSync(scannerCmd, { encoding: "utf-8", timeout: 30000, stdio: ["pipe","pipe","pipe"] });
+    status = 0;
   } catch (e) {
-    // whitehack exits 1 when findings are found — that's not an error for us
-    output = (e.stdout || "") + (e.stderr || "");
+    // whitehack exits 1 when findings are found — that is expected and the
+    // stdout still contains the findings report. Any OTHER status (null,
+    // 127, 130, etc.) means the scanner did not run at all (binary missing,
+    // TCC-blocked, timeout, killed). We must NOT treat that as "0 findings."
+    status = e.status ?? null;
+    stdout = e.stdout ?? "";
+    stderr = e.stderr ?? "";
+    if (status !== 1) {
+      // SCANNER BROKEN — the bridge cannot honestly report on this repo.
+      // Returning a sentinel instead of [] prevents the caller from
+      // printing "No findings — the code tells the truth" (a lie).
+      const reason = stderr.trim()
+        || (e.killed ? `scanner timed out after 30s`
+        : (e.code === "ENOENT" ? `scanner binary not found on PATH`
+        : `scanner exited with status ${status}`));
+      return { _scannerBroken: true, reason, rawStdout: stdout, rawStderr: stderr };
+    }
   }
-  return parseWhitehackOutput(output);
+
+  return parseWhitehackOutput(stdout);
 }
 
 function parseWhitehackOutput(output) {
@@ -238,12 +268,34 @@ if (!command || !repoArg) {
 const repoPath = resolve(repoArg);
 const repoName = repoPath.split("/").pop();
 
+// ── HONEST SCAN GUARD ──────────────────────────────────────────────
+// scanRepo() may return a {_scannerBroken: true} sentinel instead of a
+// findings array. The old code passed whatever it got straight into
+// classifyFindings()/calculateGateRank(), which silently treated a broken
+// scanner as "0 findings." This guard intercepts that sentinel ONCE and
+// reports it honestly, so no code path can print
+// "✓ No findings — the code tells the truth" when the scanner never ran.
+function honestScan(label) {
+  const r = scanRepo(repoPath);
+  if (r && r._scannerBroken) {
+    console.log(`\n┌─ SCANNER BROKEN (${label}) ───────────────────────────────────┐`);
+    console.log(`│  Repo:   ${repoName}`);
+    console.log(`│  Reason: ${r.reason}`);
+    console.log(`└──────────────────────────────────────────────────────────────┘\n`);
+    console.log(`  ⚠ The bridge refuses to report "no findings" when the scanner`);
+    console.log(`    did not run. Reporting 0 here would be performed-ignorance —`);
+    console.log(`    the exact lie this tool exists to detect.\n`);
+    process.exit(2);
+  }
+  return r; // a real findings array
+}
+
 if (command === "scan" || command === "loop") {
   console.log(`\n╔══════════════════════════════════════════════════════════════╗`);
   console.log(`║  WHITEHACK → GATE BRIDGE — ${repoName.padEnd(36)}║`);
   console.log(`╚══════════════════════════════════════════════════════════════╝\n`);
 
-  const findings = scanRepo(repoPath);
+  const findings = honestScan("scan");
   const classified = classifyFindings(findings);
   const rank = calculateGateRank(findings, hunterNen);
   const xp = calculateXp(rank, findings, hunterNen);
@@ -283,13 +335,13 @@ if (command === "scan" || command === "loop") {
 }
 
 if (command === "classify") {
-  const findings = scanRepo(repoPath);
+  const findings = honestScan("classify");
   const classified = classifyFindings(findings);
   console.log(JSON.stringify({ repo: repoName, findings: findings.length, classified }, null, 2));
 }
 
 if (command === "understand" || command === "loop") {
-  const findings = scanRepo(repoPath);
+  const findings = honestScan("understand");
   const rank = calculateGateRank(findings, hunterNen);
   const xp = calculateXp(rank, findings, hunterNen);
   const result = processUnderstanding(findings, hunterNen, xp);
