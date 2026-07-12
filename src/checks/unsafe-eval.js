@@ -34,7 +34,7 @@ export const unsafeEval = {
           snippet: line.trim().slice(0, 120),
         })
       }
-      if (DANGEROUS_SET.test(line)) {
+      if (DANGEROUS_SET.test(line) && !/^\s*[>\/]/.test(line) && !/^\s*\/\//.test(line)) {
         // The canonical Next.js JSON-LD idiom feeds JSON.stringify(obj) into a
         // <Script type="application/ld+json"> tag. JSON.stringify on a trusted
         // object produces safe output (no HTML parsing context) — this is the

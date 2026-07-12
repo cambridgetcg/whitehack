@@ -12,7 +12,11 @@ const RC4 = /\brc4\b/i
 const MATH_RANDOM_FOR_SECURITY = /Math\.random\(\)/
 
 // Context: only flag when used in a security context (hashing, crypto, token, password, key)
-const SECURITY_CONTEXT = /\b(hash|crypt|sign|token|password|secret|key|auth|session|verify|random|salt|hmac)\b/i
+// Removed 'random' from the list — it was self-referential with Math.random(), causing every
+// Math.random() call to match its own security context. A jitter function using Math.random()
+// is not crypto just because the word 'random' appears. The bell needs crypto-specific
+// context, not the word 'random' pointing at itself (castle 0064).
+const SECURITY_CONTEXT = /\b(hash|crypt|sign|token|password|secret|key|auth|session|verify|salt|hmac)\w*/i
 
 export const weakCrypto = {
   id: 'weak-crypto',
@@ -66,8 +70,9 @@ export const weakCrypto = {
         continue
       }
 
-      // Math.random() used in security context
-      if (MATH_RANDOM_FOR_SECURITY.test(l) && SECURITY_CONTEXT.test(l)) {
+      // Math.random() used in security context — skip comment-only lines
+      // (annotation text mentioning 'crypto' is not crypto usage; castle 0064)
+      if (MATH_RANDOM_FOR_SECURITY.test(l) && SECURITY_CONTEXT.test(l) && !/^\s*[\/\*]/.test(l) && !/^\s*\*/.test(l)) {
         hits.push({
           line: i + 1,
           message: 'Math.random() used for security — not cryptographically secure, use crypto.randomBytes() or crypto.getRandomValues()',

@@ -11,10 +11,25 @@
 //
 // Love is understanding. We don't pretend pairing = trust. We verify.
 
-const PAIRED_DEVICE = /paired|bond(ed|ing)|link.?key/i
+// Require Bluetooth context on the same line. Without it:
+// - 'paired' matches any comment about pairing (archive pairing, auto-pairing in text)
+// - 'auto.?pair' matches 'autoArchive' (auto-pair), 'auto.?connect' matches autoConnect
+// - 'hid.*input' matches shouldHidePromptInput, hideInputGuide — UI booleans, not HID
+// - 'advertise' matches UI advertising text, not BLE advertising
+// The bell needs Bluetooth context to tell shape from meaning (castle 0064).
+const BT_CONTEXT = /(?:bluetooth|bt|ble|gatt|l2cap|rfcomm|bond|pair|hid|keyboard|mouse)/i
+const PAIRED_DEVICE = /(?:\bbluetooth\b|\bbt\b|\bble\b)[^\n]*(?:pair(?:ed|ing)?|bond(?:ed|ing)|link.?key)|(?:pair(?:ed|ing)?|bond(?:ed|ing)|link.?key)[^\n]*(?:\bbluetooth\b|\bbt\b|\bble\b)/i
 const STRANGER_DEVICE = /(?:matthew|other|unknown|guest|friend).*(?:keyboard|mouse|device|phone)/i
-const TRUST_ALL_BT = /trust.*all|accept.*any|auto.?pair|auto.?connect/i
-const HID_INJECTION = /hid.*input|key.*inject|send.*key.*bt|bluetooth.*keyboard/i
+// Require code-like syntax (assignment or config), not natural language.
+// 'Bluetooth auto-pairing' in a comment is annotation, not configuration.
+// The pattern needs: camelCase autoPair/autoConnect with = or :, or
+// trust.*all / accept.*any in a BT context (config phrase), or
+// auto.?pair/auto.?connect followed by : and a boolean.
+const TRUST_ALL_BT = /(?:autoPair|autoConnect)\s*[:=]\s*(?:true|enabled|1|yes)|(?:\bbluetooth\b|\bbt\b|\bble\b)[^\n]*(?:trust.*all|accept.*any)|bluetooth.*(?:autoPair|autoConnect)|(?:auto.?pair|auto.?connect)\s*[:=]\s*(?:true|on|yes|1|enabled)/i
+// \bhid\b prevents matching 'hideInputGuide' or 'shouldHidePromptInput' — the
+// 'hid' in those is a prefix of 'hide', not the HID protocol. Word boundary is
+// the difference between the bell seeing shape and the bell seeing meaning.
+const HID_INJECTION = /(?:\bbluetooth\b|\bbt\b|\bble\b|\bhid\b)[^\n]*(?:\bhid\b.*input|key.*inject|send.*key.*bt|bluetooth.*keyboard)|(?:\bhid\b.*input|key.*inject|send.*key.*bt|bluetooth.*keyboard)[^\n]*(?:\bbluetooth\b|\bbt\b|\bble\b|\bhid\b)/i
 
 export const bluetoothPairedStranger = {
   id: 'bluetooth-paired-stranger',

@@ -17,10 +17,16 @@
 const BT_DISCOVERABLE_ON = /discoverable\s*[:=]\s*(true|on|yes|1)/i
 const BT_PIN_HARDCODED = /pin\s*[:=]\s*['"][0-9]{4}['"]/i
 const JUST_WORKS = /just.?works|NoInputNoOutput|no.?mitm/i
-const BT_NO_AUTH = /auth\s*[:=]\s*false|requireAuth\s*[:=]\s*false|noAuth/i
+// Require Bluetooth context (bt/ble/bluetooth/gatt/bond/pair/l2cap/rfcomm) on the same
+// line. Without it, 'noAuth' matches OAuth variables, 'auth: false' matches any auth config,
+// and 'advertise' matches UI advertising text. The bell needs context to tell shape from meaning.
+const BT_NO_AUTH = /(?:\bbluetooth\b|\bbt\b|\bble\b|\bgatt\b|\bbond\b|\bpair\b|\bl2cap\b|\brfcomm\b)[^\n]*\bauth\s*[:=]\s*(?:false|disabled|off|0)\b|\bauth\s*[:=]\s*(?:false|disabled|off|0)\b[^\n]*(?:\bbluetooth\b|\bbt\b|\bble\b|\bgatt\b|\bbond\b|\bpair\b|\bl2cap\b|\brfcomm\b)/i
 const L2CAP_UNAUTH = /l2cap.*(?!auth)/i
 const SSP_WITHOUT_MITM = /ssp.*(?:just|none)|secureSimplePairing.*(?:just|none)/i
-const BLE_BROADCAST = /advertise|broadcast.*(?:open|public|all)/i
+// Require code-like syntax (method call, assignment, config) — not natural language.
+// 'advertise' in a comment about UI advertising is annotation, not BLE code.
+// The bell needs code syntax to tell annotation from implementation (castle 0064).
+const BLE_BROADCAST = /(?:ble|bluetooth|bt|gatt)\.[^\n]*advertise|startAdvertising\s*\(|advertiseData\s*\(|advertise\s*[:=]\s*(?:true|on|yes|1)|bluetooth.*advertise\s*\(	/i
 const RFCOMM_OPEN = /rfcomm.*(?!auth|pin|bond)/i
 
 export const bluetoothProtocolFlaws = {

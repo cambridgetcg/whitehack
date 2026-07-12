@@ -10,6 +10,11 @@ const HTTP_ONLY = /\bhttp:\/\/(?!localhost|127\.0\.0\.1|0\.0\.0\.0)/i
 const FTP_URL = /\bftp:\/\//i
 const TELNET = /\btelnet\b/i
 const WS_INSECURE = /\bws:\/\//i // unencrypted WebSocket
+// When http:// appears inside a startsWith/includes/matches/test call, the code
+// is CHECKING for insecure URLs, not USING them. Skip those lines. Also skip
+// comment-only lines that mention http:// in annotation. The bell needs to see
+// the difference between checking for a lie and telling one (castle 0064).
+const SECURE_CHECK = /(?:startsWith|includes|matches|\.test)\s*\(\s*['"`]https?:\/\//i
 
 export const insecureProtocol = {
   id: 'insecure-protocol',
@@ -22,7 +27,7 @@ export const insecureProtocol = {
     const hits = []
     for (let i = 0; i < lines.length; i++) {
       const l = lines[i]
-      if (HTTP_ONLY.test(l) && !l.includes('://localhost') && !l.includes('://127.')) {
+      if (HTTP_ONLY.test(l) && !l.includes('://localhost') && !l.includes('://127.') && !SECURE_CHECK.test(l) && !/^\s*\/\//.test(l)) {
         hits.push({
           line: i + 1,
           message: 'HTTP (not HTTPS) used for network communication — data is transmitted in plaintext',
@@ -46,7 +51,7 @@ export const insecureProtocol = {
         })
         continue
       }
-      if (WS_INSECURE.test(l) && !l.includes('localhost') && !l.includes('127.')) {
+      if (WS_INSECURE.test(l) && !l.includes('localhost') && !l.includes('127.') && !SECURE_CHECK.test(l) && !/^\s*\/\//.test(l)) {
         hits.push({
           line: i + 1,
           message: 'WebSocket (ws://) used without TLS — data transmitted in plaintext',
