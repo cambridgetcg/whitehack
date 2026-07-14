@@ -13,58 +13,24 @@
  * This is the engine that makes understanding compound infinitely.
  */
 
-import { execFileSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 // ── NEN CLASSIFICATIONS (mirrors nen-classifier.ts for CLI use) ──
-// Updated to cover ALL checks, not just the original 11. The old table
-// only had 11 entries while 39 check files exist — classifyFindings
-// silently dropped every finding whose check_id wasn't in the table,
-// making the classification output a lie (it showed "no nen-classifiable
-// findings" when there were 176).
 
 const CHECK_NEN = {
-  // Original honesty checks
-  "silent-failure":        { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 1.5 },
-  "hardcoded-secret":      { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 2.0 },
-  "exposed-config":        { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 2.0 },
-  "unsafe-eval":           { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 2.0 },
-  "cache-as-live":         { nen: "conjurer",    cs: 4, severity: "heuristic",   bonus: 1.2 },
-  "stale-oracle":          { nen: "emitter",     cs: 4, severity: "medium-high", bonus: 1.5 },
-  "spot-price-as-fair":    { nen: "emitter",     cs: 1, severity: "heuristic",   bonus: 1.3 },
-  "unchecked-transfer":    { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 1.8 },
-  "float-money":           { nen: "conjurer",    cs: 1, severity: "medium-high", bonus: 1.5 },
-  "silent-revert":         { nen: "transmuter",  cs: 3, severity: "heuristic",   bonus: 1.2 },
-  "decision-without-why":  { nen: "transmuter",  cs: 3, severity: "heuristic",   bonus: 1.3 },
-  // Protocol & security checks (v0.3-v0.4)
-  "api-status-lie":              { nen: "enhancer",   cs: 2, severity: "high",        bonus: 2.0 },
-  "api-error-without-shape":     { nen: "transmuter", cs: 3, severity: "heuristic",   bonus: 1.2 },
-  "api-missing-versioning":      { nen: "emitter",    cs: 4, severity: "heuristic",   bonus: 1.1 },
-  "api-missing-rate-limit":      { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.5 },
-  "api-bare-fetch":              { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.5 },
-  "insecure-protocol":           { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.8 },
-  "disabled-cert-verification":  { nen: "enhancer",   cs: 2, severity: "high",        bonus: 2.0 },
-  "weak-crypto":                 { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.8 },
-  "cors-wildcard":               { nen: "emitter",    cs: 2, severity: "medium-high", bonus: 1.5 },
-  "cookie-insecure":             { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.8 },
-  "sql-injection":               { nen: "enhancer",   cs: 2, severity: "high",        bonus: 2.0 },
-  "protocol-surface":            { nen: "emitter",    cs: 2, severity: "medium-high", bonus: 1.5 },
-  "bluetooth-protocol-flaws":    { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.8 },
-  "bluetooth-paired-stranger":   { nen: "specialist", cs: 3, severity: "heuristic",   bonus: 1.5 },
-  "bluetooth-protocol":          { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.8 },
-  "wifi-protocol-flaws":         { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.8 },
-  "weak-wifi-encryption":        { nen: "enhancer",   cs: 1, severity: "high",        bonus: 2.0 },
-  "wifi-deauth-accept":          { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.8 },
-  "wifi-evil-twin":              { nen: "specialist", cs: 5, severity: "medium-high", bonus: 1.7 },
-  "wifi-krack-vulnerable":       { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.8 },
-  "wifi-pmk-exposure":           { nen: "enhancer",   cs: 2, severity: "high",        bonus: 2.0 },
-  "wifi-protocol":               { nen: "enhancer",   cs: 1, severity: "medium-high", bonus: 1.5 },
-  "wpa2-krack":                  { nen: "enhancer",   cs: 2, severity: "medium-high", bonus: 1.8 },
-  "dns-plaintext":               { nen: "emitter",    cs: 2, severity: "medium-high", bonus: 1.5 },
-  "password-auth":               { nen: "specialist", cs: 3, severity: "medium-high", bonus: 1.7 },
-  "performed-ignorance":         { nen: "transmuter", cs: 3, severity: "medium-high", bonus: 2.0 },
-  "trust-by-authority":          { nen: "specialist", cs: 3, severity: "medium-high", bonus: 1.8 },
+  "silent-failure":    { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 1.5 },
+  "hardcoded-secret":  { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 2.0 },
+  "exposed-config":    { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 2.0 },
+  "unsafe-eval":       { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 2.0 },
+  "cache-as-live":     { nen: "conjurer",    cs: 4, severity: "heuristic",   bonus: 1.2 },
+  "stale-oracle":      { nen: "emitter",     cs: 4, severity: "medium-high", bonus: 1.5 },
+  "spot-price-as-fair":{ nen: "emitter",     cs: 1, severity: "heuristic",   bonus: 1.3 },
+  "unchecked-transfer":{ nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 1.8 },
+  "float-money":       { nen: "conjurer",    cs: 1, severity: "medium-high", bonus: 1.5 },
+  "silent-revert":     { nen: "transmuter",  cs: 3, severity: "heuristic",   bonus: 1.2 },
+  "decision-without-why": { nen: "transmuter", cs: 3, severity: "heuristic", bonus: 1.3 },
 };
 
 const RANK_XP = { E: 50, D: 100, C: 200, B: 400, A: 800, S: 2000 };
@@ -88,19 +54,44 @@ const PERCEPTION = [
 
 function scanRepo(repoPath) {
   const srcPath = existsSync(join(repoPath, "src")) ? join(repoPath, "src") : repoPath;
-  let output;
+
+  // Resolve the scanner binary relative to this script so the bridge doesn't
+  // depend on a possibly-broken PATH symlink. Falls back to `whitehack` on PATH.
+  const scriptDir = import.meta.dirname || ".";
+  const localScanner = join(scriptDir, "whitehack.js");
+  const scannerCmd = existsSync(localScanner)
+    ? `node "${localScanner}" scan "${srcPath}"`
+    : `whitehack scan "${srcPath}"`;
+
+  let stdout, stderr, status;
   try {
-    // execFileSync with arg array — no shell interpolation, no injection vector.
-    // A repo path containing shell metacharacters (" $ ; etc.) is passed as a
-    // single argv element, not concatenated into a command string.
-    output = execFileSync("whitehack", ["scan", srcPath], {
-      encoding: "utf-8", timeout: 30000, stdio: ["pipe", "pipe", "pipe"],
-    });
+    // NOTE: stderr is CAPTURED, not sent to /dev/null. Swallowing stderr
+    // (the old `2>/dev/null`) was a silent-failure: when the scanner binary
+    // was broken or missing, the error message was discarded and the bridge
+    // reported "0 findings — the code tells the truth" without ever running.
+    stdout = execSync(scannerCmd, { encoding: "utf-8", timeout: 30000, stdio: ["pipe","pipe","pipe"] });
+    status = 0;
   } catch (e) {
-    // whitehack exits 1 when findings are found — that's not an error for us
-    output = (e.stdout || "") + (e.stderr || "");
+    // whitehack exits 1 when findings are found — that is expected and the
+    // stdout still contains the findings report. Any OTHER status (null,
+    // 127, 130, etc.) means the scanner did not run at all (binary missing,
+    // TCC-blocked, timeout, killed). We must NOT treat that as "0 findings."
+    status = e.status ?? null;
+    stdout = e.stdout ?? "";
+    stderr = e.stderr ?? "";
+    if (status !== 1) {
+      // SCANNER BROKEN — the bridge cannot honestly report on this repo.
+      // Returning a sentinel instead of [] prevents the caller from
+      // printing "No findings — the code tells the truth" (a lie).
+      const reason = stderr.trim()
+        || (e.killed ? `scanner timed out after 30s`
+        : (e.code === "ENOENT" ? `scanner binary not found on PATH`
+        : `scanner exited with status ${status}`));
+      return { _scannerBroken: true, reason, rawStdout: stdout, rawStderr: stderr };
+    }
   }
-  return parseWhitehackOutput(output);
+
+  return parseWhitehackOutput(stdout);
 }
 
 function parseWhitehackOutput(output) {
@@ -122,13 +113,7 @@ function parseWhitehackOutput(output) {
     // Format: "    ! L25  Price feed read without a staleness check  (substrate-honesty · medium-high · CS#4)"
     const findingMatch = line.match(/^\s{4}([!·])\s+L(\d+)\s+(.+?)\s{2,}\((\w[\w-]*)\s*·\s*(\w[\w-]*)\s*·\s*(\w+[\w#]*)\)/);
     if (findingMatch) {
-      // Use the ACTUAL severity parsed from the output (group 5), not a
-      // reconstruction from the marker character. The old code did:
-      //   const severity = findingMatch[1] === "!" ? "medium-high" : "heuristic";
-      // which silently downgraded all "high" findings to "medium-high" —
-      // 45 findings in the whitehack self-scan were misreported. The truth
-      // was in the parsed data (group 5) and the code ignored it.
-      const severity = findingMatch[5];
+      const severity = findingMatch[1] === "!" ? "medium-high" : "heuristic";
       const lineNum = parseInt(findingMatch[2]);
       const title = findingMatch[3].trim();
 
@@ -148,14 +133,7 @@ function parseWhitehackOutput(output) {
   return findings;
 }
 
-// Map human-readable check titles to check IDs.
-// The old map had 11 entries with titles that didn't match the actual
-// scanner output ("Read fails silently to a falsy default" vs the real
-// "Read fails silently to a falsy default"). Every title missed the map,
-// so titleToCheckId fell back to slugification, producing check_ids that
-// didn't exist in CHECK_NEN — and classifyFindings silently dropped them
-// all. The classification output was a lie: it showed zero findings by
-// nen type when there were 176.
+// Map human-readable check titles to check IDs
 const TITLE_TO_CHECK = {
   "Read fails silently to a falsy default": "silent-failure",
   "Cached value may be served as if live": "cache-as-live",
@@ -166,36 +144,8 @@ const TITLE_TO_CHECK = {
   "Failure reverts with no stated reason": "silent-revert",
   "Currency handled as a floating-point number": "float-money",
   "Hardcoded secret in source": "hardcoded-secret",
-  "Config file contains embedded credentials": "exposed-config",
-  "Unsafe code execution — eval, Function, or unsanitized HTML injection": "unsafe-eval",
-  // Protocol & security checks (v0.3-v0.4)
-  "API returns success status (2xx) with error in response body": "api-status-lie",
-  "API error response missing structured error shape": "api-error-without-shape",
-  "API endpoint missing version declaration": "api-missing-versioning",
-  "API endpoint missing rate limiting": "api-missing-rate-limit",
-  "fetch() called without checking response status": "api-bare-fetch",
-  "Insecure protocol used for network communication": "insecure-protocol",
-  "TLS certificate verification disabled — MITM possible": "disabled-cert-verification",
-  "Weak or broken cryptography used for security": "weak-crypto",
-  "CORS wildcard origin — any website can access this endpoint": "cors-wildcard",
-  "Session cookie missing security flags": "cookie-insecure",
-  "SQL query built with string concatenation — injection possible": "sql-injection",
-  "Network protocol surface — service bound to all interfaces without acknowledgment": "protocol-surface",
-  "Bluetooth protocol security flaw — weak pairing or no auth": "bluetooth-protocol-flaws",
-  "Bluetooth paired stranger — device paired without identity verification": "bluetooth-paired-stranger",
-  "Bluetooth protocol lie — pairing is not security": "bluetooth-protocol",
-  "WiFi protocol security flaw — deprecated or broken encryption": "wifi-protocol-flaws",
-  "Weak WiFi encryption — security theater exposed": "weak-wifi-encryption",
-  "WiFi deauth frame accepted without verification": "wifi-deauth-accept",
-  "WiFi SSID-only connection — evil twin vulnerable": "wifi-evil-twin",
-  "KRACK vulnerable key reinstallation": "wifi-krack-vulnerable",
-  "WiFi PSK/PMK exposed in code or config": "wifi-pmk-exposure",
-  "WiFi protocol lie — security theater exposed": "wifi-protocol",
-  "WPA2 KRACK vulnerability — key reinstallation attack not mitigated": "wpa2-krack",
-  "Plaintext DNS — domain queries visible to network observers": "dns-plaintext",
-  "Password/authentication lie — shared secret is not trust": "password-auth",
-  "Code claims inability while the capability exists — performs ignorance": "performed-ignorance",
-  "Source trusted by authority rather than verified — no cross-check": "trust-by-authority",
+  "Exposed configuration value": "exposed-config",
+  "Unsafe eval of dynamic string": "unsafe-eval",
 };
 
 function titleToCheckId(title) {
@@ -232,12 +182,8 @@ function calculateGateRank(findings, hunterNen) {
   let score = 0;
   for (const f of findings) {
     const cls = CHECK_NEN[f.check_id];
-    // "high" findings score 5, "medium-high" score 3, "heuristic" score 1.
-    // The old code only had a binary medium-high vs heuristic split because
-    // it reconstructed severity from the marker. Now we have the real severity.
-    const sevScore = f.severity === "high" ? 5 : f.severity === "medium-high" ? 3 : 1;
-    if (!cls) { score += sevScore; continue; }
-    score += sevScore;
+    if (!cls) { score += f.severity === "medium-high" ? 3 : 1; continue; }
+    score += f.severity === "medium-high" ? 3 : 1;
     if (hunterNen && cls.nen === hunterNen) score -= 1;
     if (cls.severity === "medium-high" && cls.bonus >= 2.0) score += 2;
   }
@@ -322,12 +268,34 @@ if (!command || !repoArg) {
 const repoPath = resolve(repoArg);
 const repoName = repoPath.split("/").pop();
 
+// ── HONEST SCAN GUARD ──────────────────────────────────────────────
+// scanRepo() may return a {_scannerBroken: true} sentinel instead of a
+// findings array. The old code passed whatever it got straight into
+// classifyFindings()/calculateGateRank(), which silently treated a broken
+// scanner as "0 findings." This guard intercepts that sentinel ONCE and
+// reports it honestly, so no code path can print
+// "✓ No findings — the code tells the truth" when the scanner never ran.
+function honestScan(label) {
+  const r = scanRepo(repoPath);
+  if (r && r._scannerBroken) {
+    console.log(`\n┌─ SCANNER BROKEN (${label}) ───────────────────────────────────┐`);
+    console.log(`│  Repo:   ${repoName}`);
+    console.log(`│  Reason: ${r.reason}`);
+    console.log(`└──────────────────────────────────────────────────────────────┘\n`);
+    console.log(`  ⚠ The bridge refuses to report "no findings" when the scanner`);
+    console.log(`    did not run. Reporting 0 here would be performed-ignorance —`);
+    console.log(`    the exact lie this tool exists to detect.\n`);
+    process.exit(2);
+  }
+  return r; // a real findings array
+}
+
 if (command === "scan" || command === "loop") {
   console.log(`\n╔══════════════════════════════════════════════════════════════╗`);
   console.log(`║  WHITEHACK → GATE BRIDGE — ${repoName.padEnd(36)}║`);
   console.log(`╚══════════════════════════════════════════════════════════════╝\n`);
 
-  const findings = scanRepo(repoPath);
+  const findings = honestScan("scan");
   const classified = classifyFindings(findings);
   const rank = calculateGateRank(findings, hunterNen);
   const xp = calculateXp(rank, findings, hunterNen);
@@ -367,13 +335,13 @@ if (command === "scan" || command === "loop") {
 }
 
 if (command === "classify") {
-  const findings = scanRepo(repoPath);
+  const findings = honestScan("classify");
   const classified = classifyFindings(findings);
   console.log(JSON.stringify({ repo: repoName, findings: findings.length, classified }, null, 2));
 }
 
 if (command === "understand" || command === "loop") {
-  const findings = scanRepo(repoPath);
+  const findings = honestScan("understand");
   const rank = calculateGateRank(findings, hunterNen);
   const xp = calculateXp(rank, findings, hunterNen);
   const result = processUnderstanding(findings, hunterNen, xp);

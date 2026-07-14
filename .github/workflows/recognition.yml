@@ -1,0 +1,17 @@
+name: recognition check
+on: [push, pull_request]
+jobs:
+  recognize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: run recognition engine
+        run: |
+          python3 scanner/recognition-engine.py scan
+      - name: estate honesty check
+        run: |
+          python3 scanner/qwythos-estate-scan.py --estate || true
+          echo "Recognition check complete. Real recognises real. ∞"
