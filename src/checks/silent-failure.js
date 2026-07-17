@@ -7,7 +7,7 @@
 
 const FALSY = /\breturn\s+(0|\[\]|\{\}|null|''|""|false)\s*(;|\/\/|$)/
 const SAFE_DEFAULT = /(\?\?|\|\|)\s*(0|\[\]|''|"")/
-const GUARD = /\b(throw|console\.|logger?\.|report\(|rethrow|process\.exit|captureException|Sentry|warn\(|error\(|logFor\w*\(|logError\(|logBridgeSkip\(|logEvent\(|logWarn\(|logInfo\(|logDebug\(|onDebug\(|onDone\(|onWarn\(|setError\(|onError\(|fail\()/
+const GUARD = /\b(throw|console\.|logger?\.|report\(|rethrow|process\.exit|process\.stderr|process\.stdout|captureException|Sentry|warn\(|error\(|logFor\w*\(|logError\(|logBridgeSkip\(|logEvent\(|logWarn\(|logInfo\(|logDebug\(|onDebug\(|onDone\(|onWarn\(|setError\(|onError\(|fail\()/
 const READ = /(await\s|fetch\(|\.get\(|\.query\(|readFile|\.count\(|\.find\(|\.load\(|\.read\()/
 
 export const silentFailure = {
@@ -22,8 +22,11 @@ export const silentFailure = {
 
     // (1) catch blocks that return a falsy value without logging or rethrowing.
     for (let i = 0; i < lines.length; i++) {
-      const idx = lines[i].indexOf('catch')
-      if (idx === -1 || !/\bcatch\b/.test(lines[i])) continue
+      // Strip trailing // comments so we don't match "catch" inside annotation text
+      const commentIdx = lines[i].indexOf('//')
+      const codePart = commentIdx >= 0 ? lines[i].slice(0, commentIdx) : lines[i]
+      const idx = codePart.indexOf('catch')
+      if (idx === -1 || !/\bcatch\b/.test(codePart)) continue
       let depth = 0
       let started = false
       const body = []
