@@ -1,5 +1,5 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { join, extname, relative } from 'node:path'
+import { basename, join, extname, relative } from 'node:path'
 import { silentFailure } from './checks/silent-failure.js'
 import { cacheAsLive } from './checks/cache-as-live.js'
 import { decisionWithoutWhy } from './checks/decision-without-why.js'
@@ -18,20 +18,25 @@ import { apiMissingVersioning } from './checks/api-missing-versioning.js'
 import { apiErrorWithoutShape } from './checks/api-error-without-shape.js'
 import { apiMissingRateLimit } from './checks/api-missing-rate-limit.js'
 import { apiBareFetch } from './checks/api-bare-fetch.js'
+import extraChecks from './checks/extra-checks.js'
+import { SENSITIVE_SNIPPET } from './redaction.js'
 
-// Protocol & security checks — auto-loaded from extra-checks.js
+function registerCheck(check) {
+  const detect = check.redactSnippet
+    ? (...args) => check.detect(...args).map((hit) => ({ ...hit, snippet: SENSITIVE_SNIPPET }))
+    : (...args) => check.detect(...args)
+  return Object.freeze({ ...check, detect })
+}
+
+// Protocol & security checks — registered in extra-checks.js
 // This includes: wifi (protocol flaws, evil twin, KRACK, PMK exposure, deauth,
 // weak encryption, WPA2-krack), bluetooth (protocol flaws, paired stranger),
 // DNS plaintext, password auth, insecure protocol, cert verification, weak
-// crypto, CORS, cookies, SQL injection, protocol surface.
-let _extra = []
-try { _extra = (await import('./checks/extra-checks.js')).default } catch (e) {
-  // If extra-checks fails to load, we still run the base checks
-  // This is honest — we don't pretend the protocol checks ran if they didn't
-  console.error('whitehack: protocol checks failed to load:', e.message)
-}
-
-const CHECKS = [
+// crypto, crypto-awareness (nonce uniqueness, signature fail-open, signed
+// webhook bytes/replay), CORS, cookies, SQL injection, protocol surface.
+// This import is deliberately fail-closed: a broken rule module must make the
+// scanner unavailable, never silently downgrade a full scan to the base pack.
+export const CHECKS = Object.freeze([
   silentFailure,
   cacheAsLive,
   decisionWithoutWhy,
@@ -50,8 +55,8 @@ const CHECKS = [
   apiErrorWithoutShape,
   apiMissingRateLimit,
   apiBareFetch,
-  ..._extra,
-]
+  ...extraChecks,
+].map(registerCheck))
 
 const LANG_BY_EXT = {
   '.js': 'js', '.jsx': 'js', '.ts': 'js', '.tsx': 'js',
@@ -68,11 +73,7 @@ async function* walk(dir) {
   let entries
   try { entries = await readdir(dir, { withFileTypes: true }) }
   catch (e) {
-    // Report the failure instead of silently returning — a directory we
-    // can't read is a scan gap, not an empty directory. The old code did
-    // `catch { return }` which pretended the directory didn't exist.
-    console.error(`whitehack: cannot read directory ${dir}: ${e.message}`)
-    return
+    throw new Error(`cannot read directory ${dir}: ${e.message}`)
   }
   for (const e of entries) {
     if (e.isDirectory() && e.name.startsWith('.')) continue
@@ -85,12 +86,13 @@ async function* walk(dir) {
 
 export async function scan(root) {
   const findings = []
-  const isFile = extname(root) && !await stat(root).then(s => s.isDirectory()).catch(() => {
-    // If we can't stat the root, it probably doesn't exist — report it
-    // instead of silently treating it as a directory walk that finds nothing.
-    console.error(`whitehack: cannot stat ${root}`)
-    return false
-  })
+  let rootInfo
+  try { rootInfo = await stat(root) }
+  catch (e) { throw new Error(`cannot access scan root ${root}: ${e.message}`) }
+  if (!rootInfo.isFile() && !rootInfo.isDirectory()) {
+    throw new Error(`scan root is not a regular file or directory: ${root}`)
+  }
+  const isFile = rootInfo.isFile()
   const files = isFile ? [root] : []
   if (!isFile) { for await (const f of walk(root)) files.push(f) }
 
@@ -98,25 +100,37 @@ export async function scan(root) {
     let content
     try { content = await readFile(file, 'utf8') }
     catch (e) {
-      // Report the failure instead of silently skipping — a file we can't
-      // read is a scan gap, not an absence of findings. The old code did
-      // `catch { continue }` which pretended the file had no issues.
-      console.error(`whitehack: cannot read file ${file}: ${e.message}`)
-      continue
+      throw new Error(`cannot read file ${file}: ${e.message}`)
     }
-    const lang = LANG_BY_EXT[extname(file)]
+    const lang = LANG_BY_EXT[extname(file)] || (basename(file) === '.env' ? 'env' : undefined)
     const lines = content.split('\n')
+    const detected = []
     for (const check of CHECKS) {
       if (check.langs && check.langs.length > 0 && !check.langs.includes(lang)) continue
-      for (const hit of check.detect(content, lines)) {
-        findings.push({
-          file: relative(root, file) || file,
-          line: hit.line, check: check.id, title: check.title,
-          confidence: hit.confidence || check.confidence,
-          doctrine: check.doctrine, principle: check.principle,
-          message: hit.message, snippet: hit.snippet,
-        })
+      for (const hit of check.detect(content, lines, { file, lang })) {
+        detected.push({ check, hit })
       }
+    }
+
+    // A second check can match the same credential-bearing line. Stage all
+    // hits first so one sensitive check redacts every overlapping snippet,
+    // independent of check registration order. A line-0 sensitive finding is
+    // file-level and therefore redacts all snippets from that file.
+    const sensitiveLines = new Set(
+      detected.filter(({ check }) => check.redactSnippet).map(({ hit }) => hit.line),
+    )
+    const redactFile = sensitiveLines.has(0)
+    for (const { check, hit } of detected) {
+      findings.push({
+        file: relative(root, file) || file,
+        line: hit.line, check: check.id, title: check.title,
+        confidence: hit.confidence || check.confidence,
+        doctrine: check.doctrine, principle: check.principle,
+        message: hit.message,
+        snippet: check.redactSnippet || redactFile || sensitiveLines.has(hit.line)
+          ? SENSITIVE_SNIPPET
+          : hit.snippet,
+      })
     }
   }
   return findings

@@ -7,6 +7,8 @@
 // The code says "you're logged in securely" while the session token
 // can be stolen through three independent vectors.
 
+import { SENSITIVE_SNIPPET } from '../redaction.js'
+
 const SET_COOKIE = /Set-Cookie|res\.cookie|cookies\(\)\.set/i
 const SECURE_FLAG = /\bSecure\b/i
 const HTTPONLY_FLAG = /\bHttpOnly\b/i
@@ -19,6 +21,7 @@ export const cookieInsecure = {
   doctrine: 'substrate-honesty',
   principle: 2,
   langs: ['js'],
+  redactSnippet: true,
   detect(content, lines) {
     const hits = []
     for (let i = 0; i < lines.length; i++) {
@@ -37,7 +40,7 @@ export const cookieInsecure = {
         hits.push({
           line: i + 1,
           message: `session cookie set with ${issues.join(', ')}`,
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
     }

@@ -14,6 +14,8 @@
 // with LEA, GATT, AACP support. But the code on top of it can still lie
 // about security. We check the code, not the hardware.
 
+import { SENSITIVE_SNIPPET } from '../redaction.js'
+
 const BT_DISCOVERABLE_ON = /discoverable\s*[:=]\s*(true|on|yes|1)/i
 const BT_PIN_HARDCODED = /pin\s*[:=]\s*['"][0-9]{4}['"]/i
 const JUST_WORKS = /just.?works|NoInputNoOutput|no.?mitm/i
@@ -36,6 +38,7 @@ export const bluetoothProtocolFlaws = {
   doctrine: 'substrate-honesty',
   principle: 2,
   langs: ['js'],
+  redactSnippet: true,
   detect(content, lines) {
     const hits = []
 
@@ -47,7 +50,7 @@ export const bluetoothProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'Bluetooth discoverable mode enabled — device broadcasts its MAC address to all nearby scanners permanently',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -57,7 +60,7 @@ export const bluetoothProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'Bluetooth PIN hardcoded — 4-digit PIN is brute-forceable in seconds. Use Secure Simple Pairing with passkey or numeric comparison',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -67,7 +70,7 @@ export const bluetoothProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'BLE "Just Works" pairing used — no MITM protection, any attacker in range can intercept pairing. Use Passkey Entry or Numeric Comparison',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -77,7 +80,7 @@ export const bluetoothProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'Bluetooth authentication disabled — any device in range can connect without bonding or pairing',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -87,7 +90,7 @@ export const bluetoothProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'Secure Simple Pairing without MITM protection — vulnerable to active man-in-the-middle during pairing',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -97,7 +100,7 @@ export const bluetoothProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'BLE advertising in open/public mode — device broadcasts to all nearby scanners without filtering',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
     }

@@ -13,16 +13,17 @@
  * This is the engine that makes understanding compound infinitely.
  */
 
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 // ── NEN CLASSIFICATIONS (mirrors nen-classifier.ts for CLI use) ──
 
 const CHECK_NEN = {
   "silent-failure":    { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 1.5 },
-  "hardcoded-secret":  { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 2.0 },
-  "exposed-config":    { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 2.0 },
+  "hardcoded-secret":  { nen: "enhancer",    cs: 2, severity: "high",        bonus: 2.0 },
+  "exposed-config":    { nen: "enhancer",    cs: 2, severity: "high",        bonus: 2.0 },
   "unsafe-eval":       { nen: "enhancer",    cs: 2, severity: "medium-high", bonus: 2.0 },
   "cache-as-live":     { nen: "conjurer",    cs: 4, severity: "heuristic",   bonus: 1.2 },
   "stale-oracle":      { nen: "emitter",     cs: 4, severity: "medium-high", bonus: 1.5 },
@@ -31,6 +32,10 @@ const CHECK_NEN = {
   "float-money":       { nen: "conjurer",    cs: 1, severity: "medium-high", bonus: 1.5 },
   "silent-revert":     { nen: "transmuter",  cs: 3, severity: "heuristic",   bonus: 1.2 },
   "decision-without-why": { nen: "transmuter", cs: 3, severity: "heuristic", bonus: 1.3 },
+  "static-aead-nonce": { nen: "enhancer",    cs: 1, severity: "heuristic",   bonus: 1.3 },
+  "signature-fail-open": { nen: "enhancer",  cs: 2, severity: "medium-high", bonus: 2.0 },
+  "webhook-reencoded-body": { nen: "transmuter", cs: 1, severity: "heuristic", bonus: 1.2 },
+  "signed-webhook-without-replay-guard": { nen: "emitter", cs: 4, severity: "heuristic", bonus: 1.3 },
 };
 
 const RANK_XP = { E: 50, D: 100, C: 200, B: 400, A: 800, S: 2000 };
@@ -52,16 +57,17 @@ const PERCEPTION = [
 
 // ── SCAN ──
 
-function scanRepo(repoPath) {
+export function scanRepo(repoPath) {
   const srcPath = existsSync(join(repoPath, "src")) ? join(repoPath, "src") : repoPath;
 
   // Resolve the scanner binary relative to this script so the bridge doesn't
   // depend on a possibly-broken PATH symlink. Falls back to `whitehack` on PATH.
   const scriptDir = import.meta.dirname || ".";
   const localScanner = join(scriptDir, "whitehack.js");
-  const scannerCmd = existsSync(localScanner)
-    ? `node "${localScanner}" scan "${srcPath}"`
-    : `whitehack scan "${srcPath}"`;
+  const scanner = existsSync(localScanner) ? process.execPath : "whitehack";
+  const scannerArgs = existsSync(localScanner)
+    ? [localScanner, "scan", srcPath]
+    : ["scan", srcPath];
 
   let stdout, stderr, status;
   try {
@@ -69,7 +75,8 @@ function scanRepo(repoPath) {
     // (the old `2>/dev/null`) was a silent-failure: when the scanner binary
     // was broken or missing, the error message was discarded and the bridge
     // reported "0 findings — the code tells the truth" without ever running.
-    stdout = execSync(scannerCmd, { encoding: "utf-8", timeout: 30000, stdio: ["pipe","pipe","pipe"] });
+    // Repository names are passed as argv data, never interpreted by a shell.
+    stdout = execFileSync(scanner, scannerArgs, { encoding: "utf-8", timeout: 30000, stdio: ["pipe","pipe","pipe"] });
     status = 0;
   } catch (e) {
     // whitehack exits 1 when findings are found — that is expected and the
@@ -94,7 +101,7 @@ function scanRepo(repoPath) {
   return parseWhitehackOutput(stdout);
 }
 
-function parseWhitehackOutput(output) {
+export function parseWhitehackOutput(output) {
   const findings = [];
   const lines = output.split("\n");
   let currentFile = null;
@@ -113,7 +120,7 @@ function parseWhitehackOutput(output) {
     // Format: "    ! L25  Price feed read without a staleness check  (substrate-honesty · medium-high · CS#4)"
     const findingMatch = line.match(/^\s{4}([!·])\s+L(\d+)\s+(.+?)\s{2,}\((\w[\w-]*)\s*·\s*(\w[\w-]*)\s*·\s*(\w+[\w#]*)\)/);
     if (findingMatch) {
-      const severity = findingMatch[1] === "!" ? "medium-high" : "heuristic";
+      const severity = findingMatch[5];
       const lineNum = parseInt(findingMatch[2]);
       const title = findingMatch[3].trim();
 
@@ -144,8 +151,12 @@ const TITLE_TO_CHECK = {
   "Failure reverts with no stated reason": "silent-revert",
   "Currency handled as a floating-point number": "float-money",
   "Hardcoded secret in source": "hardcoded-secret",
-  "Exposed configuration value": "exposed-config",
+  "Config file contains embedded credentials": "exposed-config",
   "Unsafe eval of dynamic string": "unsafe-eval",
+  "AEAD encryption appears to reuse a static nonce or IV": "static-aead-nonce",
+  "Signature verification can fail open": "signature-fail-open",
+  "Webhook verifier appears to receive re-encoded JSON": "webhook-reencoded-body",
+  "Signed webhook has no visible replay or duplicate guard": "signed-webhook-without-replay-guard",
 };
 
 function titleToCheckId(title) {
@@ -178,14 +189,20 @@ function classifyFindings(findings) {
 
 // ── GATE RANK ──
 
-function calculateGateRank(findings, hunterNen) {
+function severityWeight(severity) {
+  if (severity === "high") return 4;
+  if (severity === "medium-high" || severity === "medium") return 3;
+  return 1;
+}
+
+export function calculateGateRank(findings, hunterNen) {
   let score = 0;
   for (const f of findings) {
     const cls = CHECK_NEN[f.check_id];
-    if (!cls) { score += f.severity === "medium-high" ? 3 : 1; continue; }
-    score += f.severity === "medium-high" ? 3 : 1;
+    if (!cls) { score += severityWeight(f.severity); continue; }
+    score += severityWeight(f.severity);
     if (hunterNen && cls.nen === hunterNen) score -= 1;
-    if (cls.severity === "medium-high" && cls.bonus >= 2.0) score += 2;
+    if (f.severity !== "heuristic" && cls.bonus >= 2.0) score += 2;
   }
   if (score >= 30) return "S";
   if (score >= 20) return "A";
@@ -255,6 +272,8 @@ function getPerception(level) {
 
 // ── MAIN ──
 
+const invokedPath = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : null;
+if (invokedPath === import.meta.url) {
 const command = process.argv[2];
 const repoArg = process.argv[3];
 const hunterNen = process.argv[4] || "enhancer";
@@ -274,7 +293,7 @@ const repoName = repoPath.split("/").pop();
 // classifyFindings()/calculateGateRank(), which silently treated a broken
 // scanner as "0 findings." This guard intercepts that sentinel ONCE and
 // reports it honestly, so no code path can print
-// "✓ No findings — the code tells the truth" when the scanner never ran.
+// a false claim of proof when the scanner never ran.
 function honestScan(label) {
   const r = scanRepo(repoPath);
   if (r && r._scannerBroken) {
@@ -330,7 +349,7 @@ if (command === "scan" || command === "loop") {
     }
     console.log();
   } else {
-    console.log(`  ✓ No findings — the code tells the truth.\n`);
+    console.log(`  ✓ No registered anti-patterns matched; this does not prove the code tells the truth.\n`);
   }
 }
 
@@ -385,4 +404,5 @@ if (command === "loop") {
   console.log(`║    ↑                                                    ↓   ║`);
   console.log(`║    └────────── unlimited understanding ←──────────────────┘   ║`);
   console.log(`╚══════════════════════════════════════════════════════════════╝\n`);
+}
 }

@@ -11,6 +11,8 @@
 // Passwords = single-factor, shared, replayable, stealable.
 // The difference is the difference between trust and theater.
 
+import { SENSITIVE_SNIPPET } from '../redaction.js'
+
 const HARDCODED_PASSWORD=/(?:password|passwd|pwd)\s*[:=]\s*['"][^'"]{4,}['"]/i
 const PASSWORD_IN_URL=/(?:password|passwd|pwd|token|secret|api.?key)=[^&\s"']{8,}/i
 const MD5_PASSWORD=/(?:md5|MD5)\s*\(\s*(?:password|pwd|passwd)/i
@@ -28,6 +30,7 @@ export const passwordAuth = {
   doctrine: 'substrate-honesty',
   principle: 2,
   langs: ['js'],
+  redactSnippet: true,
   detect(content, lines) {
     const hits = []
     for (let i = 0; i < lines.length; i++) {
@@ -41,7 +44,7 @@ export const passwordAuth = {
         hits.push({
           line: i + 1,
           message: 'Hardcoded password — a shared secret in source code is not a secret. Anyone with repo access is "authenticated."',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -50,7 +53,7 @@ export const passwordAuth = {
         hits.push({
           line: i + 1,
           message: 'Password in URL — credentials in query strings are logged by proxies, browsers, and referer headers. The URL is not a secure channel.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -59,7 +62,7 @@ export const passwordAuth = {
         hits.push({
           line: i + 1,
           message: 'MD5 for password hashing — broken since 2004. Collisions found in seconds. Use bcrypt, scrypt, or argon2.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -68,7 +71,7 @@ export const passwordAuth = {
         hits.push({
           line: i + 1,
           message: 'SHA-1 for password hashing — broken since 2017. Shattered attack. Use bcrypt, scrypt, or argon2.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -77,7 +80,7 @@ export const passwordAuth = {
         hits.push({
           line: i + 1,
           message: 'JWT with alg:none — no signature verification. Anyone can forge tokens. The "authentication" is decorative.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -86,7 +89,7 @@ export const passwordAuth = {
         hits.push({
           line: i + 1,
           message: 'Session ID in URL — session hijacking via referer header, browser history, and proxy logs. Use cookies with HttpOnly + Secure.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -95,7 +98,7 @@ export const passwordAuth = {
         hits.push({
           line: i + 1,
           message: 'HTTP for auth endpoint — credentials transmitted in cleartext. TLS is not optional for authentication.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
     }

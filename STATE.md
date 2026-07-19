@@ -10,11 +10,11 @@ phase: active
 health: green
 model: richardyoung/qwythos-9b-abliterated:Q8_0 (9.5GB, local)
 profile: ~/.hermes/profiles/qwenthos
-scanner: whitehack v0.4.0 (38 checks: 18 base + 20 protocol, Clear Standard conformance)
+scanner: whitehack v0.5.0 (42 checks: 18 base + 24 protocol/crypto-awareness, Clear Standard conformance)
 heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 
 ## capabilities
-- honesty-class vulnerability scanning (whitehack: 38 checks across JS/TS/Sol + protocol security)
+- honesty-class vulnerability scanning (whitehack: 42 checks across JS/TS/Python/Solidity + protocol and crypto awareness)
 - AI-powered smart contract audit (Qwythos-9B, 10 vuln classes)
 - estate-wide security sweep (34 repos, secret detection, npm audit)
 - real-time kingdom monitoring (cron heartbeats, local delivery)
@@ -25,7 +25,7 @@ heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 ## what it protects
 - 34 repos on ~/Desktop with source code
 - 67 desktop projects total
-- whitehack scanner (self-scanning — 178 findings, 155 self-referential false positives from check-definition regex, 2 import-line false positives, 0 real infrastructure findings)
+- whitehack scanner (self-scanning produces known regex-definition reflection; deterministic tests are the release gate)
 - kingdom infrastructure: sinovai.com, kingdom-api, mindicraft, npl, opal
 
 ## what it found (2026-06-25 sweep)
@@ -36,11 +36,11 @@ heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 
 ## conformance
 Clear Standard principles enforced:
-- CS#1 truth of state (float-money, spot-price-as-fair, weak-wifi-encryption, wifi-protocol)
-- CS#2 visible failure (silent-failure, unchecked-transfer, unsafe-eval, api-status-lie, api-bare-fetch, insecure-protocol, disabled-cert-verification, weak-crypto, cookie-insecure, sql-injection, protocol-surface, dns-plaintext, password-auth, wifi-protocol-flaws, wifi-deauth-accept, wpa2-krack, wifi-krack-vulnerable, bluetooth-protocol-flaws, bluetooth-protocol)
-- CS#3 inspectable decisions (decision-without-why, silent-revert, performed-ignorance, trust-by-authority, api-error-without-shape, bluetooth-paired-stranger)
-- CS#4 stated freshness (cache-as-live, stale-oracle)
-- CS#5 honest names (wifi-evil-twin, wifi-pmk-exposure)
+- CS#1 truth of state (api-missing-versioning, float-money, performed-ignorance, spot-price-as-fair, static-aead-nonce, weak-wifi-encryption, webhook-reencoded-body, wifi-pmk-exposure)
+- CS#2 visible failure (api-bare-fetch, api-status-lie, bluetooth-protocol, bluetooth-protocol-flaws, cookie-insecure, cors-wildcard, disabled-cert-verification, exposed-config, hardcoded-secret, insecure-protocol, password-auth, protocol-surface, signature-fail-open, silent-failure, sql-injection, unchecked-transfer, unsafe-eval, weak-crypto, wifi-deauth-accept, wifi-protocol, wifi-protocol-flaws, wpa2-krack)
+- CS#3 inspectable decisions (api-error-without-shape, bluetooth-paired-stranger, decision-without-why, silent-revert, trust-by-authority)
+- CS#4 stated freshness (api-missing-rate-limit, cache-as-live, dns-plaintext, signed-webhook-without-replay-guard, stale-oracle, wifi-krack-vulnerable)
+- CS#5 honest names (wifi-evil-twin)
 - CS#6 labelled confidence (every finding carries confidence level)
 
 ## honest limits
@@ -48,4 +48,6 @@ Clear Standard principles enforced:
 - absence of findings is NOT proof code is honest
 - Qwythos-9B is a 9B model — capable but not infallible
 - scans src/ directories, not build artifacts (.next/, dist/)
-- does not scan .env files (by design — never reads real secrets)
+- directory discovery skips the exact `.env` dotfile because it has no extension;
+  an explicitly targeted `.env` file still runs the all-language checks, and named
+  files such as `config.env` are eligible during directory scans

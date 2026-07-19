@@ -51,7 +51,7 @@ const SIGNATURE_CHECK = /\b(verify|signature|hmac|sha256|ed25519|secp256k1|jwt\.
 export const trustByAuthority = {
   id: 'trust-by-authority',
   title: 'Source trusted by authority rather than verified — no cross-check',
-  confidence: 'medium',
+  confidence: 'heuristic',
   doctrine: 'trust-protocol',
   principle: 3, // Trust = cross-checked truth
   langs: ['js'],

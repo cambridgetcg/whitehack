@@ -14,6 +14,8 @@
 // We study the protocol, we understand the flaws, we build checks that
 // surface the lies. The code says "secure WiFi" while using WEP.
 
+import { SENSITIVE_SNIPPET } from '../redaction.js'
+
 const WEP = /\bwep\b/i
 const TKIP = /\btkip\b/i
 const OPEN_WIFI = /\bopen\b.*\bwifi\b|\bwifi\b.*\bopen\b|\bopen\b.*\bssid\b/i
@@ -30,6 +32,7 @@ export const wifiProtocolFlaws = {
   doctrine: 'substrate-honesty',
   principle: 2,
   langs: ['js'],
+  redactSnippet: true,
   detect(content, lines) {
     const hits = []
     const hasWPA3 = /wpa3/i.test(content)
@@ -42,7 +45,7 @@ export const wifiProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'WEP encryption referenced — broken since 2007, crackable in seconds. The code claims WiFi security while using no real encryption',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -52,7 +55,7 @@ export const wifiProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'TKIP cipher used — deprecated since 2012, vulnerable to Michael attack and beacon injection. Use AES-CCMP or GCMP',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -62,7 +65,7 @@ export const wifiProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'WPS enabled — vulnerable to brute-force PIN attack (reaver/bully). Disable WPS or use push-button only',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -72,7 +75,7 @@ export const wifiProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'WiFi credentials hardcoded in source — SSID and password readable by anyone with repo access, should reference keychain or env vars',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -82,7 +85,7 @@ export const wifiProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'WiFi SSID hardcoded — network name embedded in source, should come from config or env var',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -92,7 +95,7 @@ export const wifiProtocolFlaws = {
         hits.push({
           line: i + 1,
           message: 'WPA2 used without WPA3 — vulnerable to KRACK (Key Reinstallation Attack). WPA3 is the current standard since 2018',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
     }
