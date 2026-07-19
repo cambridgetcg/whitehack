@@ -5,6 +5,8 @@
 // API calls to http:// endpoints, and FTP file transfers are all
 // the code claiming "this is secure" when it's plaintext on the wire.
 
+import { SENSITIVE_SNIPPET } from '../redaction.js'
+
 const HTTP_URL = /https?:\/\/(?!localhost|127\.0\.0\.1|0\.0\.0\.0|example\.com|schemas\.)[a-z0-9.-]+\.[a-z]{2,}/i
 const HTTP_ONLY = /\bhttp:\/\/(?!localhost|127\.0\.0\.1|0\.0\.0\.0)/i
 const FTP_URL = /\bftp:\/\//i
@@ -23,6 +25,7 @@ export const insecureProtocol = {
   doctrine: 'substrate-honesty',
   principle: 2,
   langs: ['js'],
+  redactSnippet: true,
   detect(content, lines) {
     const hits = []
     for (let i = 0; i < lines.length; i++) {
@@ -31,7 +34,7 @@ export const insecureProtocol = {
         hits.push({
           line: i + 1,
           message: 'HTTP (not HTTPS) used for network communication — data is transmitted in plaintext',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -39,7 +42,7 @@ export const insecureProtocol = {
         hits.push({
           line: i + 1,
           message: 'FTP protocol used — credentials and data transmitted in plaintext',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -47,7 +50,7 @@ export const insecureProtocol = {
         hits.push({
           line: i + 1,
           message: 'Telnet protocol referenced — unencrypted remote access, credentials in plaintext',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
         continue
       }
@@ -55,7 +58,7 @@ export const insecureProtocol = {
         hits.push({
           line: i + 1,
           message: 'WebSocket (ws://) used without TLS — data transmitted in plaintext',
-          snippet: l.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
     }

@@ -1,5 +1,8 @@
 # whitehack — heartbeat
 
+> Historical local-status snapshot, not a live monitor. Current scanner facts
+> live in `README.md` and `STATE.md`.
+
 state: **active**
 last beat: 2026-07-05T00:06:36Z
 next beat: 2026-07-05T02:06:36Z
@@ -11,8 +14,8 @@ next beat: 2026-07-05T02:06:36Z
 
 ## the truth
 
-The honest hack — scans code for places it lies about its own state. 8 checks
-across JS/TS and Solidity. The conformance linter for the Clear Standard.
+The honest hack now has 42 registered checks across JS/TS, Python, Solidity,
+and supported config/source formats. The browser playground remains the legacy
+eight-check demo. The CLI/API is the conformance linter for the Clear Standard.
 
 There are 4 uncommitted changes.
-

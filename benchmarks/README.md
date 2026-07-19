@@ -20,20 +20,20 @@ lie on the PR — *and* stays silent on the corrected code.
 | `real-incidents/oracle-no-freshness.sol` | Canonical price-feed-without-freshness (OWASP SC02:2025; class behind Yellow Protocol ~$2.4M, Apr 2025) | 2 findings |
 | `real-incidents/safe-counterparts.sol` | The **fixed** versions (SafeERC20, `require()`'d result, freshness-checked feed) | **0 findings** |
 
-## Result (whitehack v0.2.1)
+## Result (whitehack v0.5.0)
 
 ```
-real-incidents/oracle-no-freshness.sol
-  ! L19  Price feed read without a staleness check        (stale-oracle, medium-high)
-  ! L25  Price feed read without a staleness check        (stale-oracle, medium-high — deprecated getter)
-real-incidents/sherlock-579-unchecked-transfer.sol
-  ! L23  ERC-20 transfer result ignored                   (unchecked-transfer, medium-high)
-  ! L28  ERC-20 transfer result ignored                   (unchecked-transfer, medium-high)
-  ! L33  ERC-20 transfer result ignored                   (unchecked-transfer, medium-high)
-  → 5 findings, 5 medium-high, 0 heuristic
+oracle-no-freshness.sol
+  ! L19  Price feed read without a staleness check  (substrate-honesty · medium-high · CS#4)
+  ! L25  Price feed read without a staleness check  (substrate-honesty · medium-high · CS#4)
+sherlock-579-unchecked-transfer.sol
+  ! L23  ERC-20 transfer result ignored  (substrate-honesty · medium-high · CS#2)
+  ! L28  ERC-20 transfer result ignored  (substrate-honesty · medium-high · CS#2)
+  ! L33  ERC-20 transfer result ignored  (substrate-honesty · medium-high · CS#2)
+  5 finding(s) — 5 medium-high
 
-real-incidents/safe-counterparts.sol
-  → 0 findings   (correct code, correctly silent)
+safe-counterparts.sol
+  0 finding(s) — none
 ```
 
 - **Recall on this corpus:** 5/5 vulnerable lines flagged.

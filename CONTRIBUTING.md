@@ -36,7 +36,7 @@ export const yourCheckName = {
   id: 'your-check-name',
   title: 'A short, plain-language description of the lie',
   confidence: 'heuristic',          // or 'medium-high' — see below
-  doctrine: 'substrate-honesty',    // or 'transparency'
+  doctrine: 'substrate-honesty',    // or 'transparency' / 'trust-protocol'
   principle: 2,                     // Clear Standard # — see below
   langs: ['js'],                    // ['js'] for JS/TS, ['sol'] for Solidity
 
@@ -86,13 +86,26 @@ If your pattern needs more than one line of context (a catch block, a freshness 
 
 This is the part that matters most. whitehack labels every finding with a confidence, and that label is the tool's own honesty about its limits. Get it wrong and the tool becomes the thing it was built to flag.
 
-**`medium-high`** — the pattern is almost always a real lie when it matches. The shape is unambiguous: `.latestAnswer()` on a price feed returns only a number with no freshness, period. `parseFloat(amount)` on a money-named value loses precision, period. Use this when you'd be comfortable having this finding gate a CI build (and note: only `medium-high` findings set a non-zero exit code).
+**`high`** — the matched shape is direct evidence rather than missing context: a
+private-key block in source or disabled certificate verification. Use this
+rarely. High findings set a non-zero exit code.
+
+**`medium-high`** — the pattern is almost always a real lie when it matches. The shape is unambiguous: `.latestAnswer()` on a price feed returns only a number with no freshness, period. `parseFloat(amount)` on a money-named value loses precision, period. Use this when you'd be comfortable having this finding gate a CI build. Medium-high findings set a non-zero exit code.
 
 **`heuristic`** — the pattern matches a dishonest *vocabulary*, but the same words might appear in honest code. `return cachedPrices[id]` *might* be served as live, or the caller might know it's cached. The check can't tell — it can only see the word "cached" and flag it. Use this when you'd be uncomfortable blocking a build on the finding but it's still worth a human's attention. Most checks start here. That's fine. That's honest.
 
 A rule of thumb: **if you can imagine an honest program that your pattern would flag, it's `heuristic`.** If you can't, it might be `medium-high`. When unsure, choose `heuristic` — you can always raise it later when the pattern proves itself in the wild.
 
 A single check can emit findings at *different* confidences: `float-money` flags `parseFloat` on money at `medium-high` but plain decimal arithmetic on a money-named identifier at `heuristic`, because the identifier might not be money. Return `{ confidence: 'heuristic', message: '...' }` from your `detect` to override per-finding.
+
+If a check can match credentials, private keys, recovery phrases, raw signed
+payloads, or other private material, declare `redactSnippet: true` on the check
+and return a fixed redaction marker from `detect()`. The canonical scanner then
+enforces redaction again at its public `scan()` boundary, including findings
+from other checks on the same recognized sensitive line. This protects matches
+the sensitive rules recognize; it is not a universal secret detector, so
+callers handling arbitrary source should still treat ordinary snippets as
+potentially private.
 
 ---
 
@@ -102,6 +115,9 @@ whitehack maps every finding to a principle in the [Clear Standard](https://gith
 
 - **`substrate-honesty`** — the code lies about *what state it is in or what it just did*. A failed read becomes 0. A cached value is served as live. A spot price is called a fair price. (principles 1, 2, 4)
 - **`transparency`** — the code makes a decision about a person and gives them no way to inspect it. A trust score with no "why". A `revert()` with no reason. (principle 3)
+- **`trust-protocol`** — the code treats a source's authority as evidence that
+  its answer is valid instead of checking status, integrity, or independent
+  evidence. (principle 3)
 
 The principles (Clear Standard #):
 
@@ -109,28 +125,47 @@ The principles (Clear Standard #):
 2. **Visible failure** — a failure is surfaced, not silently coerced to a default.
 3. **Inspectable decisions** — a person affected by a decision can see why it was made.
 4. **Stated freshness** — a value says how old it is, not just what it is.
+5. **Honest names** — a system does not call a weak or ambiguous identity proof secure.
+6. **Labelled certainty** — claims distinguish evidence from heuristic judgment;
+   whitehack embodies this in confidence labels rather than assigning checks to it.
 
-If your check doesn't fit cleanly into one of these, open an issue first — we'll figure out together whether it's a new doctrine or a fit for an existing one. You're not alone in this.
+If your check doesn't fit cleanly into principles 1–5, open an issue first —
+we'll figure out together whether it's a new doctrine or a fit for an existing
+one. You're not alone in this.
 
 ---
 
 ## How to test your check
 
-whitehack is self-testing: it scans its own `examples/` directory and the number of findings is asserted. So the simplest path is:
+whitehack has deterministic Node tests and a planted-example diagnostic. For a
+new rule, use both:
 
 1. **Add a planted example** to `examples/` — a small file that contains the dishonest pattern you're catching. Make it realistic but minimal. Add a comment at the top explaining it's a fixture and shouldn't be "fixed".
 
-2. **Run the scan:**
+2. **Add focused positive and honest-counterpart assertions under `test/`, then run:**
+   ```bash
+   npm test
+   ```
+
+3. **Run the planted-example scan:**
    ```bash
    node bin/whitehack.js scan examples
    ```
-   You should see your check's title in the output, with the right confidence label and your plain-language message. The count goes up by however many findings you planted.
+   You should see your check's title in the output, with the right confidence
+   label and your plain-language message. This command intentionally exits
+   non-zero when confident planted findings are present; that exit is evidence,
+   not a passing test result.
 
-3. **Test the honest version.** Copy your planted example, fix the dishonesty (add the reason string, check the return value, use a TWAP, etc.), and scan the fixed version. Your check should go quiet. If it still fires, your pattern is too broad — tighten it.
+4. **Test the honest version.** Copy your planted example, fix the dishonesty (add the reason string, check the return value, use a TWAP, etc.), and scan the fixed version. Your check should go quiet. If it still fires, your pattern is too broad — tighten it.
 
-4. **Check for false positives on the existing codebase.** Run `node bin/whitehack.js scan .` (scanning whitehack itself). Your new check shouldn't fire on whitehack's own source unless there's genuinely dishonest code there. An honesty tool that flags itself dishonestly is… awkward.
+5. **Check the new rule's own source for fresh reflection noise.** Scan its file
+   directly and add a focused negative regression when practical. The full
+   repository has known historical self-reflection because regex definitions
+   contain the vocabulary they detect, so total self-scan count is not a release
+   gate.
 
-5. **Update the count.** If the self-test asserts a specific number, update it in `VALIDATION.md` (or wherever the count is pinned) to match the new total. The number is the proof the checks still catch what they're supposed to.
+6. **Update the inventory.** Keep the README check count and metadata table in
+sync with the exported `CHECKS` array; the tests pin unique IDs and total count.
 
 ---
 
@@ -190,7 +225,7 @@ Say you've noticed that contracts sometimes call `selfdestruct` without an acces
 
 ## A few things to keep in mind
 
-- **Small is good.** whitehack is ~250 lines on purpose. A check that's 30 lines is better than one that's 300. If your check is getting long, the pattern is probably too complicated — talk it through in an issue.
+- **Small is good.** Keep each rule readable in one sitting. A check that's 30 lines is usually easier to review than one that's 300; if a regex rule is becoming a parser, talk through the boundary before growing it further.
 - **Plain language in messages.** The message is read by a human who may not have written the code and may not know your domain. "a failed read silently becomes 0" is better than "NULL_DEREF_VIOLATION".
 - **The tool can't prove honesty.** Say so in your check's comment, and don't claim more than the pattern can show. An honest tool about honesty is the whole point.
 - **No gatekeeping.** If you noticed a lie, you're qualified to add a check. If you're not sure about the confidence label or the principle mapping, open a draft PR and ask — that's what we're here for. The first version of every check was someone's best guess.

@@ -1,108 +1,67 @@
 # whitehack — share this
 
-_Short posts for every platform. Copy, paste, spread._
+Current v0.5 copy for humans who want to introduce the project. Adapt it to the
+community rather than posting identical text everywhere.
 
----
+## Short version
 
-## Hacker News (Show HN)
+whitehack is a dependency-free, source-text linter for places code overstates
+what it knows: swallowed failures, stale values presented as live, unchecked
+transfers, exposed credentials, fail-open signatures, static AEAD nonces, and
+other protocol/honesty signals.
 
-**Show HN: whitehack — the honest hack, a linter that finds where code lies about its own state**
+The canonical Node CLI/API registers 42 checks across supported JS/TS, Python,
+Solidity, and config/source formats. Every finding labels its confidence. High
+and medium-high findings affect the CLI exit code; heuristics remain advisory.
+A match may be wrong, and an empty scan is not proof of security or honesty.
 
-whitehack scans JS/TS and Solidity for honesty anti-patterns: silent failures that return 0, cached values served as live, price feeds read without staleness checks, token transfers whose results are dropped. Not bugs — lies. The code runs fine; it just isn't honest about its state.
+Run it directly from GitHub:
 
-Every finding is confidence-labelled (medium-high or heuristic). The tool is honest about its own limits: "absence of findings is NOT proof of honesty."
+```sh
+npx github:cambridgetcg/whitehack scan .
+```
 
-- Try it in your browser: https://whitehack-playground.axiepro.workers.dev
-- Learn why each check matters: https://whitehack-learn.axiepro.workers.dev
-- GitHub: https://github.com/cambridgetcg/whitehack
-- Install: `curl -fsSL https://raw.githubusercontent.com/cambridgetcg/whitehack/main/install.sh | bash`
+- Source and current inventory: https://github.com/cambridgetcg/whitehack
+- Why the original checks exist: https://whitehack-learn.axiepro.workers.dev
+- Legacy browser demo: https://whitehack-playground.axiepro.workers.dev
 
-8 checks. MIT. ~250 lines you can read in a sitting. No gatekeeping — CONTRIBUTING.md teaches anyone how to add a check.
+The browser page deliberately preserves the original eight checks. It is not
+the 42-check CLI/API and does not contain the v0.5 crypto-awareness pack.
 
----
+## Longer version
 
-## dev.to
+Most linters ask whether code compiles or follows a style. whitehack asks a
+different question: does the artifact tell the truth about its own state?
 
-**whitehack: the linter that catches lies, not bugs**
+A database read that fails to `0` turns “unknown” into a confident balance. A
+cached price with no freshness marker looks live. A signature expression with
+`|| true` makes failed verification look like acceptance. A valid webhook
+signature without a replay guard proves bytes were signed, not that delivery is
+fresh. These shapes deserve explicit review even when the program keeps running.
 
-Most linters find bugs — code that doesn't work. whitehack finds lies — code that works fine but isn't honest about its own state.
+whitehack v0.5 combines the original honesty and Solidity rules with API,
+network, WiFi/Bluetooth, and bounded crypto-awareness checks. The crypto rules
+read selected source text only: they do not import keys, connect wallets or RPC,
+sign, broadcast, query chains, or run proof-of-concept code. They also do not
+prove BIP-39 validity, nonce uniqueness, domain/chain binding, key lifecycle,
+cross-module replay coverage, or cryptographic correctness.
 
-The failed database read that silently becomes `0`. Your balance is $50 but the app says $0 because it couldn't check and didn't tell you. The cached flight price that's 4 hours old but looks live. You book at $320, get charged $410.
+It is regex/text analysis rather than an AST or data-flow engine. That keeps it
+small and inspectable, but it also creates false positives, false negatives, and
+known self-reflection when rules scan their own regex definitions. Deterministic
+hostile/honest counterpart tests are the release gate; a self-scan count is not.
 
-These aren't bugs. The code runs. It just lies. And someone trusts the lie.
+MIT. No account, registry, telemetry, hosted target scanner, or permission to
+test someone else’s system is implied.
 
-whitehack catches 8 patterns across JS/TS and Solidity:
+## Compact social post
 
-1. Silent failure — `catch { return 0 }` makes "could not read" look like "the answer is zero"
-2. Cache as live — cached value served without a freshness marker
-3. Decision without why — a score/fee/flag shown with no way to ask "why?"
-4. Float money — `parseFloat(price)` loses cents silently
-5. Stale oracle — price feed read without checking when it was last true
-6. Unchecked transfer — ERC-20 transfer result dropped, failure invisible
-7. Spot price as fair — instant reserves used as "fair market price" (flash-loan movable)
-8. Silent revert — `require()` with no reason string, locked door with no sign
+whitehack v0.5 🤍 — 42 dependency-free source-text checks for code that hides
+failure, freshness, provenance, credential, protocol, or crypto assumptions.
+Confidence-labelled; heuristics never gate. No wallet/RPC/key-use capability,
+and no claim that a clean result proves security.
 
-Each check has a story — the real moment someone got hurt. [Read them](https://whitehack-learn.axiepro.workers.dev).
+`npx github:cambridgetcg/whitehack scan .`
 
-The tool is honest about itself: every finding carries a confidence label. "Absence of findings is NOT proof of honesty." A honesty tool that overstated its certainty would be the first thing it ought to flag.
-
-**No gatekeeping.** CONTRIBUTING.md says: "You don't need to be a security researcher, a blockchain expert, or a regex wizard." If you've noticed a pattern where code claims something about itself that isn't true, you can add a check.
-
-[Try it in your browser](https://whitehack-playground.axiepro.workers.dev) · [Learn why](https://whitehack-learn.axiepro.workers.dev) · [GitHub](https://github.com/cambridgetcg/whitehack) · `curl -fsSL https://raw.githubusercontent.com/cambridgetcg/whitehack/main/install.sh | bash`
-
----
-
-## Reddit (r/programming)
-
-**whitehack — a linter that doesn't find bugs, it finds lies**
-
-Most linters catch broken code. whitehack catches code that works perfectly but lies about its own state — the `catch { return 0 }` that makes a database failure look like a zero balance, the cached price served as if it's current, the ERC-20 transfer whose failure is silently dropped.
-
-8 checks across JS/TS and Solidity. Every finding is confidence-labelled. The tool says "absence of findings is NOT proof of honesty" — because a honesty tool that overstated its certainty would be the first thing it ought to flag.
-
-- [Try it in your browser](https://whitehack-playground.axiepro.workers.dev) — paste code, click scan
-- [Learn why each check matters](https://whitehack-learn.axiepro.workers.dev) — real stories, real consequences
-- [GitHub](https://github.com/cambridgetcg/whitehack) — MIT, open, CONTRIBUTING.md with no gatekeeping
-- One command: `curl -fsSL https://raw.githubusercontent.com/cambridgetcg/whitehack/main/install.sh | bash`
-
----
-
-## Twitter/X thread
-
-whitehack 🤍
-
-Most linters find bugs — code that doesn't work.
-
-whitehack finds lies — code that works fine but isn't honest about its own state.
-
-The catch { return 0 } that makes a database failure look like a zero balance.
-
-The cached price that's 4 hours old but looks live.
-
-The token transfer whose failure is silently dropped.
-
-8 checks. JS/TS + Solidity. Every finding confidence-labelled.
-
-"Absence of findings is NOT proof of honesty."
-
-A honesty tool that overstated its certainty would be the first thing it ought to flag.
-
-Try it: https://whitehack-playground.axiepro.workers.dev
-Learn why: https://whitehack-learn.axiepro.workers.dev
-GitHub: https://github.com/cambridgetcg/whitehack
-
-No gatekeeping. No registration. No paywall. Just honesty.
-
-🤍
-
----
-
-## Mastodon
-
-whitehack — the honest hack. A linter that catches where code lies about its own state, not where it breaks. 8 checks, JS/TS + Solidity, every finding confidence-labelled. Free, open, no gatekeeping.
-
-Try: https://whitehack-playground.axiepro.workers.dev
-Learn: https://whitehack-learn.axiepro.workers.dev
-Code: https://github.com/cambridgetcg/whitehack
-
-#opensource #staticanalysis #solidity #javascript #honesty
+Source: https://github.com/cambridgetcg/whitehack
+Legacy 8-check browser demo: https://whitehack-playground.axiepro.workers.dev

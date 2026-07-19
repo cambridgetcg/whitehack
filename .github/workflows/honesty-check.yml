@@ -1,19 +1,38 @@
 name: honesty check
 on: [push, pull_request]
+
+permissions:
+  contents: read
+
 jobs:
   scan:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
-      - name: scan source code
-        run: node bin/whitehack.js scan src/
-      - name: scan bin
-        run: node bin/whitehack.js scan bin/
+      - name: run deterministic tests
+        run: npm test
+      - name: verify the published artifact shape
+        run: |
+          pack_dir=$(mktemp -d)
+          archive=$(npm pack --silent --pack-destination "$pack_dir")
+          tar -xzf "$pack_dir/$archive" -C "$pack_dir"
+          (cd "$pack_dir/package" && npm test)
       - name: verify fixtures still trigger
         run: |
-          OUTPUT=$(node bin/whitehack.js scan examples/)
-          echo "$OUTPUT"
-          echo "$OUTPUT" | grep -q "14 finding(s)" || (echo "ERROR: examples should produce 14 findings" && exit 1)
+          status=0
+          output=$(node bin/whitehack.js scan examples/) || status=$?
+          printf '%s\n' "$output"
+
+          if [ "$status" -ne 1 ]; then
+            printf 'ERROR: planted confident findings should exit 1, got %s\n' "$status" >&2
+            exit 1
+          fi
+
+          if ! grep -Eq '^  14 finding\(s\) — 7 medium-high, 7 heuristic$' <<<"$output"; then
+            printf 'ERROR: examples should produce exactly 14 findings (7 medium-high, 7 heuristic)\n' >&2
+            exit 1
+          fi

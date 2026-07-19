@@ -1,6 +1,6 @@
-// extra-checks.js — auto-loads all protocol and security checks
-// This module dynamically imports all check files not already in scan.js
-// and exports them as an array. QWENTHOS + Yu building together.
+// extra-checks.js — registers all protocol and security checks
+// Static imports make a broken rule fail closed during scanner import instead
+// of silently reducing coverage. QWENTHOS + Yu building together.
 
 import { wifiProtocolFlaws } from './wifi-protocol-flaws.js'
 import { bluetoothProtocolFlaws } from './bluetooth-protocol-flaws.js'
@@ -22,6 +22,10 @@ import { wifieviltwin } from './wifi-evil-twin.js'
 import { wifipmkexposure } from './wifi-pmk-exposure.js'
 import { wifikrackvulnerable } from './wifi-krack-vulnerable.js'
 import { wifiProtocol } from './wifi-protocol.js'
+import { staticAeadNonce } from './static-aead-nonce.js'
+import { signatureFailOpen } from './signature-fail-open.js'
+import { webhookReencodedBody } from './webhook-reencoded-body.js'
+import { signedWebhookWithoutReplayGuard } from './signed-webhook-without-replay-guard.js'
 
 export default [
   wifiProtocolFlaws,
@@ -44,4 +48,8 @@ export default [
   wifipmkexposure,
   wifikrackvulnerable,
   wifiProtocol,
+  staticAeadNonce,
+  signatureFailOpen,
+  webhookReencodedBody,
+  signedWebhookWithoutReplayGuard,
 ]

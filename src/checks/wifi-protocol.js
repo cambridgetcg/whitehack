@@ -32,6 +32,8 @@
 // The check pattern: scan for WiFi configuration, protocol selection,
 // and authentication code that lies about its own security posture.
 
+import { SENSITIVE_SNIPPET } from '../redaction.js'
+
 const WPA2_PSK=/(?:wpa2|wpa_psk|pre.?shared.?key|psk)\s*[:=]\s*['"][^'"]{8,}['"]/i
 const TKIP_ENABLED=/(?:tkip|TKIP)\s*[:=]\s*(?:true|enabled|1|on)/i
 const PMF_DISABLED=/(?:pmf|protected.?management.?frames|ieee80211w)\s*[:=]\s*(?:false|disabled|0|off)/i
@@ -47,6 +49,7 @@ export const wifiProtocol = {
   doctrine: 'substrate-honesty',
   principle: 2,
   langs: [], // runs on all file types (config, JSON, YAML, etc.)
+  redactSnippet: true,
   detect(content, lines) {
     const hits = []
 
@@ -59,7 +62,7 @@ export const wifiProtocol = {
         hits.push({
           line: i + 1,
           message: 'WPA2-PSK password hardcoded — the pre-shared key is in the source. Anyone with repo access joins the network. The SSID is public, so offline brute-force is trivial.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -68,7 +71,7 @@ export const wifiProtocol = {
         hits.push({
           line: i + 1,
           message: 'TKIP enabled — deprecated in 2012, uses broken RC4. Supporting TKIP is supporting a known-broken protocol. The code claims to be secure while enabling insecurity.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -77,7 +80,7 @@ export const wifiProtocol = {
         hits.push({
           line: i + 1,
           message: 'PMF disabled — without Protected Management Frames, deauth attacks are trivial. WPA3 mandates PMF; disabling it in WPA2 is choosing vulnerability.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -86,7 +89,7 @@ export const wifiProtocol = {
         hits.push({
           line: i + 1,
           message: 'Open or WEP network — no encryption or broken encryption. The network is a party line. WEP was cracked in 2007; open networks leak metadata.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -95,7 +98,7 @@ export const wifiProtocol = {
         hits.push({
           line: i + 1,
           message: 'WEP enabled — cracked in 2007, broken for 19 years. Any code supporting WEP is pretending a broken protocol is a security measure.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
 
@@ -104,7 +107,7 @@ export const wifiProtocol = {
         hits.push({
           line: i + 1,
           message: 'Weak WiFi password (8-12 chars) — WPA2-PSK derives the key from PBKDF2(password, SSID). Short passwords are brute-forced in minutes. The "encryption" is theater.',
-          snippet: line.trim().slice(0, 120),
+          snippet: SENSITIVE_SNIPPET,
         })
       }
     }
@@ -114,7 +117,7 @@ export const wifiProtocol = {
       hits.push({
         line: 0,
         message: 'Hardcoded SSID + password pair — the entire WiFi credential set is in the source. Not a secret. Not security. Theater.',
-        snippet: '(multi-line match)',
+        snippet: SENSITIVE_SNIPPET,
       })
     }
 
