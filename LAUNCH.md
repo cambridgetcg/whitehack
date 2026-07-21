@@ -2,7 +2,7 @@
 
 > **Archived v0.2 launch snapshot.** This document preserves the original
 > positioning and posting drafts; its counts, self-scan claims, commands, and
-> package checklist are not the v0.5 release contract. See `README.md`,
+> package checklist are not the v0.6 release contract. See `README.md`,
 > `STATE.md`, and the deterministic tests for current behavior.
 
 This is the launch runbook for **whitehack**. It is ordered as a sequence: positioning first, then the responsible-launch checklist, then ready-to-post copy per channel, then the README upgrades and npm-readiness steps, then the supporting assets. All links are left as `<REPO_URL>` and `<SITE_URL>` placeholders — replace them per channel before posting.

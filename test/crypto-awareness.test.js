@@ -15,6 +15,11 @@ import { staticAeadNonce } from '../src/checks/static-aead-nonce.js'
 import { signatureFailOpen } from '../src/checks/signature-fail-open.js'
 import { webhookReencodedBody } from '../src/checks/webhook-reencoded-body.js'
 import { signedWebhookWithoutReplayGuard } from '../src/checks/signed-webhook-without-replay-guard.js'
+import { walletKeyEgress } from '../src/checks/wallet-key-egress.js'
+import { walletDirectRequestSigning } from '../src/checks/wallet-direct-request-signing.js'
+import { walletCapabilityUnbounded } from '../src/checks/wallet-capability-unbounded.js'
+import { walletBroadcastAutoRetry } from '../src/checks/wallet-broadcast-auto-retry.js'
+import { unlimitedTokenApproval } from '../src/checks/unlimited-token-approval.js'
 import { calculateGateRank, parseWhitehackOutput, scanRepo } from '../bin/whitehack-gate-bridge.js'
 
 const EXPECTED_CHECK_IDS = [
@@ -49,7 +54,12 @@ const EXPECTED_CHECK_IDS = [
   'static-aead-nonce',
   'trust-by-authority',
   'unchecked-transfer',
+  'unlimited-token-approval',
   'unsafe-eval',
+  'wallet-broadcast-auto-retry',
+  'wallet-capability-unbounded',
+  'wallet-direct-request-signing',
+  'wallet-key-egress',
   'weak-crypto',
   'weak-wifi-encryption',
   'webhook-reencoded-body',
@@ -69,6 +79,11 @@ const CRYPTO_CHECK_FILES = [
   '../src/checks/signature-fail-open.js',
   '../src/checks/webhook-reencoded-body.js',
   '../src/checks/signed-webhook-without-replay-guard.js',
+  '../src/checks/wallet-key-egress.js',
+  '../src/checks/wallet-direct-request-signing.js',
+  '../src/checks/wallet-capability-unbounded.js',
+  '../src/checks/wallet-broadcast-auto-retry.js',
+  '../src/checks/unlimited-token-approval.js',
 ]
 
 function detect(check, source, lang) {
@@ -85,10 +100,10 @@ function assertNoHits(check, cases, lang) {
   }
 }
 
-test('registers exactly the unique 42-check pack', () => {
+test('registers exactly the unique 47-check pack', () => {
   const ids = CHECKS.map((check) => check.id)
-  assert.equal(ids.length, 42)
-  assert.equal(new Set(ids).size, 42)
+  assert.equal(ids.length, 47)
+  assert.equal(new Set(ids).size, 47)
   assert.deepEqual([...ids].sort(), EXPECTED_CHECK_IDS)
   for (const check of CHECKS) {
     assert.match(check.id, /^[a-z][a-z0-9-]{0,63}$/)
@@ -99,6 +114,15 @@ test('exposes the canonical scanner at the package root', async () => {
   const packageApi = await import('whitehack')
   assert.equal(packageApi.scan, scan)
   assert.equal(packageApi.CHECKS, CHECKS)
+})
+
+test('CLI help and version are successful introspection commands', () => {
+  const cli = fileURLToPath(new URL('../bin/whitehack.js', import.meta.url))
+  const version = execFileSync(process.execPath, [cli, '--version'], { encoding: 'utf8' })
+  const help = execFileSync(process.execPath, [cli, '--help'], { encoding: 'utf8' })
+  assert.equal(version.trim(), 'v0.6.0')
+  assert.match(help, /usage:/)
+  assert.match(help, /47|bounded crypto-awareness/i)
 })
 
 test('fails closed when the requested scan root does not exist', async () => {
@@ -731,9 +755,154 @@ test('does not claim domain, chain, or address guarantees from vocabulary alone'
     signatureFailOpen,
     webhookReencodedBody,
     signedWebhookWithoutReplayGuard,
+    walletKeyEgress,
+    walletDirectRequestSigning,
+    walletCapabilityUnbounded,
+    walletBroadcastAutoRetry,
+    unlimitedTokenApproval,
   ]) {
     assert.deepEqual(detect(check, source), [], check.id)
   }
+})
+
+test('recognises explicit wallet key output surfaces and keeps source redacted', () => {
+  const unsafe = [
+    'console.log(privateKey)',
+    'logger.info({ wallet_private_key })',
+    'logging.info(private_key)',
+    'print(recovery_phrase)',
+    'return c.json({ mnemonic })',
+  ]
+  for (const source of unsafe) {
+    const lang = /^(?:logging\.|print\()/i.test(source) ? 'py' : 'js'
+    const hits = detect(walletKeyEgress, source, lang)
+    assert.equal(hits.length, 1, source)
+    assert.equal(hits[0].snippet, '[redacted: crypto-awareness match]')
+  }
+  assert.equal(effectiveConfidence(walletKeyEgress, detect(walletKeyEgress, unsafe[0], 'js')[0]), 'medium-high')
+  assert.equal(effectiveConfidence(walletKeyEgress, detect(walletKeyEgress, unsafe[4], 'js')[0]), 'heuristic')
+  assertNoHits(walletKeyEgress, {
+    descriptor: 'return c.json({ signer_key_id, exportable: false })',
+    'public material': 'console.log(walletPublicKey)',
+    'encrypted envelope': 'return c.json({ encrypted_private_key_envelope })',
+    'private field name': 'class Signer { #privateKeyId = keyId }',
+    comment: '// console.log(privateKey)',
+    documentation: 'const docs = "export function getPrivateKey()"',
+    'explicit refusal': 'function getPrivateKey() { throw new Error("non-exportable") }',
+  }, 'js')
+})
+
+test('recognises direct request-to-signing paths but respects visible local guards', () => {
+  const unsafe = [
+    'return wallet.signTransaction(req.body)',
+    'return await signer.sign_message(request.json)',
+    'const tx = await c.req.json()\nreturn kms.sign(tx)',
+    'payload = request.get_json()\nreturn account.sign_transaction(payload)',
+  ]
+  for (const source of unsafe) {
+    const hits = detect(walletDirectRequestSigning, source, source.includes('request.get_json') ? 'py' : 'js')
+    assert.equal(hits.length, 1, source)
+    assert.equal(effectiveConfidence(walletDirectRequestSigning, hits[0]), 'heuristic')
+  }
+  assertNoHits(walletDirectRequestSigning, {
+    'validated request': [
+      'const tx = await c.req.json()',
+      'const intent = validateIntent(tx)',
+      'const authorization = assertIntentWithinCapabilityStatic(intent)',
+      'return signer.sign_exact(authorization.exactBytes)',
+    ].join('\n'),
+    'internal exact bytes': 'return signer.sign_exact(signingRequest)',
+    'request metadata only': 'const requestId = req.params.id\nreturn signer.sign_exact(preparedPayload)',
+    'database transaction': 'return database.sendTransaction(req.body)',
+    'cross-function alias': [
+      'function readRequest(req) { const tx = req.body; return tx }',
+      'function signPrepared() { return wallet.signTransaction(tx) }',
+    ].join('\n'),
+    comment: '// return wallet.signTransaction(req.body)',
+    docs: 'const example = "wallet.signTransaction(req.body)"',
+  }, 'js')
+})
+
+test('labels explicit unbounded wallet capability values as heuristics', () => {
+  const unsafe = [
+    'const capability = { actions: ["transfer"], targets: ["*"], expiresAt: now + 60_000 }',
+    'const walletPolicy = { maxSpend: Infinity, expiresAt }',
+    'const sessionKey = { actions: ["execute"], permissions: { anyContract: true }, expiresAt }',
+    'wallet_capability:\n  actions: [transfer]\n  deadline: null',
+  ]
+  for (const source of unsafe) {
+    const hits = detect(walletCapabilityUnbounded, source, source.includes('wallet_capability:') ? 'yaml' : 'js')
+    assert.ok(hits.length >= 1, source)
+    assert.ok(hits.every((hit) => effectiveConfidence(walletCapabilityUnbounded, hit) === 'heuristic'))
+  }
+  assertNoHits(walletCapabilityUnbounded, {
+    bounded: 'const capability = { targets: [merchant], maxSpend: "1000", maxIntents: 2, expiresAt }',
+    'unrelated infinity': 'const graphPolicy = { maxDepth: Infinity }',
+    'permissions without allow all': 'const walletPermissions = { methods: ["erc20.transfer"] }',
+    'read-only wildcard': 'const walletCapability = { actions: ["readBalance"], accounts: ["*"], expiresAt: tomorrow }',
+    'zero disables authority': 'const walletCapability = { actions: ["signTransaction"], expiresAt: 0, maxSpend: 0 }',
+    'filesystem capability': 'const capability = { actions: ["writeFile"], targets: ["*"] }',
+    'generic write permission': 'const capability = { permissions: ["write"], expiresAt: null }',
+    'generic execute permission': 'const capability = { permissions: ["execute"], expiresAt: null }',
+    'generic call capability': 'const capability = { actions: ["call"], targets: ["*"] }',
+    comment: '// const capability = { targets: ["*"] }',
+    docs: 'const example = "const capability = { unlimited: true }"',
+  }, 'js')
+})
+
+test('recognises automatic wallet broadcast retries and leaves reconciliation paths quiet', () => {
+  const unsafe = [
+    'return pRetry(() => provider.sendTransaction(signedPayload))',
+    'await retryOperation(\n  () => rpc.broadcastTransaction(rawTx),\n)',
+    'for (let attempt = 0; attempt < 3; attempt++) {\n  await broadcaster.broadcast_once(payload)\n}',
+    '@retry(stop=stop_after_attempt(3))\ndef submit():\n  return rpc.send_raw_transaction(payload)',
+  ]
+  for (const source of unsafe) {
+    const hits = detect(walletBroadcastAutoRetry, source, source.includes('@retry') ? 'py' : 'js')
+    assert.equal(hits.length, 1, source)
+    assert.equal(effectiveConfidence(walletBroadcastAutoRetry, hits[0]), 'heuristic')
+  }
+  assertNoHits(walletBroadcastAutoRetry, {
+    once: 'const result = await broadcaster.broadcast_once(payload)',
+    reconcile: 'const status = await provider.getTransaction(operationId)',
+    'operator-approved recovery': 'if (operatorApproved) await broadcaster.broadcast_once(replacement)',
+    'unrelated retry': 'await retry(() => cache.read())\nreturn provider.sendTransaction(signedPayload)',
+    'database retry': 'return retry(() => database.sendTransaction(record))',
+    'retry disabled': 'return retry(() => provider.sendTransaction(tx), { retries: 0 })',
+    'manual recovery function': [
+      'async function retryBroadcast(signedPayload, freshApproval) {',
+      '  assertFreshApproval(freshApproval)',
+      '  return broadcaster.broadcast_once(signedPayload)',
+      '}',
+    ].join('\n'),
+    comment: '// return pRetry(() => provider.sendTransaction(signedPayload))',
+    docs: 'const example = "pRetry(() => provider.sendTransaction(payload))"',
+  }, 'js')
+})
+
+test('recognises maximum token approvals while exact approvals stay quiet', () => {
+  const unsafe = [
+    'await token.approve(spender, ethers.MaxUint256)',
+    'await token.approve(spender, ethers.constants.MaxUint256)',
+    'token.safeApprove(spender, type(uint256).max);',
+    'token.forceApprove(\n  spender,\n  MAX_UINT256\n)',
+  ]
+  for (const source of unsafe) {
+    const lang = source.includes('type(uint256)') ? 'sol' : 'js'
+    const hits = detect(unlimitedTokenApproval, source, lang)
+    assert.equal(hits.length, 1, source)
+    assert.equal(effectiveConfidence(unlimitedTokenApproval, hits[0]), 'heuristic')
+  }
+  assertNoHits(unlimitedTokenApproval, {
+    exact: 'await token.approve(spender, intent.amount)',
+    revoke: 'await token.approve(spender, 0)',
+    scoped: 'await token.approve(spender, 1000n)',
+    constant: 'const MAX_UINT256 = (1n << 256n) - 1n',
+    'signed sentinel outside uint context': 'await permissions.approve(spender, -1)',
+    'NFT operator approval is a separate rule': 'await nft.setApprovalForAll(operator, true)',
+    comment: '// token.approve(spender, ethers.MaxUint256)',
+    docs: 'const example = "token.approve(spender, ethers.MaxUint256)"',
+  }, 'js')
 })
 
 test('the canonical scanner executes the registered crypto pack', async () => {

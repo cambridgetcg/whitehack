@@ -33,7 +33,8 @@ function registerCheck(check) {
 // weak encryption, WPA2-krack), bluetooth (protocol flaws, paired stranger),
 // DNS plaintext, password auth, insecure protocol, cert verification, weak
 // crypto, crypto-awareness (nonce uniqueness, signature fail-open, signed
-// webhook bytes/replay), CORS, cookies, SQL injection, protocol surface.
+// webhook bytes/replay, wallet custody/capability/signing/submission/approval),
+// CORS, cookies, SQL injection, protocol surface.
 // This import is deliberately fail-closed: a broken rule module must make the
 // scanner unavailable, never silently downgrade a full scan to the base pack.
 export const CHECKS = Object.freeze([

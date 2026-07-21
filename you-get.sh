@@ -11,6 +11,6 @@ For the canonical Whitehack CLI, use one explicit route:
   npx github:cambridgetcg/whitehack scan .
   curl -fsSL https://raw.githubusercontent.com/cambridgetcg/whitehack/main/install.sh | bash
 
-The browser playground is a legacy eight-check demo, not the v0.5 scanner.
+The browser playground is a legacy eight-check demo, not the v0.6 scanner.
 NOTICE
 exit 2

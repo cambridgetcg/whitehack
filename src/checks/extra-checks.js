@@ -26,6 +26,11 @@ import { staticAeadNonce } from './static-aead-nonce.js'
 import { signatureFailOpen } from './signature-fail-open.js'
 import { webhookReencodedBody } from './webhook-reencoded-body.js'
 import { signedWebhookWithoutReplayGuard } from './signed-webhook-without-replay-guard.js'
+import { walletKeyEgress } from './wallet-key-egress.js'
+import { walletDirectRequestSigning } from './wallet-direct-request-signing.js'
+import { walletCapabilityUnbounded } from './wallet-capability-unbounded.js'
+import { walletBroadcastAutoRetry } from './wallet-broadcast-auto-retry.js'
+import { unlimitedTokenApproval } from './unlimited-token-approval.js'
 
 export default [
   wifiProtocolFlaws,
@@ -52,4 +57,9 @@ export default [
   signatureFailOpen,
   webhookReencodedBody,
   signedWebhookWithoutReplayGuard,
+  walletKeyEgress,
+  walletDirectRequestSigning,
+  walletCapabilityUnbounded,
+  walletBroadcastAutoRetry,
+  unlimitedTokenApproval,
 ]
