@@ -111,7 +111,7 @@ test('registers exactly the unique 47-check pack', () => {
 })
 
 test('exposes the canonical scanner at the package root', async () => {
-  const packageApi = await import('whitehack')
+  const packageApi = await import('@agenttool/whitehack-scan')
   assert.equal(packageApi.scan, scan)
   assert.equal(packageApi.CHECKS, CHECKS)
 })
@@ -120,7 +120,7 @@ test('CLI help and version are successful introspection commands', () => {
   const cli = fileURLToPath(new URL('../bin/whitehack.js', import.meta.url))
   const version = execFileSync(process.execPath, [cli, '--version'], { encoding: 'utf8' })
   const help = execFileSync(process.execPath, [cli, '--help'], { encoding: 'utf8' })
-  assert.equal(version.trim(), 'v0.7.0')
+  assert.equal(version.trim(), 'v0.7.1')
   assert.match(help, /usage:/)
   assert.match(help, /47|bounded crypto-awareness/i)
 })

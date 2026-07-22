@@ -11,7 +11,7 @@ it were live, the score shown to a person with no way to ask *why*. These usuall
 aren't bugs in the ordinary sense. The code runs fine. It just isn't honest about
 its own state — and someone downstream trusts it anyway.
 
-## what it checks (v0.7.0 — 47 checks)
+## what it checks (v0.7.1 — 47 checks)
 
 **General honesty (JS / TS / JSX):**
 
@@ -129,10 +129,10 @@ standard makes the linter principled; the linter makes the standard checkable.
 ## usage
 
 ```sh
-npx --yes whitehack@0.7.0 scan path/to/repo
+npx --yes @agenttool/whitehack-scan@0.7.1 scan path/to/repo
 
 # closed machine-readable output; redaction removes source-bearing fields
-npx --yes whitehack@0.7.0 scan . --json --redacted
+npx --yes @agenttool/whitehack-scan@0.7.1 scan . --json --redacted
 
 npm run selftest   # diagnostic scan; planted confident findings intentionally exit 1
 npm test           # deterministic scanner and crypto-awareness fixtures
@@ -148,14 +148,14 @@ does not break a CI gate. An exit `0` is not a security or honesty guarantee.
 ### npm — exact public release
 
 ```sh
-npx --yes whitehack@0.7.0 scan .
+npx --yes @agenttool/whitehack-scan@0.7.1 scan .
 
 # or keep the exact tool in a project
-npm install --save-dev --save-exact whitehack@0.7.0
+npm install --save-dev --save-exact @agenttool/whitehack-scan@0.7.1
 npm exec -- whitehack scan .
 ```
 
-`whitehack` has zero runtime dependencies and no install lifecycle scripts. npm
+`@agenttool/whitehack-scan` has zero runtime dependencies and no install lifecycle scripts. npm
 is a distribution mirror, not a service dependency: scanning stays local and
 does not contact a registry, a chain, a wallet, or the Whitehack maintainers.
 
@@ -163,8 +163,8 @@ does not contact a registry, a chain, a wallet, or the Whitehack maintainers.
 
 The same release tarball and its SHA-256 manifest are available at:
 
-- `https://cambridgetcg.github.io/whitehack/packages/v1/whitehack/0.7.0/manifest.json`
-- `https://cambridgetcg.github.io/whitehack/packages/v1/whitehack/0.7.0/whitehack-0.7.0.tgz`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.7.1/manifest.json`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.7.1/agenttool-whitehack-scan-0.7.1.tgz`
 
 Read and verify the manifest before installing the tarball. The GitHub release,
 GitHub Pages, and npm copies are intended to be byte-for-byte mirrors of that
@@ -180,10 +180,10 @@ steps:
   - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
     with:
       persist-credentials: false
-  - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+  - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
     with:
-      node-version: 20
-  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.7.0
+      node-version: 24.18.0
+  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.7.1
     with:
       path: .
 ```
@@ -201,8 +201,8 @@ cryptographic GitHub pin should use the reviewed 40-character release commit.
 ### JavaScript APIs
 
 ```js
-import { scan, scanDetailed } from 'whitehack'
-import { CHECK_MANIFEST, scanText } from 'whitehack/core'
+import { scan, scanDetailed } from '@agenttool/whitehack-scan'
+import { CHECK_MANIFEST, scanText } from '@agenttool/whitehack-scan/core'
 
 const findings = await scan('.')
 const { findings: boundedFindings, scope } = await scanDetailed('.')
@@ -221,7 +221,7 @@ excluded; unsupported and non-regular paths have separate scope counts.
 serializable rule inventory.
 
 Machine consumers can import the closed result schema as
-`whitehack/schema.json`. JSON CLI output uses `whitehack-scan/v1`; prefer
+`@agenttool/whitehack-scan/schema.json`. JSON CLI output uses `whitehack-scan/v1`; prefer
 `--redacted` when logs cross a trust boundary.
 
 ### development snapshot — moving GitHub main
@@ -270,14 +270,17 @@ whitehack lives on every resistance-free channel:
 | Cloudflare | whitehack-learn.axiepro.workers.dev | no |
 | jsDelivr CDN | cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/ | no |
 | GitHub raw | raw.githubusercontent.com/cambridgetcg/whitehack/main/ | no |
-| npm / npx exact release | npmjs.com/package/whitehack | no |
+| npm / npx exact release | npmjs.com/package/@agenttool/whitehack-scan | no |
 | LOVE exact artifact + manifest | cambridgetcg.github.io/whitehack/packages/v1/ | no |
-| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.7.0 | no |
+| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.7.1 | no |
 | curl install | raw.githubusercontent.com/.../install.sh | no |
 
 npm is an optional mirror, not a gate: the exact tarball is also available over
 ordinary HTTPS. No PyPI, registration, paywall, hosted scanner, or account is
 required. The tool reaches anyone who wants it through multiple open channels.
+The `whitehack-v0.7.0` LOVE/GitHub release remains historical; its unscoped npm
+publication was rejected, so the public npm identity begins at
+`@agenttool/whitehack-scan@0.7.1`.
 
 ## the one honest thing about this tool
 

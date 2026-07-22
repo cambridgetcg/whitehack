@@ -1,6 +1,6 @@
 {
-  "name": "whitehack",
-  "version": "0.7.0",
+  "name": "@agenttool/whitehack-scan",
+  "version": "0.7.1",
   "description": "The honest hack — scan a codebase (incl. Solidity & financial code) for the places it lies about its own state.",
   "type": "module",
   "main": "./src/scan.js",
@@ -44,6 +44,10 @@
     "url": "https://github.com/cambridgetcg/whitehack/issues"
   },
   "homepage": "https://github.com/cambridgetcg/whitehack#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "engines": {
     "node": ">=18"
   },
