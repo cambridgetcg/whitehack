@@ -5,10 +5,21 @@
     {
       "name": "whitehack",
       "latest": "0.7.0",
+      "notice": "Historical LOVE/GitHub release; npm rejected the unscoped name and no whitehack@0.7.0 package exists.",
       "versions": [
         {
           "version": "0.7.0",
           "manifest_url": "https://cambridgetcg.github.io/whitehack/packages/v1/whitehack/0.7.0/manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "@agenttool/whitehack-scan",
+      "latest": "0.7.1",
+      "versions": [
+        {
+          "version": "0.7.1",
+          "manifest_url": "https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.7.1/manifest.json"
         }
       ]
     }
