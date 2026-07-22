@@ -1,6 +1,6 @@
 {
   "name": "whitehack",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "The honest hack \u2014 scan a codebase (incl. Solidity & financial code) for the places it lies about its own state.",
   "type": "module",
   "main": "./src/scan.js",

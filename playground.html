@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>whitehack legacy playground — original 8-check browser demo</title>
-<meta name="description" content="Preserved browser demo of whitehack's original eight JS/TS and Solidity checks. The canonical v0.5 CLI/API runs 42 checks." />
+<meta name="description" content="Preserved browser demo of whitehack's original eight JS/TS and Solidity checks. The canonical v0.6 CLI/API runs 47 checks." />
 <style>
   :root {
     --ink: #0a0a0b;
@@ -207,7 +207,7 @@
   <div class="wrap">
     <p class="eyebrow">legacy browser demo · original 8 checks</p>
     <h1>The original <span class="em">honest</span> hack, in your browser.</h1>
-    <p class="sub">This preserved demo runs the original eight JS/TS and Solidity checks entirely in this page — no server or upload. It does not run the canonical v0.5 CLI/API's 42-check protocol and crypto-awareness pack.</p>
+    <p class="sub">This preserved demo runs the original eight JS/TS and Solidity checks entirely in this page — no server or upload. It does not run the canonical v0.6 CLI/API's 47-check protocol and wallet/crypto-awareness pack.</p>
     <div style="margin-top:24px">
       <div class="tabs">
         <button class="tab active" data-lang="js">JS / TS</button>
@@ -235,7 +235,7 @@
     </div>
     <div id="findingsBody"></div>
     <p class="honest-banner">
-      <strong>Legacy boundary:</strong> this page contains the original eight-check demo, not the canonical 42-check CLI/API. whitehack flags <em>common</em> lies via heuristics; it cannot prove honesty. A flagged line may be a false positive; absence of findings is <em>not</em> proof the code is honest. <a href="https://github.com/cambridgetcg/whitehack#readme">Read about the current scanner →</a>
+      <strong>Legacy boundary:</strong> this page contains the original eight-check demo, not the canonical 47-check CLI/API. whitehack flags <em>common</em> lies via heuristics; it cannot prove honesty. A flagged line may be a false positive; absence of findings is <em>not</em> proof the code is honest. <a href="https://github.com/cambridgetcg/whitehack#readme">Read about the current scanner →</a>
     </p>
   </div>
 </div>
@@ -249,7 +249,7 @@
 <script>
 // ─────────────────────────────────────────────────────────────────────────────
 // whitehack legacy browser checks — preserved original eight-check port.
-// The canonical v0.5 CLI/API has 42 checks; this demo is intentionally not parity.
+// The canonical v0.6 CLI/API has 47 checks; this demo is intentionally not parity.
 // Each check is a { id, title, confidence, doctrine, principle, langs, detect }.
 // detect(content, lines) returns [{ line, message, snippet, confidence? }].
 // ─────────────────────────────────────────────────────────────────────────────

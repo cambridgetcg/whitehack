@@ -6,6 +6,11 @@ const args = process.argv.slice(2)
 const cmd = args[0]
 const target = args[1] || '.'
 
+if (cmd === '--version' || cmd === '-v') {
+  console.log(VERSION)
+  process.exit(0)
+}
+
 if (cmd !== 'scan') {
   console.log(`whitehack ${VERSION} — make software tell the truth about itself
 
@@ -20,11 +25,13 @@ whitehack ${VERSION} includes protocol, auth, and bounded crypto-awareness check
 WiFi (WPA2/3, TKIP, PMF, deauth), Bluetooth (Just Works, E0, HID),
 password/auth (hardcoded, MD5/SHA1, JWT none, session in URL, no HTTPS),
 private material, weak randomness, static AEAD nonces, signature fail-open,
-signed-webhook bytes/replay, insecure protocols, CORS, cookies, SQL injection.
+signed-webhook bytes/replay, wallet key egress, request-to-signing, unbounded
+capabilities, broadcast retries, unlimited approvals, insecure protocols,
+CORS, cookies, SQL injection.
 
 It cannot prove honesty; it surfaces common lies.
 Absence of findings is not proof of honesty.`)
-  process.exit(cmd === undefined ? 0 : 1)
+  process.exit(cmd === undefined || cmd === '--help' || cmd === '-h' ? 0 : 1)
 }
 
 try {

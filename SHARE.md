@@ -1,6 +1,6 @@
 # whitehack — share this
 
-Current v0.5 copy for humans who want to introduce the project. Adapt it to the
+Current v0.6 copy for humans who want to introduce the project. Adapt it to the
 community rather than posting identical text everywhere.
 
 ## Short version
@@ -10,7 +10,7 @@ what it knows: swallowed failures, stale values presented as live, unchecked
 transfers, exposed credentials, fail-open signatures, static AEAD nonces, and
 other protocol/honesty signals.
 
-The canonical Node CLI/API registers 42 checks across supported JS/TS, Python,
+The canonical Node CLI/API registers 47 checks across supported JS/TS, Python,
 Solidity, and config/source formats. Every finding labels its confidence. High
 and medium-high findings affect the CLI exit code; heuristics remain advisory.
 A match may be wrong, and an empty scan is not proof of security or honesty.
@@ -26,7 +26,7 @@ npx github:cambridgetcg/whitehack scan .
 - Legacy browser demo: https://whitehack-playground.axiepro.workers.dev
 
 The browser page deliberately preserves the original eight checks. It is not
-the 42-check CLI/API and does not contain the v0.5 crypto-awareness pack.
+the 47-check CLI/API and does not contain the v0.6 crypto-awareness pack.
 
 ## Longer version
 
@@ -39,7 +39,7 @@ cached price with no freshness marker looks live. A signature expression with
 signature without a replay guard proves bytes were signed, not that delivery is
 fresh. These shapes deserve explicit review even when the program keeps running.
 
-whitehack v0.5 combines the original honesty and Solidity rules with API,
+whitehack v0.6 combines the original honesty and Solidity rules with API,
 network, WiFi/Bluetooth, and bounded crypto-awareness checks. The crypto rules
 read selected source text only: they do not import keys, connect wallets or RPC,
 sign, broadcast, query chains, or run proof-of-concept code. They also do not
@@ -56,7 +56,7 @@ test someone else’s system is implied.
 
 ## Compact social post
 
-whitehack v0.5 🤍 — 42 dependency-free source-text checks for code that hides
+whitehack v0.6 🤍 — 47 dependency-free source-text checks for code that hides
 failure, freshness, provenance, credential, protocol, or crypto assumptions.
 Confidence-labelled; heuristics never gate. No wallet/RPC/key-use capability,
 and no claim that a clean result proves security.

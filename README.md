@@ -11,7 +11,7 @@ it were live, the score shown to a person with no way to ask *why*. These usuall
 aren't bugs in the ordinary sense. The code runs fine. It just isn't honest about
 its own state — and someone downstream trusts it anyway.
 
-## what it checks (v0.5.0 — 42 checks)
+## what it checks (v0.6.0 — 47 checks)
 
 **General honesty (JS / TS / JSX):**
 
@@ -55,14 +55,20 @@ its own state — and someone downstream trusts it anyway.
 | `signature-fail-open` | signature verification coerced to true, or an invalid/error branch that accepts | substrate honesty | medium-high |
 | `webhook-reencoded-body` | a signed webhook verifier appears to receive parsed-and-re-serialized JSON instead of provider-defined exact bytes | substrate honesty | heuristic |
 | `signed-webhook-without-replay-guard` | a signed webhook file shows no local timestamp comparison or event-id/nonce dedupe guard | substrate honesty | heuristic |
+| `wallet-key-egress` | raw wallet signing/recovery material passed directly to a log, telemetry, or HTTP-response sink | substrate honesty | medium-high / heuristic |
+| `wallet-direct-request-signing` | request-derived bytes reach a wallet signing/send primitive with no visible local policy, capability, simulation, or approval call | substrate honesty | heuristic |
+| `wallet-capability-unbounded` | a wallet capability carries an explicit wildcard, no-expiry/no-limit value, or allow-all flag near mutating authority | substrate honesty | heuristic |
+| `wallet-broadcast-auto-retry` | transaction broadcast appears inside an automatic retry wrapper or retry loop, where timeout may be mistaken for failure | substrate honesty | heuristic |
+| `unlimited-token-approval` | an ERC-20-style approval call grants maximum fungible-token allowance | substrate honesty | heuristic |
 
 These checks inspect text only. They do not parse possible private material as
 keys, connect wallets, call RPC providers, query chains, sign bytes, submit
-transactions, or deliver webhooks. This first bounded pack does not detect
-private-key logging/egress, signing-display intent, dependency lifecycle scripts,
-or Solidity signature domains. It also cannot prove chain/address binding, key
-lifecycle, nonce uniqueness, or cross-module replay protection; those require
-AST/data-flow analysis and local review.
+transactions, or deliver webhooks. They cannot prove that middleware did or did
+not validate a request, a retry is or is not chain-idempotent, a broad approval
+is unjustified, or a complete capability is bounded. Nor can they prove
+chain/address binding, key lifecycle, nonce uniqueness, cross-module replay
+protection, dependency lifecycle safety, or Solidity signature domains; those
+require AST/data-flow analysis and local review.
 
 **Network & security protocol (JS / TS / config):**
 
@@ -111,8 +117,8 @@ enforces a specific principle, and every finding cites it (`CS#n`):
 | Clear Standard principle | whitehack checks |
 |--------------------------|------------------|
 | **#1 — truth of state** | `api-missing-versioning`, `float-money`, `performed-ignorance`, `spot-price-as-fair`, `static-aead-nonce`, `weak-wifi-encryption`, `webhook-reencoded-body`, `wifi-pmk-exposure` |
-| **#2 — visible failure** | `api-bare-fetch`, `api-status-lie`, `bluetooth-protocol`, `bluetooth-protocol-flaws`, `cookie-insecure`, `cors-wildcard`, `disabled-cert-verification`, `exposed-config`, `hardcoded-secret`, `insecure-protocol`, `password-auth`, `protocol-surface`, `signature-fail-open`, `silent-failure`, `sql-injection`, `unchecked-transfer`, `unsafe-eval`, `weak-crypto`, `wifi-deauth-accept`, `wifi-protocol`, `wifi-protocol-flaws`, `wpa2-krack` |
-| **#3 — inspectable decisions** | `api-error-without-shape`, `bluetooth-paired-stranger`, `decision-without-why`, `silent-revert`, `trust-by-authority` |
+| **#2 — visible failure** | `api-bare-fetch`, `api-status-lie`, `bluetooth-protocol`, `bluetooth-protocol-flaws`, `cookie-insecure`, `cors-wildcard`, `disabled-cert-verification`, `exposed-config`, `hardcoded-secret`, `insecure-protocol`, `password-auth`, `protocol-surface`, `signature-fail-open`, `silent-failure`, `sql-injection`, `unchecked-transfer`, `unsafe-eval`, `wallet-broadcast-auto-retry`, `wallet-key-egress`, `weak-crypto`, `wifi-deauth-accept`, `wifi-protocol`, `wifi-protocol-flaws`, `wpa2-krack` |
+| **#3 — inspectable decisions** | `api-error-without-shape`, `bluetooth-paired-stranger`, `decision-without-why`, `silent-revert`, `trust-by-authority`, `unlimited-token-approval`, `wallet-capability-unbounded`, `wallet-direct-request-signing` |
 | **#4 — stated freshness** | `api-missing-rate-limit`, `cache-as-live`, `dns-plaintext`, `signed-webhook-without-replay-guard`, `stale-oracle`, `wifi-krack-vulnerable` |
 | **#5 — honest names** | `wifi-evil-twin` |
 | **#6 — labelled certainty** | *whitehack **embodies** this — it labels its own confidence rather than checking yours* |
@@ -159,8 +165,8 @@ provides `scan` and `CHECKS`, while `whitehack/report` provides the formatter.
 - **jsDelivr CDN** → https://cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/LEARN.md
 - **GitHub** → https://github.com/cambridgetcg/whitehack
 
-The Node CLI and imported `scan()` API are the canonical v0.5 implementation
-with 42 checks. The client-only browser playground deliberately preserves the
+The Node CLI and imported `scan()` API are the canonical v0.6 implementation
+with 47 checks. The client-only browser playground deliberately preserves the
 original eight-check demo; it is useful for learning, but it is not feature
 parity and does not include the protocol or crypto-awareness pack.
 

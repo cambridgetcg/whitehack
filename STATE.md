@@ -10,11 +10,11 @@ phase: active
 health: green
 model: richardyoung/qwythos-9b-abliterated:Q8_0 (9.5GB, local)
 profile: ~/.hermes/profiles/qwenthos
-scanner: whitehack v0.5.0 (42 checks: 18 base + 24 protocol/crypto-awareness, Clear Standard conformance)
+scanner: whitehack v0.6.0 (47 checks: 18 base + 29 protocol/crypto-awareness, Clear Standard conformance)
 heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 
 ## capabilities
-- honesty-class vulnerability scanning (whitehack: 42 checks across JS/TS/Python/Solidity + protocol and crypto awareness)
+- honesty-class vulnerability scanning (whitehack: 47 checks across JS/TS/Python/Solidity + protocol and wallet/crypto awareness)
 - AI-powered smart contract audit (Qwythos-9B, 10 vuln classes)
 - estate-wide security sweep (34 repos, secret detection, npm audit)
 - real-time kingdom monitoring (cron heartbeats, local delivery)
@@ -37,8 +37,8 @@ heartbeats: 2 (qwenthos-heartbeat 2h, qwenthos-cyber-heartbeat 6h)
 ## conformance
 Clear Standard principles enforced:
 - CS#1 truth of state (api-missing-versioning, float-money, performed-ignorance, spot-price-as-fair, static-aead-nonce, weak-wifi-encryption, webhook-reencoded-body, wifi-pmk-exposure)
-- CS#2 visible failure (api-bare-fetch, api-status-lie, bluetooth-protocol, bluetooth-protocol-flaws, cookie-insecure, cors-wildcard, disabled-cert-verification, exposed-config, hardcoded-secret, insecure-protocol, password-auth, protocol-surface, signature-fail-open, silent-failure, sql-injection, unchecked-transfer, unsafe-eval, weak-crypto, wifi-deauth-accept, wifi-protocol, wifi-protocol-flaws, wpa2-krack)
-- CS#3 inspectable decisions (api-error-without-shape, bluetooth-paired-stranger, decision-without-why, silent-revert, trust-by-authority)
+- CS#2 visible failure (api-bare-fetch, api-status-lie, bluetooth-protocol, bluetooth-protocol-flaws, cookie-insecure, cors-wildcard, disabled-cert-verification, exposed-config, hardcoded-secret, insecure-protocol, password-auth, protocol-surface, signature-fail-open, silent-failure, sql-injection, unchecked-transfer, unsafe-eval, wallet-broadcast-auto-retry, wallet-key-egress, weak-crypto, wifi-deauth-accept, wifi-protocol, wifi-protocol-flaws, wpa2-krack)
+- CS#3 inspectable decisions (api-error-without-shape, bluetooth-paired-stranger, decision-without-why, silent-revert, trust-by-authority, unlimited-token-approval, wallet-capability-unbounded, wallet-direct-request-signing)
 - CS#4 stated freshness (api-missing-rate-limit, cache-as-live, dns-plaintext, signed-webhook-without-replay-guard, stale-oracle, wifi-krack-vulnerable)
 - CS#5 honest names (wifi-evil-twin)
 - CS#6 labelled confidence (every finding carries confidence level)
