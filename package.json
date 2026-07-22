@@ -1,12 +1,15 @@
 {
   "name": "whitehack",
-  "version": "0.6.0",
-  "description": "The honest hack \u2014 scan a codebase (incl. Solidity & financial code) for the places it lies about its own state.",
+  "version": "0.7.0",
+  "description": "The honest hack — scan a codebase (incl. Solidity & financial code) for the places it lies about its own state.",
   "type": "module",
   "main": "./src/scan.js",
   "exports": {
     ".": "./src/scan.js",
+    "./core": "./src/core.js",
     "./report": "./src/report.js",
+    "./result": "./src/result.js",
+    "./schema.json": "./schema/scan-result-v1.schema.json",
     "./package.json": "./package.json"
   },
   "bin": {
@@ -45,16 +48,13 @@
     "node": ">=18"
   },
   "files": [
-    "bin",
+    "bin/whitehack.js",
     "src",
-    "test",
-    "examples",
-    "install.sh",
-    "LEARN.md",
-    "LOOP.md",
-    "CONTRIBUTING.md",
-    "SHARE.md",
+    "schema",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "devDependencies": {
+    "ajv": "8.17.1"
+  }
 }

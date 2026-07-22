@@ -21,11 +21,9 @@
 // it inside ::nsmiddleware, :::stardust, or other double-colon syntax.
 // Removed bare \* — it matched `*]`, `*:`, `*)` in regex syntax, markdown
 // bold (**Word**), and route patterns ([a-z]*$), none of which are bind calls.
-const BIND_ALL = /(?:\b0\.0\.0\.0\b|(?<=^|[\s'"`{(,])::(?:[,)\]\s}"`]|$))/g
-const BIND_LOCALHOST = /127\.0\.0\.1|localhost/g
-const LISTEN_ALL = /\.listen\s*\(\s*(?:0|process\.env\.PORT|port|PORT)\b/g
+const BIND_ALL = /(?:\b0\.0\.0\.0\b|(?<=^|[\s'"`{(,])::(?:[,)\]\s}"`]|$))/
+const LISTEN_ALL = /\.listen\s*\(\s*(?:0|process\.env\.PORT|port|PORT)\b/
 const OLLAMA_HOST = /OLLAMA_HOST|host\s*[:=]\s*['"]0\.0\.0\.0['"]/i
-const HARDCODED_PORT = /port\s*[:=]\s*(\d{2,5})/gi
 
 export const protocolSurface = {
   id: 'protocol-surface',
@@ -36,8 +34,6 @@ export const protocolSurface = {
   langs: ['js', 'ts', 'mjs'],
   detect(content, lines) {
     const hits = []
-    const hasLocalhost = BIND_LOCALHOST.test(content)
-
     for (let i = 0; i < lines.length; i++) {
       const l = lines[i]
 
@@ -58,22 +54,18 @@ export const protocolSurface = {
           message: 'Ollama bound to 0.0.0.0 — AI inference API exposed to the entire local network. Anyone can run model inference. Bind to 127.0.0.1 unless you have a firewall',
           snippet: l.trim().slice(0, 120),
         })
+        continue
       }
-    }
 
-    // Check for .listen(port) without host argument — defaults to all interfaces
-    let listenMatches = LISTEN_ALL.exec(content)
-    while (listenMatches !== null) {
-      const lineNum = content.slice(0, listenMatches.index).split('\n').length
-      const line = lines[lineNum - 1]
-      if (line && !line.includes('localhost') && !line.includes('127.0.0.1') && !line.includes('0.0.0.0')) {
+      // .listen(port) without a host defaults to all interfaces. Check each
+      // line independently so line calculation stays linear in input size.
+      if (LISTEN_ALL.test(l) && !l.includes('localhost') && !l.includes('127.0.0.1') && !l.includes('0.0.0.0')) {
         hits.push({
-          line: lineNum,
+          line: i + 1,
           message: '.listen(port) without host argument — Node.js defaults to all interfaces. Add "127.0.0.1" as second argument if external access is not needed',
-          snippet: line.trim().slice(0, 120),
+          snippet: l.trim().slice(0, 120),
         })
       }
-      listenMatches = LISTEN_ALL.exec(content)
     }
 
     return hits

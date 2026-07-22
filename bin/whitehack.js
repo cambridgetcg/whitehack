@@ -1,21 +1,23 @@
 #!/usr/bin/env node
-import { scan } from '../src/scan.js'
+import { CHECKS, ScanError, scanDetailed } from '../src/scan.js'
 import { report, VERSION } from '../src/report.js'
+import { escapeTerminal, stringifyJsonSafe } from '../src/output-text.js'
+import {
+  createScanErrorResult,
+  createScanResult,
+  exitCodeForFindings,
+} from '../src/result.js'
 
-const args = process.argv.slice(2)
-const cmd = args[0]
-const target = args[1] || '.'
-
-if (cmd === '--version' || cmd === '-v') {
-  console.log(VERSION)
-  process.exit(0)
-}
-
-if (cmd !== 'scan') {
-  console.log(`whitehack ${VERSION} — make software tell the truth about itself
+const HELP = `whitehack ${VERSION} — make software tell the truth about itself
 
 usage:
-  whitehack scan [path]   scan a directory (default: .) for honesty anti-patterns
+  whitehack scan [path] [--json] [--redacted] [--require-files]
+
+options:
+  --json       emit one closed whitehack-scan/v1 JSON document
+  --redacted   emit JSON with finding title, message, and snippet removed
+  --require-files
+               fail with exit 2 when no supported regular files were scanned
 
 whitehack flags where code lies about its own state — a failed read that
 silently becomes 0, a cached value served as if live, or a score shown with
@@ -30,15 +32,145 @@ capabilities, broadcast retries, unlimited approvals, insecure protocols,
 CORS, cookies, SQL injection.
 
 It cannot prove honesty; it surfaces common lies.
-Absence of findings is not proof of honesty.`)
-  process.exit(cmd === undefined || cmd === '--help' || cmd === '-h' ? 0 : 1)
+Absence of findings is not proof of honesty.`
+
+class CliUsageError extends Error {
+  constructor(message) {
+    super(message)
+    this.name = 'CliUsageError'
+    this.code = 'cli_usage'
+  }
 }
 
-try {
-  const findings = await scan(target)
-  const code = report(findings, target)
-  process.exit(code)
-} catch (error) {
-  console.error(`whitehack: scan failed: ${error.message}`)
-  process.exit(2)
+function parseScanArguments(args) {
+  let target
+  let json = false
+  let redacted = false
+  let requireFiles = false
+  let positionalOnly = false
+
+  for (const arg of args) {
+    if (!positionalOnly && arg === '--') {
+      positionalOnly = true
+      continue
+    }
+    if (!positionalOnly && arg === '--json') {
+      json = true
+      continue
+    }
+    if (!positionalOnly && arg === '--redacted') {
+      redacted = true
+      json = true
+      continue
+    }
+    if (!positionalOnly && arg === '--require-files') {
+      requireFiles = true
+      continue
+    }
+    if (!positionalOnly && arg.startsWith('-')) {
+      throw new CliUsageError(`unknown option: ${JSON.stringify(arg)}`)
+    }
+    if (target !== undefined) throw new CliUsageError('scan accepts at most one path')
+    target = arg
+  }
+
+  return { target: target ?? '.', json, redacted, requireFiles }
 }
+
+function writeJson(document) {
+  process.stdout.write(`${stringifyJsonSafe(document)}\n`)
+}
+
+function errorCode(error) {
+  if (error instanceof ScanError || error instanceof CliUsageError) return error.code
+  return 'unexpected_error'
+}
+
+function safeErrorTarget(target, code) {
+  return code === 'scan_path_unsafe' ? '[unsafe-path]' : target
+}
+
+async function run(argv) {
+  const command = argv[0]
+  if (command === '--version' || command === '-v') {
+    process.stdout.write(`${VERSION}\n`)
+    return 0
+  }
+  if (command === undefined || command === '--help' || command === '-h') {
+    process.stdout.write(`${HELP}\n`)
+    return 0
+  }
+
+  const jsonRequested = argv.includes('--json') || argv.includes('--redacted')
+  if (command !== 'scan') {
+    const error = new CliUsageError(`unknown command: ${JSON.stringify(command)}`)
+    if (jsonRequested) {
+      writeJson(createScanErrorResult({
+        version: VERSION.slice(1),
+        checkCount: CHECKS.length,
+        target: '.',
+        code: error.code,
+        redacted: argv.includes('--redacted'),
+      }))
+      process.stderr.write(`whitehack: ${error.code}\n`)
+    } else {
+      process.stdout.write(`${HELP}\n`)
+    }
+    return 2
+  }
+
+  let parsed
+  try {
+    parsed = parseScanArguments(argv.slice(1))
+  } catch (error) {
+    if (jsonRequested) {
+      writeJson(createScanErrorResult({
+        version: VERSION.slice(1),
+        checkCount: CHECKS.length,
+        target: '.',
+        code: errorCode(error),
+        redacted: argv.includes('--redacted'),
+      }))
+      process.stderr.write(`whitehack: ${errorCode(error)}\n`)
+    } else {
+      process.stderr.write(`whitehack: ${escapeTerminal(error.message)}\n`)
+    }
+    return 2
+  }
+
+  try {
+    const scanned = await scanDetailed(parsed.target)
+    if (parsed.requireFiles && scanned.scope.files_scanned === 0) {
+      throw new ScanError('scan_empty_scope', 'no supported regular files were scanned')
+    }
+    if (parsed.json) {
+      writeJson(createScanResult({
+        version: VERSION.slice(1),
+        checkCount: CHECKS.length,
+        target: parsed.target,
+        findings: scanned.findings,
+        scope: scanned.scope,
+        redacted: parsed.redacted,
+      }))
+      return exitCodeForFindings(scanned.findings)
+    }
+    return report(scanned.findings, parsed.target)
+  } catch (error) {
+    if (parsed.json) {
+      const code = errorCode(error)
+      writeJson(createScanErrorResult({
+        version: VERSION.slice(1),
+        checkCount: CHECKS.length,
+        target: safeErrorTarget(parsed.target, code),
+        code,
+        redacted: parsed.redacted,
+      }))
+      process.stderr.write(`whitehack: scan failed: ${code}\n`)
+    } else {
+      process.stderr.write(`whitehack: scan failed: ${escapeTerminal(error.message)}\n`)
+    }
+    return 2
+  }
+}
+
+process.exitCode = await run(process.argv.slice(2))

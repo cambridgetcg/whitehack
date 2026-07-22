@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cambridgetcg/whitehack/schema/scan-result-v1.schema.json",
+  "title": "Whitehack scan result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document_type",
+    "status",
+    "complete",
+    "scanner",
+    "target",
+    "redacted",
+    "scope",
+    "summary",
+    "findings",
+    "error"
+  ],
+  "properties": {
+    "document_type": { "const": "whitehack-scan/v1" },
+    "status": { "enum": ["complete", "error"] },
+    "complete": { "type": "boolean" },
+    "scanner": { "$ref": "#/$defs/scanner" },
+    "target": { "type": "string", "minLength": 1 },
+    "redacted": { "type": "boolean" },
+    "scope": {
+      "oneOf": [
+        { "$ref": "#/$defs/scope" },
+        { "type": "null" }
+      ]
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "error": {
+      "oneOf": [
+        { "$ref": "#/$defs/error" },
+        { "type": "null" }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "redacted": { "const": true } },
+        "required": ["redacted"]
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": { "type": "null" },
+                "message": { "type": "null" },
+                "snippet": { "type": "null" }
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "message": { "type": "string" },
+                "snippet": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "oneOf": [
+    {
+      "properties": {
+        "status": { "const": "complete" },
+        "complete": { "const": true },
+        "scope": { "$ref": "#/$defs/scope" },
+        "error": { "type": "null" }
+      }
+    },
+    {
+      "properties": {
+        "status": { "const": "error" },
+        "complete": { "const": false },
+        "scope": { "type": "null" },
+        "findings": { "type": "array", "maxItems": 0 },
+        "error": { "$ref": "#/$defs/error" }
+      }
+    }
+  ],
+  "$defs": {
+    "scanner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "check_count"],
+      "properties": {
+        "name": { "const": "whitehack" },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "check_count": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxFiles",
+        "maxFileBytes",
+        "maxTotalBytes",
+        "maxEntries",
+        "maxDepth",
+        "maxPathBytes",
+        "maxLinesPerFile",
+        "maxFindings"
+      ],
+      "properties": {
+        "maxFiles": { "type": "integer", "minimum": 1 },
+        "maxFileBytes": { "type": "integer", "minimum": 1 },
+        "maxTotalBytes": { "type": "integer", "minimum": 1 },
+        "maxEntries": { "type": "integer", "minimum": 1 },
+        "maxDepth": { "type": "integer", "minimum": 1 },
+        "maxPathBytes": { "type": "integer", "minimum": 1 },
+        "maxLinesPerFile": { "type": "integer", "minimum": 1 },
+        "maxFindings": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "files_scanned",
+        "bytes_scanned",
+        "entries_observed",
+        "excluded_paths",
+        "non_regular_paths",
+        "unsupported_files",
+        "excluded_basenames",
+        "limits"
+      ],
+      "properties": {
+        "files_scanned": { "type": "integer", "minimum": 0 },
+        "bytes_scanned": { "type": "integer", "minimum": 0 },
+        "entries_observed": { "type": "integer", "minimum": 0 },
+        "excluded_paths": { "type": "integer", "minimum": 0 },
+        "non_regular_paths": { "type": "integer", "minimum": 0 },
+        "unsupported_files": { "type": "integer", "minimum": 0 },
+        "excluded_basenames": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "limits": { "$ref": "#/$defs/limits" }
+      }
+    },
+    "by_confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["high", "medium-high", "medium", "heuristic"],
+      "properties": {
+        "high": { "type": "integer", "minimum": 0 },
+        "medium-high": { "type": "integer", "minimum": 0 },
+        "medium": { "type": "integer", "minimum": 0 },
+        "heuristic": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_count", "gating_finding_count", "by_confidence"],
+      "properties": {
+        "finding_count": { "type": "integer", "minimum": 0 },
+        "gating_finding_count": { "type": "integer", "minimum": 0 },
+        "by_confidence": { "$ref": "#/$defs/by_confidence" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "line",
+        "check",
+        "title",
+        "confidence",
+        "doctrine",
+        "principle",
+        "message",
+        "snippet"
+      ],
+      "properties": {
+        "file": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 0 },
+        "check": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,63}$"
+        },
+        "title": { "type": ["string", "null"] },
+        "confidence": {
+          "enum": ["high", "medium-high", "medium", "heuristic"]
+        },
+        "doctrine": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,63}$"
+        },
+        "principle": { "type": "integer", "minimum": 1, "maximum": 6 },
+        "message": { "type": ["string", "null"] },
+        "snippet": { "type": ["string", "null"] }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        }
+      }
+    }
+  }
+}

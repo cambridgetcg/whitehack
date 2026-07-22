@@ -16,11 +16,44 @@ jobs:
       - name: run deterministic tests
         run: npm test
       - name: verify the published artifact shape
+        shell: bash
         run: |
+          set -euo pipefail
           pack_dir=$(mktemp -d)
+          trap 'rm -rf "$pack_dir"' EXIT
           archive=$(npm pack --silent --pack-destination "$pack_dir")
           tar -xzf "$pack_dir/$archive" -C "$pack_dir"
-          (cd "$pack_dir/package" && npm test)
+          cd "$pack_dir/package"
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict'
+          import { readFile } from 'node:fs/promises'
+          import { fileURLToPath } from 'node:url'
+
+          import { scan, scanDetailed } from 'whitehack'
+          import { CHECK_MANIFEST, scanText } from 'whitehack/core'
+          import { createScanResult } from 'whitehack/result'
+
+          const findings = scanText('eval(userInput)\n', { file: 'smoke.js' })
+          assert.ok(findings.some(({ check }) => check === 'unsafe-eval'))
+          assert.equal(CHECK_MANIFEST.length, 47)
+          assert.equal(typeof scan, 'function')
+          assert.equal(typeof scanDetailed, 'function')
+          assert.equal(typeof createScanResult, 'function')
+
+          const schemaUrl = import.meta.resolve('whitehack/schema.json')
+          const schema = JSON.parse(await readFile(fileURLToPath(schemaUrl), 'utf8'))
+          assert.equal(schema.properties.document_type.const, 'whitehack-scan/v1')
+          NODE
+
+          printf 'eval(userInput)\n' > smoke.js
+          status=0
+          node bin/whitehack.js scan smoke.js --json --redacted > result.json || status=$?
+          test "$status" -eq 1
+          node --input-type=module --eval '
+            import { readFileSync } from "node:fs";
+            const result = JSON.parse(readFileSync("result.json", "utf8"));
+            if (result.document_type !== "whitehack-scan/v1" || result.complete !== true || result.redacted !== true) process.exit(1);
+          '
       - name: verify fixtures still trigger
         run: |
           status=0
