@@ -192,7 +192,7 @@ test('JSON CLI is closed, redactable, deterministic, and preserves exit 0/1/2', 
     assert.equal(result.document_type, 'whitehack-scan/v1')
     assert.equal(result.status, 'complete')
     assert.equal(result.complete, true)
-    assert.equal(result.scanner.version, '0.7.0')
+    assert.equal(result.scanner.version, '0.7.1')
     assert.equal(result.redacted, true)
     assert.equal(result.findings[0].title, null)
     assert.equal(result.findings[0].message, null)
@@ -270,7 +270,9 @@ test('schema, package allowlist, and composite action keep authority surfaces se
   )
   const action = await readFile(new URL('../action-for-anyone/action.yml', import.meta.url), 'utf8')
 
-  assert.equal(packageJson.version, '0.7.0')
+  assert.equal(packageJson.name, '@agenttool/whitehack-scan')
+  assert.equal(packageJson.version, '0.7.1')
+  assert.deepEqual(packageJson.bin, { whitehack: 'bin/whitehack.js' })
   assert.deepEqual(packageJson.files, [
     'bin/whitehack.js',
     'src',
@@ -282,8 +284,13 @@ test('schema, package allowlist, and composite action keep authority surfaces se
   assert.equal(packageJson.exports['./schema.json'], './schema/scan-result-v1.schema.json')
   assert.equal(packageJson.dependencies, undefined)
   assert.deepEqual(packageJson.devDependencies, { ajv: '8.17.1' })
-  assert.equal(packageJson.preinstall, undefined)
-  assert.equal(packageJson.postinstall, undefined)
+  assert.deepEqual(packageJson.publishConfig, {
+    access: 'public',
+    registry: 'https://registry.npmjs.org/',
+  })
+  assert.equal(packageJson.scripts.preinstall, undefined)
+  assert.equal(packageJson.scripts.install, undefined)
+  assert.equal(packageJson.scripts.postinstall, undefined)
   assert.equal(schema.additionalProperties, false)
   assert.deepEqual(schema.properties.document_type, { const: 'whitehack-scan/v1' })
   assert.equal(
@@ -319,14 +326,14 @@ test('schema, package allowlist, and composite action keep authority surfaces se
     },
   }
   const complete = createScanResult({
-    version: '0.7.0',
+    version: '0.7.1',
     checkCount: CHECK_MANIFEST.length,
     target: '.',
     findings: [sourceFinding],
     scope: callerScope,
   })
   const redacted = createScanResult({
-    version: '0.7.0',
+    version: '0.7.1',
     checkCount: CHECK_MANIFEST.length,
     target: '.',
     findings: [sourceFinding],
@@ -334,7 +341,7 @@ test('schema, package allowlist, and composite action keep authority surfaces se
     redacted: true,
   })
   const failed = createScanErrorResult({
-    version: '0.7.0',
+    version: '0.7.1',
     checkCount: CHECK_MANIFEST.length,
     target: '.',
     code: 'scan_read_failed',

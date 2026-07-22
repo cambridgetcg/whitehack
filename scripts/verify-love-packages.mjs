@@ -25,7 +25,6 @@ import { createGunzip } from "node:zlib";
 
 const execFileAsync = promisify(execFile);
 
-const PACKAGE_NAME = "whitehack";
 const SOURCE_REPOSITORY = "https://github.com/cambridgetcg/whitehack.git";
 const EXPECTED_NODE_VERSION = "v24.18.0";
 const EXPECTED_NPM_VERSION = "11.17.0";
@@ -37,6 +36,28 @@ const IO_CHUNK_BYTES = 64 * 1024;
 const SEMVER_PATTERN = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
 const FULL_GIT_OID_PATTERN = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
 const UNSAFE_TEXT_PATTERN = /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/u;
+
+const LOVE_PACKAGE_PROFILES = Object.freeze([
+  Object.freeze({
+    packageName: "whitehack",
+    version: "0.7.0",
+    lovePath: "whitehack",
+    pagesPath: "whitehack",
+    checkedInPackBasename: "whitehack-0.7.0.tgz",
+    npmTarballBasename: "whitehack-0.7.0.tgz",
+    githubTag: "whitehack-v0.7.0",
+    indexNotice: "Historical LOVE/GitHub release; npm rejected the unscoped name and no whitehack@0.7.0 package exists.",
+  }),
+  Object.freeze({
+    packageName: "@agenttool/whitehack-scan",
+    version: "0.7.1",
+    lovePath: "@agenttool/whitehack-scan",
+    pagesPath: "@agenttool/whitehack-scan",
+    checkedInPackBasename: "agenttool-whitehack-scan-0.7.1.tgz",
+    npmTarballBasename: "whitehack-scan-0.7.1.tgz",
+    githubTag: "whitehack-v0.7.1",
+  }),
+]);
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const DEFAULT_REPO_ROOT = path.resolve(path.dirname(SCRIPT_PATH), "..");
@@ -65,6 +86,22 @@ function posixRelative(repoRoot, absolutePath) {
 
 function isPlainObject(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function lovePackageRoot(profile) {
+  return `packages/v1/${profile.lovePath}`;
+}
+
+function loveVersionRoot(profile) {
+  return `${lovePackageRoot(profile)}/${profile.version}`;
+}
+
+function pagesUrl(profile, basename) {
+  return `https://cambridgetcg.github.io/whitehack/packages/v1/${profile.pagesPath}/${profile.version}/${basename}`;
+}
+
+function manifestUrl(profile) {
+  return pagesUrl(profile, "manifest.json");
 }
 
 function requireObject(value, subject) {
@@ -350,18 +387,18 @@ async function filesAreEqual(leftPath, rightPath, repoRoot) {
   }
 }
 
-function validateManifestShape(manifest, version, subject) {
+function validateManifestShape(manifest, profile, subject) {
   requireObject(manifest, subject);
   requireExact(manifest.protocol, "love-package/v1", `${subject}#protocol`);
   requireExact(manifest.document_type, "package-manifest", `${subject}#document_type`);
-  requireExact(manifest.name, PACKAGE_NAME, `${subject}#name`);
-  requireExact(manifest.version, version, `${subject}#version`);
+  requireExact(manifest.name, profile.packageName, `${subject}#name`);
+  requireExact(manifest.version, profile.version, `${subject}#version`);
   parseSemver(manifest.version, `${subject}#version`);
   requireString(manifest.description, `${subject}#description`);
   requireString(manifest.license, `${subject}#license`, { max: 500 });
 
   const artifact = requireObject(manifest.artifact, `${subject}#artifact`);
-  const expectedFilename = `${PACKAGE_NAME}-${version}.tgz`;
+  const expectedFilename = profile.checkedInPackBasename;
   requireExact(artifact.format, "npm-tarball", `${subject}#artifact.format`);
   requireExact(artifact.filename, expectedFilename, `${subject}#artifact.filename`);
   if (!/^[0-9a-f]{64}$/.test(artifact.sha256)) {
@@ -372,9 +409,9 @@ function validateManifestShape(manifest, version, subject) {
   }
   requireExact(artifact.media_type, "application/gzip", `${subject}#artifact.media_type`);
 
-  const pagesUrl = `https://cambridgetcg.github.io/whitehack/packages/v1/${PACKAGE_NAME}/${version}/${expectedFilename}`;
-  const releaseUrl = `https://github.com/cambridgetcg/whitehack/releases/download/whitehack-v${version}/${expectedFilename}`;
-  const npmUrl = `https://registry.npmjs.org/${PACKAGE_NAME}/-/${expectedFilename}`;
+  const canonicalPagesUrl = pagesUrl(profile, expectedFilename);
+  const releaseUrl = `https://github.com/cambridgetcg/whitehack/releases/download/${profile.githubTag}/${expectedFilename}`;
+  const npmUrl = `https://registry.npmjs.org/${profile.packageName}/-/${profile.npmTarballBasename}`;
   if (!Array.isArray(artifact.mirrors) || artifact.mirrors.length < 2 || artifact.mirrors.length > 3) {
     fail("E_MANIFEST_MIRRORS", `${subject}#artifact.mirrors`, "must contain the canonical Pages and GitHub mirrors, with optional npm mirror");
   }
@@ -386,9 +423,9 @@ function validateManifestShape(manifest, version, subject) {
     fail("E_MANIFEST_MIRRORS", `${subject}#artifact.mirrors`, "must not contain duplicate mirrors");
   }
   if (
-    mirrorUrls[0] !== pagesUrl ||
+    mirrorUrls[0] !== canonicalPagesUrl ||
     !mirrorUrls.includes(releaseUrl) ||
-    mirrorUrls.some((url) => ![pagesUrl, releaseUrl, npmUrl].includes(url))
+    mirrorUrls.some((url) => ![canonicalPagesUrl, releaseUrl, npmUrl].includes(url))
   ) {
     fail("E_MANIFEST_MIRRORS", `${subject}#artifact.mirrors`, "contains a non-canonical or missing Whitehack mirror");
   }
@@ -403,7 +440,7 @@ function validateManifestShape(manifest, version, subject) {
 
   const install = requireObject(manifest.install, `${subject}#install`);
   requireExact(install.format, "npm-tarball", `${subject}#install.format`);
-  requireExact(install.specifier, pagesUrl, `${subject}#install.specifier`);
+  requireExact(install.specifier, canonicalPagesUrl, `${subject}#install.specifier`);
   requireHttpsUrl(install.specifier, `${subject}#install.specifier`);
 
   const source = requireObject(manifest.source, `${subject}#source`);
@@ -427,7 +464,7 @@ function validateManifestShape(manifest, version, subject) {
   requireExact(dependencies.mode, "package_manifest", `${subject}#dependency_resolution.mode`);
   requireExact(dependencies.self_contained, true, `${subject}#dependency_resolution.self_contained`);
 
-  return { artifact, source, engines, expectedFilename, pagesUrl };
+  return { artifact, source, engines, expectedFilename, pagesUrl: canonicalPagesUrl };
 }
 
 function normalizedRepository(packageJson) {
@@ -466,9 +503,9 @@ function validateSourcePackage(packageJson, manifest, details, subject) {
   }
 }
 
-async function verifySourceAndRepack({ repoRoot, manifest, details, artifactPath, npmCommand }) {
+async function verifySourceAndRepack({ repoRoot, profile, manifest, details, artifactPath, npmCommand }) {
   const revision = details.source.revision;
-  const manifestSubject = `packages/v1/${PACKAGE_NAME}/${manifest.version}/manifest.json`;
+  const manifestSubject = `${loveVersionRoot(profile)}/manifest.json`;
   const resolved = (await git(repoRoot, ["rev-parse", "--verify", `${revision}^{commit}`], "E_SOURCE_REVISION", `${manifestSubject}#source.revision`)).stdout.trim();
   if (resolved !== revision) {
     fail("E_SOURCE_REVISION", `${manifestSubject}#source.revision`, "does not resolve to the recorded full commit ID");
@@ -581,12 +618,12 @@ async function verifyBaseImmutability(repoRoot, base) {
     if (UNSAFE_TEXT_PATTERN.test(entry) || entry.includes("\\")) {
       fail("E_BASE_TREE", "--base", "contains an unsafe package path");
     }
-    const parts = entry.split("/");
-    if (parts[0] !== "packages" || parts[1] !== "v1" || parts[2] === "index.json") continue;
-    if (parts.length < 5 || parts[2] !== PACKAGE_NAME || !SEMVER_PATTERN.test(parts[3])) {
+    if (entry === "packages/v1/index.json") continue;
+    const profile = LOVE_PACKAGE_PROFILES.find((candidate) => entry.startsWith(`${loveVersionRoot(candidate)}/`));
+    if (profile === undefined) {
       fail("E_BASE_TREE", "--base", "contains an unsupported package layout");
     }
-    roots.add(parts.slice(0, 4).join("/"));
+    roots.add(loveVersionRoot(profile));
   }
   for (const root of [...roots].sort()) {
     const unchanged = await gitPredicate(repoRoot, ["diff", "--quiet", "--no-ext-diff", base, "--", root], "E_BASE_DIFF", root);
@@ -596,31 +633,34 @@ async function verifyBaseImmutability(repoRoot, base) {
   }
 }
 
-function validateIndex(index, versions, subject) {
+function validateIndex(index, subject) {
   requireObject(index, subject);
   requireExact(index.protocol, "love-package/v1", `${subject}#protocol`);
   requireExact(index.document_type, "package-index", `${subject}#document_type`);
-  if (!Array.isArray(index.packages) || index.packages.length !== 1) {
-    fail("E_INDEX_SHAPE", `${subject}#packages`, "must contain exactly the Whitehack package entry");
+  if (!Array.isArray(index.packages) || index.packages.length !== LOVE_PACKAGE_PROFILES.length) {
+    fail("E_INDEX_SHAPE", `${subject}#packages`, "must contain exactly the allowlisted Whitehack package entries");
   }
-  const packageEntry = requireObject(index.packages[0], `${subject}#packages[0]`);
-  requireExact(packageEntry.name, PACKAGE_NAME, `${subject}#packages[0].name`);
-  if (!Array.isArray(packageEntry.versions) || packageEntry.versions.length !== versions.length) {
-    fail("E_INDEX_COVERAGE", `${subject}#packages[0].versions`, "must enumerate every checked-in version exactly once");
-  }
-  const sortedVersions = [...versions].sort(compareSemver);
-  for (let indexPosition = 0; indexPosition < sortedVersions.length; indexPosition += 1) {
-    const expectedVersion = sortedVersions[indexPosition];
-    const versionEntry = requireObject(packageEntry.versions[indexPosition], `${subject}#packages[0].versions[${indexPosition}]`);
-    requireExact(versionEntry.version, expectedVersion, `${subject}#packages[0].versions[${indexPosition}].version`);
+  for (let packageIndex = 0; packageIndex < LOVE_PACKAGE_PROFILES.length; packageIndex += 1) {
+    const profile = LOVE_PACKAGE_PROFILES[packageIndex];
+    const packageSubject = `${subject}#packages[${packageIndex}]`;
+    const packageEntry = requireObject(index.packages[packageIndex], packageSubject);
+    requireExact(packageEntry.name, profile.packageName, `${packageSubject}.name`);
+    if (!Array.isArray(packageEntry.versions) || packageEntry.versions.length !== 1) {
+      fail("E_INDEX_COVERAGE", `${packageSubject}.versions`, "must enumerate the allowlisted checked-in version exactly once");
+    }
+    const versionEntry = requireObject(packageEntry.versions[0], `${packageSubject}.versions[0]`);
+    if (profile.indexNotice !== undefined) {
+      requireExact(packageEntry.notice, profile.indexNotice, `${packageSubject}.notice`);
+    }
+    requireExact(versionEntry.version, profile.version, `${packageSubject}.versions[0].version`);
     requireExact(
       versionEntry.manifest_url,
-      `https://cambridgetcg.github.io/whitehack/packages/v1/${PACKAGE_NAME}/${expectedVersion}/manifest.json`,
-      `${subject}#packages[0].versions[${indexPosition}].manifest_url`,
+      manifestUrl(profile),
+      `${packageSubject}.versions[0].manifest_url`,
     );
-    requireHttpsUrl(versionEntry.manifest_url, `${subject}#packages[0].versions[${indexPosition}].manifest_url`);
+    requireHttpsUrl(versionEntry.manifest_url, `${packageSubject}.versions[0].manifest_url`);
+    requireExact(packageEntry.latest, profile.version, `${packageSubject}.latest`);
   }
-  requireExact(packageEntry.latest, sortedVersions.at(-1), `${subject}#packages[0].latest`);
 }
 
 export async function verifyLovePackages({
@@ -674,26 +714,54 @@ export async function verifyLovePackages({
     if (allowEmpty) return { packageCount: 0, versionCount: 0, artifactCount: 0, repackMode: "none" };
     fail("E_EMPTY", "packages/v1", "contains no package versions; pass --allow-empty only during bootstrap");
   }
-  if (v1Entries.length !== 2 || v1Entries[0] !== "index.json" || v1Entries[1] !== PACKAGE_NAME) {
-    fail("E_LAYOUT_EXTRA", "packages/v1", "must contain only index.json and the whitehack package directory");
-  }
-
   const indexPath = path.join(v1Path, "index.json");
   await ensureRegularFile(indexPath, repoRoot, { maxBytes: MAX_JSON_BYTES });
-  const packagePath = path.join(v1Path, PACKAGE_NAME);
-  await ensureDirectory(packagePath, repoRoot);
-  const versions = (await readdir(packagePath)).sort(compareSemver);
-  if (versions.length === 0) fail("E_EMPTY", posixRelative(repoRoot, packagePath), "contains no package versions");
+  const topLevelPackageEntries = [...new Set(
+    LOVE_PACKAGE_PROFILES.map((profile) => profile.lovePath.split("/")[0]),
+  )].sort();
+  const expectedV1Entries = ["index.json", ...topLevelPackageEntries].sort();
+  if (
+    v1Entries.length !== expectedV1Entries.length
+    || v1Entries.some((entry, index) => entry !== expectedV1Entries[index])
+  ) {
+    fail("E_LAYOUT_EXTRA", "packages/v1", "must contain only index.json and the allowlisted package directories");
+  }
+
+  const intermediateDirectoryChildren = new Map();
+  for (const profile of LOVE_PACKAGE_PROFILES) {
+    const segments = profile.lovePath.split("/");
+    for (let index = 1; index < segments.length; index += 1) {
+      const parent = segments.slice(0, index).join("/");
+      const children = intermediateDirectoryChildren.get(parent) ?? new Set();
+      children.add(segments[index]);
+      intermediateDirectoryChildren.set(parent, children);
+    }
+  }
+  for (const [relativeDirectory, expectedChildrenSet] of [...intermediateDirectoryChildren].sort()) {
+    const directoryPath = path.join(v1Path, ...relativeDirectory.split("/"));
+    await ensureDirectory(directoryPath, repoRoot);
+    const entries = (await readdir(directoryPath)).sort();
+    const expectedEntries = [...expectedChildrenSet].sort();
+    if (entries.length !== expectedEntries.length || entries.some((entry, index) => entry !== expectedEntries[index])) {
+      fail("E_LAYOUT_EXTRA", posixRelative(repoRoot, directoryPath), "must contain only the allowlisted package directories");
+    }
+  }
 
   const repackModes = new Set();
-  for (const version of versions) {
-    parseSemver(version, `packages/v1/${PACKAGE_NAME}/${version}`);
-    const versionPath = path.join(packagePath, version);
+  for (const profile of LOVE_PACKAGE_PROFILES) {
+    const packagePath = path.join(v1Path, ...profile.lovePath.split("/"));
+    await ensureDirectory(packagePath, repoRoot);
+    const versions = (await readdir(packagePath)).sort(compareSemver);
+    if (versions.length !== 1 || versions[0] !== profile.version) {
+      fail("E_LAYOUT_EXTRA", posixRelative(repoRoot, packagePath), "must contain exactly its allowlisted version directory");
+    }
+    parseSemver(profile.version, loveVersionRoot(profile));
+    const versionPath = path.join(packagePath, profile.version);
     await ensureDirectory(versionPath, repoRoot);
     const manifestPath = path.join(versionPath, "manifest.json");
     const manifestSubject = posixRelative(repoRoot, manifestPath);
     const manifest = parseJsonBytes(await readBoundedFile(manifestPath, repoRoot), manifestSubject);
-    const details = validateManifestShape(manifest, version, manifestSubject);
+    const details = validateManifestShape(manifest, profile, manifestSubject);
     const entries = (await readdir(versionPath)).sort();
     const expectedEntries = ["manifest.json", details.expectedFilename].sort();
     if (entries.length !== expectedEntries.length || entries.some((entry, index) => entry !== expectedEntries[index])) {
@@ -707,16 +775,16 @@ export async function verifyLovePackages({
     if (identity.sha256 !== details.artifact.sha256) {
       fail("E_ARTIFACT_HASH", posixRelative(repoRoot, artifactPath), "does not match manifest artifact.sha256");
     }
-    repackModes.add(await verifySourceAndRepack({ repoRoot, manifest, details, artifactPath, npmCommand }));
+    repackModes.add(await verifySourceAndRepack({ repoRoot, profile, manifest, details, artifactPath, npmCommand }));
   }
 
   const indexSubject = posixRelative(repoRoot, indexPath);
   const index = parseJsonBytes(await readBoundedFile(indexPath, repoRoot), indexSubject);
-  validateIndex(index, versions, indexSubject);
+  validateIndex(index, indexSubject);
   return {
-    packageCount: 1,
-    versionCount: versions.length,
-    artifactCount: versions.length,
+    packageCount: LOVE_PACKAGE_PROFILES.length,
+    versionCount: LOVE_PACKAGE_PROFILES.length,
+    artifactCount: LOVE_PACKAGE_PROFILES.length,
     repackMode: [...repackModes].sort().join(","),
   };
 }
