@@ -1,0 +1,51 @@
+{
+  "protocol": "love-package/v1",
+  "document_type": "package-manifest",
+  "name": "whitehack",
+  "version": "0.7.0",
+  "description": "The honest hack — a bounded local scanner for software claims, protocol safety, and crypto-awareness",
+  "license": "MIT",
+  "artifact": {
+    "format": "npm-tarball",
+    "filename": "whitehack-0.7.0.tgz",
+    "sha256": "d23ee10cc74490ba9c4100cc3b5a26f95672cda7a11fbef928a81a321fff81e6",
+    "size": 67618,
+    "media_type": "application/gzip",
+    "mirrors": [
+      {
+        "url": "https://cambridgetcg.github.io/whitehack/packages/v1/whitehack/0.7.0/whitehack-0.7.0.tgz"
+      },
+      {
+        "url": "https://github.com/cambridgetcg/whitehack/releases/download/whitehack-v0.7.0/whitehack-0.7.0.tgz"
+      },
+      {
+        "url": "https://registry.npmjs.org/whitehack/-/whitehack-0.7.0.tgz"
+      }
+    ]
+  },
+  "runtime": {
+    "kind": "javascript",
+    "engines": {
+      "node": ">=18"
+    }
+  },
+  "install": {
+    "format": "npm-tarball",
+    "specifier": "https://cambridgetcg.github.io/whitehack/packages/v1/whitehack/0.7.0/whitehack-0.7.0.tgz"
+  },
+  "source": {
+    "repository": "https://github.com/cambridgetcg/whitehack.git",
+    "revision": "1363d70bcbd5603c238154431c8bb72b9e54f3ad",
+    "path": "."
+  },
+  "reproducibility": {
+    "canonical_platform": "linux",
+    "node": "24.18.0",
+    "npm": "11.17.0",
+    "cross_platform_comparison": "uncompressed-tar-sha256"
+  },
+  "dependency_resolution": {
+    "mode": "package_manifest",
+    "self_contained": true
+  }
+}

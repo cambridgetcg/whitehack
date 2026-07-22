@@ -3,18 +3,37 @@ on:
   push:
     branches: [main]
 permissions:
+  contents: read
   pages: write
   id-token: write
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - name: build site
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.18.0
+      - name: Pin release npm
+        run: npm install --global --ignore-scripts npm@11.17.0
+      - name: verify exact immutable LOVE artifacts
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.before }}
         run: |
+          set -euo pipefail
+          node scripts/verify-love-packages.mjs --base "$BASE_SHA"
+      - name: build site
+        shell: bash
+        run: |
+          set -euo pipefail
           mkdir -p _site
           cp index.html _site/index.html
           cp playground.html _site/playground.html
@@ -23,8 +42,10 @@ jobs:
           cp LOOP.md _site/LOOP.md
           cp CONTRIBUTING.md _site/CONTRIBUTING.md
           cp SHARE.md _site/SHARE.md
-      - uses: actions/upload-pages-artifact@v3
+          test -d packages/v1
+          cp -R packages _site/packages
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
           path: _site
       - id: deploy
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

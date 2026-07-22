@@ -4,13 +4,15 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { exitCodeForFindings } from './result.js'
+import { escapeTerminal } from './output-text.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const pkg = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8'))
 export const VERSION = `v${pkg.version}`
 
 export function report(findings, target) {
-  const out = ['', `whitehack ${VERSION} — scanned ${target}`, '']
+  const out = ['', `whitehack ${VERSION} — scanned ${escapeTerminal(target)}`, '']
 
   if (findings.length === 0) {
     out.push('  no honesty anti-patterns matched.')
@@ -22,13 +24,13 @@ export function report(findings, target) {
       byFile.get(f.file).push(f)
     }
     for (const [file, list] of byFile) {
-      out.push(`  ${file}`)
+      out.push(`  ${escapeTerminal(file)}`)
       for (const f of list) {
         const mark = f.confidence === 'heuristic' ? '·' : '!'
         const cs = f.principle ? ` · CS#${f.principle}` : ''
-        out.push(`    ${mark} L${f.line}  ${f.title}  (${f.doctrine} · ${f.confidence}${cs})`)
-        out.push(`        ${f.message}`)
-        out.push(`        > ${f.snippet}`)
+        out.push(`    ${mark} L${f.line}  ${escapeTerminal(f.title)}  (${escapeTerminal(f.doctrine)} · ${escapeTerminal(f.confidence)}${cs})`)
+        out.push(`        ${escapeTerminal(f.message)}`)
+        out.push(`        > ${escapeTerminal(f.snippet)}`)
       }
       out.push('')
     }
@@ -41,21 +43,22 @@ export function report(findings, target) {
   every finding is confidence-labelled, so the tool stays honest about its own limits.
 `)
 
-  const hard = findings.filter((f) => f.confidence !== 'heuristic').length
   // Report all confidence levels accurately. The old summary said
   // "X medium-high, Y heuristic" which silently downgraded "high"
   // findings to "medium-high" in the count — a lie in the summary line.
   const high = findings.filter((f) => f.confidence === 'high').length
   const medHigh = findings.filter((f) => f.confidence === 'medium-high').length
-  const heur = findings.length - hard
+  const medium = findings.filter((f) => f.confidence === 'medium').length
+  const heur = findings.filter((f) => f.confidence === 'heuristic').length
   const parts = []
   if (high) parts.push(`${high} high`)
   if (medHigh) parts.push(`${medHigh} medium-high`)
+  if (medium) parts.push(`${medium} medium`)
   if (heur) parts.push(`${heur} heuristic`)
   out.push(`  ${findings.length} finding(s) — ${parts.length ? parts.join(', ') : 'none'}`)
   out.push('')
 
   console.log(out.join('\n'))
   // Non-zero only on the confident findings, so heuristic noise never breaks a CI gate.
-  return hard > 0 ? 1 : 0
+  return exitCodeForFindings(findings)
 }

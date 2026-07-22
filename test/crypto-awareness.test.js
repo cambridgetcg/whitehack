@@ -120,7 +120,7 @@ test('CLI help and version are successful introspection commands', () => {
   const cli = fileURLToPath(new URL('../bin/whitehack.js', import.meta.url))
   const version = execFileSync(process.execPath, [cli, '--version'], { encoding: 'utf8' })
   const help = execFileSync(process.execPath, [cli, '--help'], { encoding: 'utf8' })
-  assert.equal(version.trim(), 'v0.6.0')
+  assert.equal(version.trim(), 'v0.7.0')
   assert.match(help, /usage:/)
   assert.match(help, /47|bounded crypto-awareness/i)
 })
@@ -243,7 +243,7 @@ test('report preserves high confidence in its summary and exit code', () => {
   console.log = (...parts) => output.push(parts.join(' '))
   try {
     const code = report([{
-      file: 'config.json',
+      file: 'config\u001b[31m.json',
       line: 1,
       check: 'exposed-config',
       title: 'Config file contains embedded credentials',
@@ -251,14 +251,18 @@ test('report preserves high confidence in its summary and exit code', () => {
       doctrine: 'substrate-honesty',
       principle: 2,
       message: 'synthetic finding',
-      snippet: '[redacted: sensitive source match]',
-    }], '.')
+      snippet: '[redacted: sensitive source match]\u202e',
+    }], '.\u001b[31m')
     assert.equal(code, 1)
   } finally {
     console.log = originalLog
   }
   assert.match(output.join('\n'), /1 finding\(s\) — 1 high/)
   assert.doesNotMatch(output.join('\n'), /1 medium-high/)
+  assert.equal(output.join('\n').includes('\u001b'), false)
+  assert.equal(output.join('\n').includes('\u202e'), false)
+  assert.match(output.join('\n'), /\\u001b/)
+  assert.match(output.join('\n'), /\\u202e/)
 })
 
 test('legacy gate bridge passes repository metacharacters as literal argv', async () => {

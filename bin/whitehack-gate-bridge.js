@@ -15,8 +15,8 @@
 
 import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 // ── NEN CLASSIFICATIONS (mirrors nen-classifier.ts for CLI use) ──
 
@@ -62,7 +62,7 @@ export function scanRepo(repoPath) {
 
   // Resolve the scanner binary relative to this script so the bridge doesn't
   // depend on a possibly-broken PATH symlink. Falls back to `whitehack` on PATH.
-  const scriptDir = import.meta.dirname || ".";
+  const scriptDir = dirname(fileURLToPath(import.meta.url));
   const localScanner = join(scriptDir, "whitehack.js");
   const scanner = existsSync(localScanner) ? process.execPath : "whitehack";
   const scannerArgs = existsSync(localScanner)

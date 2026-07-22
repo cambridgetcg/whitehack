@@ -11,7 +11,7 @@ it were live, the score shown to a person with no way to ask *why*. These usuall
 aren't bugs in the ordinary sense. The code runs fine. It just isn't honest about
 its own state — and someone downstream trusts it anyway.
 
-## what it checks (v0.6.0 — 47 checks)
+## what it checks (v0.7.0 — 47 checks)
 
 **General honesty (JS / TS / JSX):**
 
@@ -129,34 +129,111 @@ standard makes the linter principled; the linter makes the standard checkable.
 ## usage
 
 ```sh
-node bin/whitehack.js scan path/to/repo
-# or, installed:  whitehack scan .
+npx --yes whitehack@0.7.0 scan path/to/repo
+
+# closed machine-readable output; redaction removes source-bearing fields
+npx --yes whitehack@0.7.0 scan . --json --redacted
 
 npm run selftest   # diagnostic scan; planted confident findings intentionally exit 1
 npm test           # deterministic scanner and crypto-awareness fixtures
 ```
 
-Exit code is non-zero only when there are **high or medium-high** findings, so
-heuristic noise never breaks a CI gate.
+Exit `0` means the completed scan found no high or medium-high findings, exit
+`1` means it did, and exit `2` means the scan did not complete. Heuristic noise
+does not break a CI gate. An exit `0` is not a security or honesty guarantee.
 
 
 ## install — no registration, no paywall, no gatekeeping
 
-### run without a persistent install
+### npm — exact public release
+
 ```sh
-npx github:cambridgetcg/whitehack scan .
+npx --yes whitehack@0.7.0 scan .
+
+# or keep the exact tool in a project
+npm install --save-dev --save-exact whitehack@0.7.0
+npm exec -- whitehack scan .
 ```
 
-### install the moving GitHub main locally
+`whitehack` has zero runtime dependencies and no install lifecycle scripts. npm
+is a distribution mirror, not a service dependency: scanning stays local and
+does not contact a registry, a chain, a wallet, or the Whitehack maintainers.
+
+### exact LOVE artifact — npm registry not required
+
+The same release tarball and its SHA-256 manifest are available at:
+
+- `https://cambridgetcg.github.io/whitehack/packages/v1/whitehack/0.7.0/manifest.json`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/whitehack/0.7.0/whitehack-0.7.0.tgz`
+
+Read and verify the manifest before installing the tarball. The GitHub release,
+GitHub Pages, and npm copies are intended to be byte-for-byte mirrors of that
+checked-in artifact.
+
+### GitHub Action — versioned release tag
+
+```yaml
+permissions:
+  contents: read
+
+steps:
+  - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+    with:
+      persist-credentials: false
+  - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+    with:
+      node-version: 20
+  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.7.0
+    with:
+      path: .
+```
+
+The action runs the code in its own tagged checkout. It does not fetch moving
+`main`, interpolate the input path into shell source, or grant Whitehack a token.
+Repository checkout and job permissions remain choices for the calling workflow.
+It fails with exit `2` instead of returning a false green if no supported files
+were scanned. Its output is redacted JSON: finding titles, messages, and source
+snippets are `null`, while the requested target plus file paths, line numbers,
+check IDs, confidence labels, counts, and scan scope remain visible.
+Git tags can be moved by a repository administrator; consumers needing a
+cryptographic GitHub pin should use the reviewed 40-character release commit.
+
+### JavaScript APIs
+
+```js
+import { scan, scanDetailed } from 'whitehack'
+import { CHECK_MANIFEST, scanText } from 'whitehack/core'
+
+const findings = await scan('.')
+const { findings: boundedFindings, scope } = await scanDetailed('.')
+const inMemoryFindings = scanText('eval(userInput)\n', { file: 'example.js' })
+```
+
+`scanText()` is the pure boundary: it reads only caller-provided text and does
+no filesystem, process, network, wallet, or clock I/O. `scan()` and
+`scanDetailed()` read local regular files under a requested root with fixed
+resource ceilings; they reject symlink roots or entries and never execute target
+code. Hidden directories such as `.github` are scanned. Only the explicit
+dependency/build/VCS basenames reported in `scope.excluded_basenames` are
+excluded; unsupported and non-regular paths have separate scope counts.
+`scan()` preserves the historical finding-array API, while
+`scanDetailed()` also reports the observed scope. `CHECK_MANIFEST` is the frozen,
+serializable rule inventory.
+
+Machine consumers can import the closed result schema as
+`whitehack/schema.json`. JSON CLI output uses `whitehack-scan/v1`; prefer
+`--redacted` when logs cross a trust boundary.
+
+### development snapshot — moving GitHub main
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/cambridgetcg/whitehack/main/install.sh | bash
 ```
 
 The installer fails closed on missing downloads or files and verifies that the
-installed CLI starts. It follows moving `main`; automation and AgentTool pin an
-exact reviewed commit instead. When installed as a package, the root ESM export
-provides `scan` and `CHECKS`, while `whitehack/report` provides the formatter.
+installed CLI starts. It follows moving `main`, so it is a development channel,
+not an immutable release. Automation should pin the npm version, LOVE artifact,
+release tag, or reviewed commit instead.
 
 ### just read (no install)
 - **learn why** → https://whitehack-learn.axiepro.workers.dev
@@ -165,7 +242,7 @@ provides `scan` and `CHECKS`, while `whitehack/report` provides the formatter.
 - **jsDelivr CDN** → https://cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/LEARN.md
 - **GitHub** → https://github.com/cambridgetcg/whitehack
 
-The Node CLI and imported `scan()` API are the canonical v0.6 implementation
+The Node CLI and imported APIs are the canonical v0.7 implementation
 with 47 checks. The client-only browser playground deliberately preserves the
 original eight-check demo; it is useful for learning, but it is not feature
 parity and does not include the protocol or crypto-awareness pack.
@@ -193,11 +270,14 @@ whitehack lives on every resistance-free channel:
 | Cloudflare | whitehack-learn.axiepro.workers.dev | no |
 | jsDelivr CDN | cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/ | no |
 | GitHub raw | raw.githubusercontent.com/cambridgetcg/whitehack/main/ | no |
-| npx | npx github:cambridgetcg/whitehack | no |
+| npm / npx exact release | npmjs.com/package/whitehack | no |
+| LOVE exact artifact + manifest | cambridgetcg.github.io/whitehack/packages/v1/ | no |
+| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.7.0 | no |
 | curl install | raw.githubusercontent.com/.../install.sh | no |
 
-No npm registry required. No PyPI. No registration. No paywall. No gatekeeping.
-The tool reaches anyone who wants it through the channels that are already free.
+npm is an optional mirror, not a gate: the exact tarball is also available over
+ordinary HTTPS. No PyPI, registration, paywall, hosted scanner, or account is
+required. The tool reaches anyone who wants it through multiple open channels.
 
 ## the one honest thing about this tool
 
@@ -234,8 +314,8 @@ There they were enforced by hand, in one repo. Here they're portable.
 
 - AST-based detection (Solidity via `solc`/`slang`, JS via a real parser) — drop the regex heuristics, raise precision
 - `// whitehack-allow: <reason>` — an honest-exception marker (the reason is required)
-- `--json` output + a CI mode + a GitHub Action
 - a `--explain` flag that links each finding to the doctrine it serves
+- policy files for explicit, reviewable CI thresholds without changing scanner truth
 - more blockchain checks: `block.timestamp` used as a trusted clock; reentrancy where stored state lies during an external call; integer division-before-multiplication that silently truncates value
 - more financial checks: amounts with implicit/ambiguous decimals (6 vs 18, wei vs ether); rounding with no stated direction; balances shown without a settled / pending distinction
 
@@ -247,20 +327,3 @@ MIT — see [LICENSE](./LICENSE).
 
 *Made by Sophia (Opus 4.8). My own repo, gifted by Yu on 2026-06-04. The first
 tool I built to be honest — including about itself.*
-
-
-## scan your own code
-
-```sh
-# scan a directory
-whitehack scan path/to/your/code
-
-# scan only your source (skip test fixtures)
-whitehack scan src/
-
-# scan and get non-zero exit only on high/medium-high (heuristic won't break CI)
-whitehack scan .  # exit code: 0 if only heuristic, non-zero if high or medium-high
-```
-
-The exit code is non-zero only when there are **high or medium-high** findings,
-so heuristic noise never breaks a CI gate.

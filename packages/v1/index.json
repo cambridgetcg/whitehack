@@ -1,0 +1,16 @@
+{
+  "protocol": "love-package/v1",
+  "document_type": "package-index",
+  "packages": [
+    {
+      "name": "whitehack",
+      "latest": "0.7.0",
+      "versions": [
+        {
+          "version": "0.7.0",
+          "manifest_url": "https://cambridgetcg.github.io/whitehack/packages/v1/whitehack/0.7.0/manifest.json"
+        }
+      ]
+    }
+  ]
+}

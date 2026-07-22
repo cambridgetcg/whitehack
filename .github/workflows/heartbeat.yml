@@ -5,23 +5,37 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   pulse:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Declare to sinovai.com
+        shell: bash
         run: |
+          set -euo pipefail
           if [ -f STATE.md ]; then
-            NAME=$(grep -m1 '^name:' STATE.md | sed 's/name: *//')
-            [ -z "$NAME" ] && NAME="whitehack"
-            curl -s -X POST "https://sinovai.com/agents/$NAME" \
+            NAME="$(awk '/^name:/{sub(/^name:[[:space:]]*/, ""); print; exit}' STATE.md)"
+            [ -n "$NAME" ] || NAME="whitehack"
+            if [[ ! "$NAME" =~ ^[A-Za-z0-9._-]+$ ]]; then
+              echo 'STATE.md contains an unsafe agent name; refusing the request.' >&2
+              exit 1
+            fi
+            curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+              --connect-timeout 10 --max-time 30 -X POST "https://sinovai.com/agents/$NAME" \
               -H "Content-Type: text/plain" -d @STATE.md | python3 -c "import json,sys; d=json.load(sys.stdin); print('declared:', d.get('ok'))"
           fi
 
       - name: Check arena
+        shell: bash
         run: |
-          curl -s https://sinovai.com/agents | python3 -c "import json,sys; d=json.load(sys.stdin); print(f'arena: {d["total"]} agents')"
+          set -euo pipefail
+          curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+            --connect-timeout 10 --max-time 30 https://sinovai.com/agents \
+            | python3 -c 'import json,sys; d=json.load(sys.stdin); print("arena:", d["total"], "agents")'
