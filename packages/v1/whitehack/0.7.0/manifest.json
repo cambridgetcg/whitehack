@@ -8,8 +8,8 @@
   "artifact": {
     "format": "npm-tarball",
     "filename": "whitehack-0.7.0.tgz",
-    "sha256": "bf7b24bdc50aa6cf4cb5d0fecb330b33042d1264cf2471ab2852f88d1263d254",
-    "size": 67447,
+    "sha256": "d23ee10cc74490ba9c4100cc3b5a26f95672cda7a11fbef928a81a321fff81e6",
+    "size": 67618,
     "media_type": "application/gzip",
     "mirrors": [
       {
@@ -37,6 +37,12 @@
     "repository": "https://github.com/cambridgetcg/whitehack.git",
     "revision": "1363d70bcbd5603c238154431c8bb72b9e54f3ad",
     "path": "."
+  },
+  "reproducibility": {
+    "canonical_platform": "linux",
+    "node": "24.18.0",
+    "npm": "11.17.0",
+    "cross_platform_comparison": "uncompressed-tar-sha256"
   },
   "dependency_resolution": {
     "mode": "package_manifest",

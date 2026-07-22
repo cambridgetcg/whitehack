@@ -21,14 +21,17 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
+import { createGunzip } from "node:zlib";
 
 const execFileAsync = promisify(execFile);
 
 const PACKAGE_NAME = "whitehack";
 const SOURCE_REPOSITORY = "https://github.com/cambridgetcg/whitehack.git";
+const EXPECTED_NODE_VERSION = "v24.18.0";
 const EXPECTED_NPM_VERSION = "11.17.0";
 const MAX_JSON_BYTES = 128 * 1024;
 const MAX_ARTIFACT_BYTES = 256 * 1024 * 1024;
+const MAX_TAR_PAYLOAD_BYTES = 512 * 1024 * 1024;
 const MAX_COMMAND_OUTPUT = 8 * 1024 * 1024;
 const IO_CHUNK_BYTES = 64 * 1024;
 const SEMVER_PATTERN = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-((?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/;
@@ -280,6 +283,43 @@ async function hashRegularFile(absolutePath, repoRoot) {
   }
 }
 
+async function hashGzipPayload(absolutePath, repoRoot) {
+  const before = await ensureRegularFile(absolutePath, repoRoot);
+  const subject = posixRelative(repoRoot, absolutePath);
+  const noFollow = fsConstants.O_NOFOLLOW ?? 0;
+  const digest = createHash("sha256");
+  let handle;
+  try {
+    handle = await open(absolutePath, fsConstants.O_RDONLY | noFollow);
+    const opened = await handle.stat();
+    if (opened.dev !== before.dev || opened.ino !== before.ino || opened.size !== before.size) {
+      fail("E_FILE_CHANGED", subject, "changed while being opened");
+    }
+    const gunzip = createGunzip();
+    handle.createReadStream({ autoClose: false }).pipe(gunzip);
+    let size = 0;
+    for await (const chunk of gunzip) {
+      size += chunk.length;
+      if (size > MAX_TAR_PAYLOAD_BYTES) {
+        gunzip.destroy();
+        fail("E_TAR_PAYLOAD_SIZE", subject, `decompressed tar exceeds ${MAX_TAR_PAYLOAD_BYTES} bytes`);
+      }
+      digest.update(chunk);
+    }
+    const after = await handle.stat();
+    if (after.dev !== opened.dev || after.ino !== opened.ino || after.size !== opened.size) {
+      fail("E_FILE_CHANGED", subject, "changed while being decompressed");
+    }
+    return { size, sha256: digest.digest("hex") };
+  } catch (error) {
+    if (error instanceof VerificationError) throw error;
+    if (error?.code === "ELOOP") fail("E_SYMLINK", subject, "symbolic links are forbidden");
+    fail("E_GZIP_PAYLOAD", subject, "could not read a valid bounded gzip payload");
+  } finally {
+    await handle?.close().catch(() => {});
+  }
+}
+
 async function filesAreEqual(leftPath, rightPath, repoRoot) {
   const leftStat = await ensureRegularFile(leftPath, repoRoot);
   const rightStat = await ensureRegularFile(rightPath, repoRoot);
@@ -372,6 +412,16 @@ function validateManifestShape(manifest, version, subject) {
     fail("E_SOURCE_REVISION", `${subject}#source.revision`, "must be a full lowercase Git object ID");
   }
   requireExact(source.path, ".", `${subject}#source.path`);
+
+  const reproducibility = requireObject(manifest.reproducibility, `${subject}#reproducibility`);
+  requireExact(reproducibility.canonical_platform, "linux", `${subject}#reproducibility.canonical_platform`);
+  requireExact(reproducibility.node, EXPECTED_NODE_VERSION.slice(1), `${subject}#reproducibility.node`);
+  requireExact(reproducibility.npm, EXPECTED_NPM_VERSION, `${subject}#reproducibility.npm`);
+  requireExact(
+    reproducibility.cross_platform_comparison,
+    "uncompressed-tar-sha256",
+    `${subject}#reproducibility.cross_platform_comparison`,
+  );
 
   const dependencies = requireObject(manifest.dependency_resolution, `${subject}#dependency_resolution`);
   requireExact(dependencies.mode, "package_manifest", `${subject}#dependency_resolution.mode`);
@@ -491,9 +541,23 @@ async function verifySourceAndRepack({ repoRoot, manifest, details, artifactPath
       fail("E_NPM_PACK_OUTPUT", `${manifestSubject}#artifact`, "npm pack destination contains unexpected entries");
     }
     const reproducedPath = path.join(packPath, details.expectedFilename);
-    if (!await filesAreEqual(artifactPath, reproducedPath, repoRoot)) {
-      fail("E_REPACK_MISMATCH", posixRelative(repoRoot, artifactPath), "does not byte-match npm pack of its recorded source revision");
+    if (process.platform === "linux") {
+      if (!await filesAreEqual(artifactPath, reproducedPath, repoRoot)) {
+        fail("E_REPACK_MISMATCH", posixRelative(repoRoot, artifactPath), "does not byte-match the canonical Linux npm pack of its recorded source revision");
+      }
+      return "exact-gzip";
     }
+    const [artifactPayload, reproducedPayload] = await Promise.all([
+      hashGzipPayload(artifactPath, repoRoot),
+      hashGzipPayload(reproducedPath, repoRoot),
+    ]);
+    if (
+      artifactPayload.size !== reproducedPayload.size
+      || artifactPayload.sha256 !== reproducedPayload.sha256
+    ) {
+      fail("E_REPACK_MISMATCH", posixRelative(repoRoot, artifactPath), "does not match the uncompressed tar payload packed from its recorded source revision");
+    }
+    return "tar-payload";
   } finally {
     if (worktreeAdded) {
       await git(repoRoot, ["worktree", "remove", "--force", worktreePath], "E_WORKTREE_CLEANUP", `${manifestSubject}#source.revision`).catch(() => {});
@@ -572,6 +636,10 @@ export async function verifyLovePackages({
   }
   if (base !== null) await verifyBaseImmutability(repoRoot, base);
 
+  if (process.version !== EXPECTED_NODE_VERSION) {
+    fail("E_NODE_VERSION", "node", `must resolve to Node ${EXPECTED_NODE_VERSION.slice(1)}, received ${process.version}`);
+  }
+
   const npmVersion = (await command(
     npmCommand,
     ["--version"],
@@ -589,13 +657,13 @@ export async function verifyLovePackages({
     await ensureDirectory(packagesPath, repoRoot, "E_LAYOUT", "E_PACKAGES_MISSING");
   } catch (error) {
     if (allowEmpty && error instanceof VerificationError && error.code === "E_PACKAGES_MISSING") {
-      return { packageCount: 0, versionCount: 0, artifactCount: 0 };
+      return { packageCount: 0, versionCount: 0, artifactCount: 0, repackMode: "none" };
     }
     throw error;
   }
   const packageRootEntries = (await readdir(packagesPath)).sort();
   if (packageRootEntries.length === 0 && allowEmpty) {
-    return { packageCount: 0, versionCount: 0, artifactCount: 0 };
+    return { packageCount: 0, versionCount: 0, artifactCount: 0, repackMode: "none" };
   }
   if (packageRootEntries.length !== 1 || packageRootEntries[0] !== "v1") {
     fail("E_LAYOUT_EXTRA", "packages", "must contain only the v1 protocol directory");
@@ -603,7 +671,7 @@ export async function verifyLovePackages({
   await ensureDirectory(v1Path, repoRoot);
   const v1Entries = (await readdir(v1Path)).sort();
   if (v1Entries.length === 0) {
-    if (allowEmpty) return { packageCount: 0, versionCount: 0, artifactCount: 0 };
+    if (allowEmpty) return { packageCount: 0, versionCount: 0, artifactCount: 0, repackMode: "none" };
     fail("E_EMPTY", "packages/v1", "contains no package versions; pass --allow-empty only during bootstrap");
   }
   if (v1Entries.length !== 2 || v1Entries[0] !== "index.json" || v1Entries[1] !== PACKAGE_NAME) {
@@ -617,6 +685,7 @@ export async function verifyLovePackages({
   const versions = (await readdir(packagePath)).sort(compareSemver);
   if (versions.length === 0) fail("E_EMPTY", posixRelative(repoRoot, packagePath), "contains no package versions");
 
+  const repackModes = new Set();
   for (const version of versions) {
     parseSemver(version, `packages/v1/${PACKAGE_NAME}/${version}`);
     const versionPath = path.join(packagePath, version);
@@ -638,13 +707,18 @@ export async function verifyLovePackages({
     if (identity.sha256 !== details.artifact.sha256) {
       fail("E_ARTIFACT_HASH", posixRelative(repoRoot, artifactPath), "does not match manifest artifact.sha256");
     }
-    await verifySourceAndRepack({ repoRoot, manifest, details, artifactPath, npmCommand });
+    repackModes.add(await verifySourceAndRepack({ repoRoot, manifest, details, artifactPath, npmCommand }));
   }
 
   const indexSubject = posixRelative(repoRoot, indexPath);
   const index = parseJsonBytes(await readBoundedFile(indexPath, repoRoot), indexSubject);
   validateIndex(index, versions, indexSubject);
-  return { packageCount: 1, versionCount: versions.length, artifactCount: versions.length };
+  return {
+    packageCount: 1,
+    versionCount: versions.length,
+    artifactCount: versions.length,
+    repackMode: [...repackModes].sort().join(","),
+  };
 }
 
 function usage() {
@@ -679,7 +753,7 @@ async function main() {
       return;
     }
     const result = await verifyLovePackages(options);
-    process.stdout.write(`LOVE_VERIFY_OK packages=${result.packageCount} versions=${result.versionCount} artifacts=${result.artifactCount}\n`);
+    process.stdout.write(`LOVE_VERIFY_OK packages=${result.packageCount} versions=${result.versionCount} artifacts=${result.artifactCount} repack=${result.repackMode}\n`);
   } catch (error) {
     const verificationError = error instanceof VerificationError
       ? error
