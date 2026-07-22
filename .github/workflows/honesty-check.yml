@@ -10,11 +10,30 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 24
+      - name: Pin release npm
+        run: npm install --global --ignore-scripts npm@11.17.0
+      - name: Install locked validation dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: run deterministic tests
-        run: npm test
+        run: npm test --ignore-scripts
+      - name: verify LOVE artifacts and immutable released versions
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+          base="$BASE_SHA"
+          if [[ "$base" =~ ^0+$ ]]; then
+            git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+            base="$(git rev-parse refs/remotes/origin/main)"
+          fi
+          node scripts/verify-love-packages.mjs --base "$base"
       - name: verify the published artifact shape
         shell: bash
         run: |
