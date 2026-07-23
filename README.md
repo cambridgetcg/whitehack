@@ -11,7 +11,7 @@ it were live, the score shown to a person with no way to ask *why*. These usuall
 aren't bugs in the ordinary sense. The code runs fine. It just isn't honest about
 its own state — and someone downstream trusts it anyway.
 
-## what it checks (v0.7.1 — 47 checks)
+## what it checks (v0.8.0 — 47 checks)
 
 **General honesty (JS / TS / JSX):**
 
@@ -129,10 +129,10 @@ standard makes the linter principled; the linter makes the standard checkable.
 ## usage
 
 ```sh
-npx --yes @agenttool/whitehack-scan@0.7.1 scan path/to/repo
+npx --yes @agenttool/whitehack-scan@0.8.0 scan path/to/repo
 
-# closed machine-readable output; redaction removes source-bearing fields
-npx --yes @agenttool/whitehack-scan@0.7.1 scan . --json --redacted
+# closed output; redaction removes finding titles, messages, and snippets
+npx --yes @agenttool/whitehack-scan@0.8.0 scan . --json --redacted
 
 npm run selftest   # diagnostic scan; planted confident findings intentionally exit 1
 npm test           # deterministic scanner and crypto-awareness fixtures
@@ -148,10 +148,10 @@ does not break a CI gate. An exit `0` is not a security or honesty guarantee.
 ### npm — exact public release
 
 ```sh
-npx --yes @agenttool/whitehack-scan@0.7.1 scan .
+npx --yes @agenttool/whitehack-scan@0.8.0 scan .
 
 # or keep the exact tool in a project
-npm install --save-dev --save-exact @agenttool/whitehack-scan@0.7.1
+npm install --save-dev --save-exact @agenttool/whitehack-scan@0.8.0
 npm exec -- whitehack scan .
 ```
 
@@ -163,8 +163,8 @@ does not contact a registry, a chain, a wallet, or the Whitehack maintainers.
 
 The same release tarball and its SHA-256 manifest are available at:
 
-- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.7.1/manifest.json`
-- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.7.1/agenttool-whitehack-scan-0.7.1.tgz`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.0/manifest.json`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.0/agenttool-whitehack-scan-0.8.0.tgz`
 
 Read and verify the manifest before installing the tarball. The GitHub release,
 GitHub Pages, and npm copies are intended to be byte-for-byte mirrors of that
@@ -183,7 +183,7 @@ steps:
   - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
     with:
       node-version: 24.18.0
-  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.7.1
+  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.8.0
     with:
       path: .
 ```
@@ -203,6 +203,7 @@ cryptographic GitHub pin should use the reviewed 40-character release commit.
 ```js
 import { scan, scanDetailed } from '@agenttool/whitehack-scan'
 import { CHECK_MANIFEST, scanText } from '@agenttool/whitehack-scan/core'
+import { createUnderstanding } from '@agenttool/whitehack-scan/understanding'
 
 const findings = await scan('.')
 const { findings: boundedFindings, scope } = await scanDetailed('.')
@@ -224,6 +225,91 @@ Machine consumers can import the closed result schema as
 `@agenttool/whitehack-scan/schema.json`. JSON CLI output uses `whitehack-scan/v1`; prefer
 `--redacted` when logs cross a trust boundary.
 
+### understanding without custody
+
+`createUnderstanding()` turns location-preserving finding metadata plus a
+closed, enum-only Whitehack projection of caller-presented Agent Wallet
+assertions into
+`whitehack-understanding/v1`:
+
+```js
+const understanding = createUnderstanding({
+  findings: inMemoryFindings,
+  context: {
+    profile: 'whitehack-agent-wallet-projection/v1',
+    source_protocol: 'agent-wallet/0.1',
+    records: {
+      descriptor: 'verified',
+      capability: 'verified',
+      intent: 'verified',
+      simulation: 'verified',
+      continuity: 'absent',
+    },
+    relations: {
+      'descriptor-capability': 'match',
+      'capability-intent': 'match',
+      delegate: 'match',
+      chain: 'match',
+      source: 'match',
+      'intent-simulation': 'match',
+      revocation: 'unknown',
+    },
+    policy: {
+      calls: 'within-bounds',
+      spend: 'unknown',
+      fee: 'within-bounds',
+      expiry: 'within-bounds',
+      use: 'unknown',
+      approvals: 'unknown',
+    },
+    simulation: {
+      execution: 'passed',
+      effects: 'match',
+      fee: 'within-bounds',
+    },
+    custody: {
+      'descriptor-mode': 'delegated-signer',
+      'signer-exportability': 'non-exportable',
+    },
+  },
+})
+```
+
+The context is not an Agent Wallet record and does not use its transport schema.
+`profile` names this Whitehack projection; `source_protocol` names the record
+protocol it describes. A separate local adapter must verify the actual signed
+records and map Agent Wallet values into these fixed states. Do not pass
+payloads, signatures, public or private keys, accounts, assets, RPC URLs,
+approval IDs, signer objects, or transaction bytes into this API.
+
+The output keeps caller-presented scanner finding claims separate from wallet
+context assertions. Check IDs and static doctrine metadata are checked
+against the bundled 47-check manifest, but their origin remains explicitly
+unknown. The function derives only confidence-labelled heuristic consistency
+questions and permanently retains unknowns such as finding provenance, adapter
+trust, payload semantics, projection freshness, subject binding, current
+continuity, durable usage/reservation, approval authenticity, consent, custody
+truth, live-chain state, and signing/broadcast outcome. Because the closed
+context projection retains no dedicated wallet or operation identifier, a
+retained file label cannot bind one, and the document retains no evaluation
+time, it is an ephemeral explanation, not correlated preflight evidence;
+verify and bind records again atomically at sign time. `complete: true` means
+this bounded transformation completed; it does not mean the wallet operation
+is complete, safe, approved, authorized, or ready to execute.
+
+Whitehack itself has no direct filesystem, process, network, wallet, clock,
+key-store, signing, RPC, simulation, broadcast, or authorization capability in
+this function. It does not execute scanned source. Required-field accessors are
+rejected and discarded-field accessors are ignored, both without invocation.
+The output retains exactly `file`, `line`, `check`, `confidence`, `doctrine`,
+and `principle` from each finding; every other finding field is removed. `file`
+is an untrusted caller label, not a proven path, and its sensitivity is
+explicitly `unknown`, so callers must not put credentials or personal data
+there. Ordinary JavaScript Proxy traps can still run while an object is
+inspected, and pre-existing hostile object graphs are not a resource sandbox.
+Import the closed output schema as
+`@agenttool/whitehack-scan/understanding-schema.json`.
+
 ### development snapshot — moving GitHub main
 
 ```sh
@@ -242,7 +328,7 @@ release tag, or reviewed commit instead.
 - **jsDelivr CDN** → https://cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/LEARN.md
 - **GitHub** → https://github.com/cambridgetcg/whitehack
 
-The Node CLI and imported APIs are the canonical v0.7 implementation
+The Node CLI and imported APIs are the canonical v0.8 implementation
 with 47 checks. The client-only browser playground deliberately preserves the
 original eight-check demo; it is useful for learning, but it is not feature
 parity and does not include the protocol or crypto-awareness pack.
@@ -272,7 +358,7 @@ whitehack lives on every resistance-free channel:
 | GitHub raw | raw.githubusercontent.com/cambridgetcg/whitehack/main/ | no |
 | npm / npx exact release | npmjs.com/package/@agenttool/whitehack-scan | no |
 | LOVE exact artifact + manifest | cambridgetcg.github.io/whitehack/packages/v1/ | no |
-| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.7.1 | no |
+| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.8.0 | no |
 | curl install | raw.githubusercontent.com/.../install.sh | no |
 
 npm is an optional mirror, not a gate: the exact tarball is also available over

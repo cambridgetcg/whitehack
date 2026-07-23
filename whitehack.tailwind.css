@@ -1,0 +1,33 @@
+/*
+ * Static site stylesheet source.
+ * Regenerate with tailwindcss 3.4.17:
+ * tailwindcss -c tailwind.config.cjs -i whitehack.tailwind.css -o whitehack.css --minify
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .grain {
+    background:
+      radial-gradient(
+        60rem 30rem at 50% -10%,
+        rgb(255 255 255 / 6%),
+        transparent 60%
+      );
+  }
+
+  .card {
+    transition: border-color 150ms ease, transform 150ms ease;
+  }
+
+  .card:hover {
+    border-color: #3f3f46;
+    transform: translateY(-2px);
+  }
+}

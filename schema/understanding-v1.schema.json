@@ -1,0 +1,562 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cambridgetcg/whitehack/schema/understanding-v1.schema.json",
+  "title": "Whitehack understanding v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document_type",
+    "complete",
+    "redaction",
+    "presented_evidence",
+    "inferences",
+    "unknowns",
+    "boundaries"
+  ],
+  "properties": {
+    "document_type": { "const": "whitehack-understanding/v1" },
+    "complete": { "const": true },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "retained_finding_fields",
+        "other_finding_fields_removed",
+        "caller_file_label_retained",
+        "caller_file_label_sensitivity"
+      ],
+      "properties": {
+        "profile": { "const": "whitehack-finding-field-allowlist/v1" },
+        "retained_finding_fields": {
+          "const": [
+            "file",
+            "line",
+            "check",
+            "confidence",
+            "doctrine",
+            "principle"
+          ]
+        },
+        "other_finding_fields_removed": { "const": true },
+        "caller_file_label_retained": { "const": true },
+        "caller_file_label_sensitivity": { "const": "unknown" }
+      }
+    },
+    "presented_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_claims", "context_assertions"],
+      "properties": {
+        "finding_claims": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": { "$ref": "#/$defs/scan_finding_claim" }
+        },
+        "context_assertions": {
+          "$ref": "#/$defs/context_assertions"
+        }
+      }
+    },
+    "inferences": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "prefixItems": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/inference" },
+            {
+              "type": "object",
+              "properties": {
+                "id": { "const": "source-attention" },
+                "basis": {
+                  "const": ["/presented_evidence/finding_claims"]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/inference" },
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "const": "caller-declared-record-chain-consistency"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/inference" },
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "const": "caller-declared-static-policy-consistency"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/inference" },
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "const": "caller-declared-simulation-consistency"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/inference" },
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "const": "caller-declared-continuity-consistency"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/inference" },
+            {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "const": "caller-declared-custody-description"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/inference" },
+            {
+              "type": "object",
+              "properties": {
+                "id": { "const": "execution-readiness" },
+                "status": { "const": "indeterminate" }
+              }
+            }
+          ]
+        }
+      ],
+      "items": false
+    },
+    "unknowns": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter-trust",
+        "approval-authenticity",
+        "consent",
+        "current-continuity",
+        "custody-truth",
+        "durable-usage-reservation",
+        "finding-provenance",
+        "live-chain-state",
+        "payload-semantics",
+        "projection-freshness",
+        "scanner-coverage",
+        "signing-broadcast-outcome",
+        "subject-binding"
+      ],
+      "properties": {
+        "adapter-trust": { "$ref": "#/$defs/unknown_reason" },
+        "approval-authenticity": { "$ref": "#/$defs/unknown_reason" },
+        "consent": { "$ref": "#/$defs/unknown_reason" },
+        "current-continuity": { "$ref": "#/$defs/unknown_reason" },
+        "custody-truth": { "$ref": "#/$defs/unknown_reason" },
+        "durable-usage-reservation": { "$ref": "#/$defs/unknown_reason" },
+        "finding-provenance": { "$ref": "#/$defs/unknown_reason" },
+        "live-chain-state": { "$ref": "#/$defs/unknown_reason" },
+        "payload-semantics": { "$ref": "#/$defs/unknown_reason" },
+        "projection-freshness": { "$ref": "#/$defs/unknown_reason" },
+        "record-relations": { "$ref": "#/$defs/unknown_reason" },
+        "record-verification": { "$ref": "#/$defs/unknown_reason" },
+        "scanner-coverage": { "$ref": "#/$defs/unknown_reason" },
+        "signing-broadcast-outcome": { "$ref": "#/$defs/unknown_reason" },
+        "static-policy-context": { "$ref": "#/$defs/unknown_reason" },
+        "subject-binding": { "$ref": "#/$defs/unknown_reason" }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "direct_capabilities",
+        "input_inspection",
+        "wallet_subject_bound"
+      ],
+      "properties": {
+        "direct_capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "filesystem",
+            "process",
+            "network",
+            "wallet",
+            "clock",
+            "key_store_access",
+            "signing",
+            "rpc",
+            "simulation",
+            "broadcast",
+            "authorization"
+          ],
+          "properties": {
+            "filesystem": { "const": false },
+            "process": { "const": false },
+            "network": { "const": false },
+            "wallet": { "const": false },
+            "clock": { "const": false },
+            "key_store_access": { "const": false },
+            "signing": { "const": false },
+            "rpc": { "const": false },
+            "simulation": { "const": false },
+            "broadcast": { "const": false },
+            "authorization": { "const": false }
+          }
+        },
+        "input_inspection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ordinary_accessors_invoked",
+            "caller_proxy_traps_may_run",
+            "sandboxed"
+          ],
+          "properties": {
+            "ordinary_accessors_invoked": { "const": false },
+            "caller_proxy_traps_may_run": { "const": true },
+            "sandboxed": { "const": false }
+          }
+        },
+        "wallet_subject_bound": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "scan_finding_claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "line",
+        "check",
+        "confidence",
+        "doctrine",
+        "principle"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f\\u202a-\\u202e\\u2066-\\u2069]+$"
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "check": {
+          "enum": [
+            "silent-failure",
+            "cache-as-live",
+            "decision-without-why",
+            "stale-oracle",
+            "unchecked-transfer",
+            "spot-price-as-fair",
+            "silent-revert",
+            "float-money",
+            "hardcoded-secret",
+            "exposed-config",
+            "unsafe-eval",
+            "performed-ignorance",
+            "trust-by-authority",
+            "api-status-lie",
+            "api-missing-versioning",
+            "api-error-without-shape",
+            "api-missing-rate-limit",
+            "api-bare-fetch",
+            "wifi-protocol-flaws",
+            "bluetooth-protocol-flaws",
+            "bluetooth-protocol",
+            "insecure-protocol",
+            "disabled-cert-verification",
+            "weak-crypto",
+            "cors-wildcard",
+            "cookie-insecure",
+            "sql-injection",
+            "protocol-surface",
+            "dns-plaintext",
+            "password-auth",
+            "bluetooth-paired-stranger",
+            "wpa2-krack",
+            "weak-wifi-encryption",
+            "wifi-deauth-accept",
+            "wifi-evil-twin",
+            "wifi-pmk-exposure",
+            "wifi-krack-vulnerable",
+            "wifi-protocol",
+            "static-aead-nonce",
+            "signature-fail-open",
+            "webhook-reencoded-body",
+            "signed-webhook-without-replay-guard",
+            "wallet-key-egress",
+            "wallet-direct-request-signing",
+            "wallet-capability-unbounded",
+            "wallet-broadcast-auto-retry",
+            "unlimited-token-approval"
+          ]
+        },
+        "confidence": {
+          "enum": ["high", "medium-high", "heuristic"]
+        },
+        "doctrine": {
+          "enum": [
+            "substrate-honesty",
+            "transparency",
+            "trust-protocol"
+          ]
+        },
+        "principle": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        }
+      }
+    },
+    "context_assertions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "source_protocol",
+        "records",
+        "relations",
+        "policy",
+        "simulation",
+        "custody"
+      ],
+      "properties": {
+        "profile": {
+          "const": "whitehack-agent-wallet-projection/v1"
+        },
+        "source_protocol": {
+          "const": "agent-wallet/0.1"
+        },
+        "records": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "descriptor",
+            "capability",
+            "intent",
+            "simulation",
+            "continuity"
+          ],
+          "properties": {
+            "descriptor": { "$ref": "#/$defs/record_state" },
+            "capability": { "$ref": "#/$defs/record_state" },
+            "intent": { "$ref": "#/$defs/record_state" },
+            "simulation": { "$ref": "#/$defs/record_state" },
+            "continuity": { "$ref": "#/$defs/record_state" }
+          }
+        },
+        "relations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "descriptor-capability",
+            "capability-intent",
+            "delegate",
+            "chain",
+            "source",
+            "intent-simulation",
+            "revocation"
+          ],
+          "properties": {
+            "descriptor-capability": { "$ref": "#/$defs/relation_state" },
+            "capability-intent": { "$ref": "#/$defs/relation_state" },
+            "delegate": { "$ref": "#/$defs/relation_state" },
+            "chain": { "$ref": "#/$defs/relation_state" },
+            "source": { "$ref": "#/$defs/relation_state" },
+            "intent-simulation": { "$ref": "#/$defs/relation_state" },
+            "revocation": { "$ref": "#/$defs/relation_state" }
+          }
+        },
+        "policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "calls",
+            "spend",
+            "fee",
+            "expiry",
+            "use",
+            "approvals"
+          ],
+          "properties": {
+            "calls": { "$ref": "#/$defs/bound_state" },
+            "spend": { "$ref": "#/$defs/bound_state" },
+            "fee": { "$ref": "#/$defs/bound_state" },
+            "expiry": { "$ref": "#/$defs/bound_state" },
+            "use": { "$ref": "#/$defs/bound_state" },
+            "approvals": {
+              "enum": [
+                "not-required",
+                "requirement-satisfied",
+                "requirement-unsatisfied",
+                "unknown"
+              ]
+            }
+          }
+        },
+        "simulation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["execution", "effects", "fee"],
+          "properties": {
+            "execution": {
+              "enum": [
+                "passed",
+                "failed",
+                "stale",
+                "inconclusive",
+                "not-run"
+              ]
+            },
+            "effects": { "$ref": "#/$defs/relation_state" },
+            "fee": { "$ref": "#/$defs/bound_state" }
+          }
+        },
+        "custody": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "descriptor-mode",
+            "signer-exportability"
+          ],
+          "properties": {
+            "descriptor-mode": {
+              "enum": [
+                "self-custodied",
+                "delegated-signer",
+                "platform-custodied",
+                "watch-only",
+                "unknown"
+              ]
+            },
+            "signer-exportability": {
+              "enum": [
+                "non-exportable",
+                "exportable",
+                "unknown"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "record_state": {
+      "enum": ["absent", "unverified", "verified", "invalid"]
+    },
+    "relation_state": {
+      "enum": ["match", "mismatch", "unknown"]
+    },
+    "bound_state": {
+      "enum": ["within-bounds", "outside-bounds", "unknown"]
+    },
+    "inference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status",
+        "confidence",
+        "epistemic_basis",
+        "question",
+        "basis"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "source-attention",
+            "caller-declared-record-chain-consistency",
+            "caller-declared-static-policy-consistency",
+            "caller-declared-simulation-consistency",
+            "caller-declared-continuity-consistency",
+            "caller-declared-custody-description",
+            "execution-readiness"
+          ]
+        },
+        "status": {
+          "enum": ["supported", "contradicted", "indeterminate"]
+        },
+        "confidence": { "const": "heuristic" },
+        "epistemic_basis": { "const": "caller-assertion" },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "basis": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/evidence_path" }
+        }
+      }
+    },
+    "evidence_path": {
+      "enum": [
+        "/presented_evidence/finding_claims",
+        "/presented_evidence/context_assertions/records/descriptor",
+        "/presented_evidence/context_assertions/records/capability",
+        "/presented_evidence/context_assertions/records/intent",
+        "/presented_evidence/context_assertions/records/simulation",
+        "/presented_evidence/context_assertions/records/continuity",
+        "/presented_evidence/context_assertions/relations/descriptor-capability",
+        "/presented_evidence/context_assertions/relations/capability-intent",
+        "/presented_evidence/context_assertions/relations/delegate",
+        "/presented_evidence/context_assertions/relations/chain",
+        "/presented_evidence/context_assertions/relations/source",
+        "/presented_evidence/context_assertions/relations/intent-simulation",
+        "/presented_evidence/context_assertions/relations/revocation",
+        "/presented_evidence/context_assertions/policy/calls",
+        "/presented_evidence/context_assertions/policy/spend",
+        "/presented_evidence/context_assertions/policy/fee",
+        "/presented_evidence/context_assertions/policy/expiry",
+        "/presented_evidence/context_assertions/policy/use",
+        "/presented_evidence/context_assertions/policy/approvals",
+        "/presented_evidence/context_assertions/simulation/execution",
+        "/presented_evidence/context_assertions/simulation/effects",
+        "/presented_evidence/context_assertions/simulation/fee",
+        "/presented_evidence/context_assertions/custody/descriptor-mode",
+        "/presented_evidence/context_assertions/custody/signer-exportability"
+      ]
+    },
+    "unknown_reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    }
+  }
+}
