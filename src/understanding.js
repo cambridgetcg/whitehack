@@ -79,7 +79,7 @@ const PERMANENT_UNKNOWNS = Object.freeze([
   }),
   Object.freeze({
     id: 'scanner-coverage',
-    reason: 'A finding is a bounded heuristic match, and absence of findings is not proof of honesty or security.',
+    reason: 'Even a genuine scanner finding is only a bounded heuristic match, and absence of findings is not proof of honesty or security.',
   }),
   Object.freeze({
     id: 'adapter-trust',
@@ -123,7 +123,7 @@ const PERMANENT_UNKNOWNS = Object.freeze([
   }),
   Object.freeze({
     id: 'subject-binding',
-    reason: 'The redacted enum projection contains no wallet, capability, intent, simulation, or operation identifier and cannot establish which operation it describes.',
+    reason: 'The closed context projection contains no wallet, capability, intent, simulation, or operation identifier. A retained caller file label does not bind it to a wallet subject or operation.',
   }),
 ])
 
@@ -134,7 +134,7 @@ const BOUNDARIES = Object.freeze({
     network: false,
     wallet: false,
     clock: false,
-    key_access: false,
+    key_store_access: false,
     signing: false,
     rpc: false,
     simulation: false,
@@ -509,7 +509,7 @@ function infer(context, findingEvidence) {
       'source-attention',
       findingEvidence.length > 0 ? 'supported' : 'indeterminate',
       'caller-assertion',
-      'Which matched source claims need contextual review, and what evidence would confirm or reject each concern?',
+      'Which presented finding claims need contextual review, and what evidence would confirm or reject each concern?',
       ['/presented_evidence/finding_claims'],
     ),
     inference(
@@ -611,14 +611,16 @@ function contextUnknowns(context) {
 /**
  * Build a deterministic, fixed-field understanding document from
  * scanner finding claims and a closed caller-supplied Whitehack projection of
- * Agent Wallet evidence.
+ * Agent Wallet assertions.
  *
- * Whitehack itself has no filesystem, process, network, wallet, clock, key,
- * signing, RPC, simulation, broadcast, or authorization capability here.
+ * Whitehack itself has no direct filesystem, process, network, wallet, clock,
+ * key-store, signing, RPC, simulation, broadcast, or authorization capability
+ * here.
  * Context values remain explicitly labelled as caller assertions; the function
  * does not verify wallet records, freshness, subject binding, consent,
  * authorization, or execution readiness. The caller's `file` label is retained
- * with unknown sensitivity. Ordinary accessors are rejected, but hostile Proxy
+ * with unknown sensitivity. Required-field accessors are rejected and
+ * discarded-field accessors are ignored, without invocation, but hostile Proxy
  * traps can still run during object inspection; this API is not a sandbox.
  */
 export function createUnderstanding(options) {

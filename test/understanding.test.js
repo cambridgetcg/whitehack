@@ -106,7 +106,7 @@ test('creates deterministic schema-valid understanding with only allowlisted fin
   assert.equal(JSON.stringify(first).includes(secret), false)
   assert.equal(first.boundaries.direct_capabilities.filesystem, false)
   assert.equal(first.boundaries.direct_capabilities.network, false)
-  assert.equal(first.boundaries.direct_capabilities.key_access, false)
+  assert.equal(first.boundaries.direct_capabilities.key_store_access, false)
   assert.equal(first.boundaries.direct_capabilities.signing, false)
   assert.equal(first.boundaries.direct_capabilities.rpc, false)
   assert.equal(first.boundaries.direct_capabilities.authorization, false)
@@ -115,6 +115,10 @@ test('creates deterministic schema-valid understanding with only allowlisted fin
   assert.equal(first.boundaries.input_inspection.sandboxed, false)
   assert.equal(first.boundaries.wallet_subject_bound, false)
   assert.equal(inference(first, 'source-attention').status, 'supported')
+  assert.match(
+    inference(first, 'source-attention').question,
+    /presented finding claims/,
+  )
   assert.equal(inference(first, 'caller-declared-record-chain-consistency').status, 'supported')
   assert.equal(inference(first, 'caller-declared-static-policy-consistency').status, 'supported')
   assert.equal(inference(first, 'caller-declared-simulation-consistency').status, 'supported')
@@ -134,6 +138,7 @@ test('creates deterministic schema-valid understanding with only allowlisted fin
   assert.equal(typeof first.unknowns['payload-semantics'], 'string')
   assert.equal(typeof first.unknowns['projection-freshness'], 'string')
   assert.equal(typeof first.unknowns['subject-binding'], 'string')
+  assert.match(first.unknowns['subject-binding'], /file label does not bind/)
   assert.equal(typeof first.unknowns['durable-usage-reservation'], 'string')
   assertDeepFrozen(first)
 
@@ -168,6 +173,14 @@ test('creates deterministic schema-valid understanding with only allowlisted fin
   const inventedContextField = structuredClone(first)
   inventedContextField.presented_evidence.context_assertions.records.invented = 'verified'
   assert.equal(validate(inventedContextField), false)
+
+  const falseFileSensitivity = structuredClone(first)
+  falseFileSensitivity.redaction.caller_file_label_sensitivity = 'public'
+  assert.equal(validate(falseFileSensitivity), false)
+
+  const falseKeyStoreCapability = structuredClone(first)
+  falseKeyStoreCapability.boundaries.direct_capabilities.key_store_access = true
+  assert.equal(validate(falseKeyStoreCapability), false)
 })
 
 test('copies and canonical-sorts location-preserving finding metadata before freezing', () => {
@@ -359,7 +372,7 @@ test('rejects findings that do not match the bundled scanner manifest', () => {
   )
 })
 
-test('rejects open or unsafe projection data and never invokes accessors', () => {
+test('rejects open or unsafe projection data, avoids accessors, and reports Proxy traps', () => {
   assert.throws(
     () => createUnderstanding({
       findings: [],
@@ -404,6 +417,30 @@ test('rejects open or unsafe projection data and never invokes accessors', () =>
   }
   createUnderstanding({ findings: [finding], context: context() })
   assert.equal(invoked, false)
+
+  let proxyTrapCount = 0
+  const proxiedFinding = new Proxy({
+    file: 'proxy.js',
+    line: 1,
+    check: 'unsafe-eval',
+    confidence: 'medium-high',
+    doctrine: 'substrate-honesty',
+    principle: 2,
+  }, {
+    getOwnPropertyDescriptor(target, property) {
+      proxyTrapCount += 1
+      return Reflect.getOwnPropertyDescriptor(target, property)
+    },
+  })
+  const proxiedDocument = createUnderstanding({
+    findings: [proxiedFinding],
+    context: context(),
+  })
+  assert.equal(
+    proxiedDocument.boundaries.input_inspection.caller_proxy_traps_may_run,
+    true,
+  )
+  assert.ok(proxyTrapCount >= 6)
 
   const arrayWithMapAccessor = [finding]
   Object.defineProperty(arrayWithMapAccessor, 'map', {

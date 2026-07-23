@@ -131,7 +131,7 @@ standard makes the linter principled; the linter makes the standard checkable.
 ```sh
 npx --yes @agenttool/whitehack-scan@0.8.0 scan path/to/repo
 
-# closed machine-readable output; redaction removes source-bearing fields
+# closed output; redaction removes finding titles, messages, and snippets
 npx --yes @agenttool/whitehack-scan@0.8.0 scan . --json --redacted
 
 npm run selftest   # diagnostic scan; planted confident findings intentionally exit 1
@@ -228,7 +228,8 @@ Machine consumers can import the closed result schema as
 ### understanding without custody
 
 `createUnderstanding()` turns location-preserving finding metadata plus a
-closed, enum-only Whitehack projection of Agent Wallet evidence into
+closed, enum-only Whitehack projection of caller-presented Agent Wallet
+assertions into
 `whitehack-understanding/v1`:
 
 ```js
@@ -288,23 +289,25 @@ unknown. The function derives only confidence-labelled heuristic consistency
 questions and permanently retains unknowns such as finding provenance, adapter
 trust, payload semantics, projection freshness, subject binding, current
 continuity, durable usage/reservation, approval authenticity, consent, custody
-truth, live-chain state, and signing/broadcast outcome. Because it retains no
-wallet or operation identifier and no evaluation time, the document is an
-ephemeral explanation, not correlated preflight evidence; verify and bind
-records again atomically at sign time. `complete: true` means this bounded
-transformation completed; it does not mean the wallet operation is complete,
-safe, approved, authorized, or ready to execute.
+truth, live-chain state, and signing/broadcast outcome. Because the closed
+context projection retains no dedicated wallet or operation identifier, a
+retained file label cannot bind one, and the document retains no evaluation
+time, it is an ephemeral explanation, not correlated preflight evidence;
+verify and bind records again atomically at sign time. `complete: true` means
+this bounded transformation completed; it does not mean the wallet operation
+is complete, safe, approved, authorized, or ready to execute.
 
-Whitehack itself has no direct filesystem, process, network, wallet, clock, key,
-signing, RPC, simulation, broadcast, or authorization capability in this
-function. It does not execute scanned source or invoke ordinary input
-accessors. The output retains exactly `file`, `line`, `check`, `confidence`,
-`doctrine`, and `principle` from each finding; every other finding field is
-removed. `file` is an untrusted caller label, not a proven path, and its
-sensitivity is explicitly `unknown`, so callers must not put credentials or
-personal data there. Ordinary JavaScript Proxy traps can still run while an
-object is inspected, and pre-existing hostile object graphs are not a resource
-sandbox. Import the closed output schema as
+Whitehack itself has no direct filesystem, process, network, wallet, clock,
+key-store, signing, RPC, simulation, broadcast, or authorization capability in
+this function. It does not execute scanned source. Required-field accessors are
+rejected and discarded-field accessors are ignored, both without invocation.
+The output retains exactly `file`, `line`, `check`, `confidence`, `doctrine`,
+and `principle` from each finding; every other finding field is removed. `file`
+is an untrusted caller label, not a proven path, and its sensitivity is
+explicitly `unknown`, so callers must not put credentials or personal data
+there. Ordinary JavaScript Proxy traps can still run while an object is
+inspected, and pre-existing hostile object graphs are not a resource sandbox.
+Import the closed output schema as
 `@agenttool/whitehack-scan/understanding-schema.json`.
 
 ### development snapshot — moving GitHub main
