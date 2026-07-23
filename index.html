@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'" />
   <title>whitehack — canonical 47-check CLI/API</title>
-  <meta name="description" content="whitehack v0.8.0 is a bounded local 47-check CLI/API with a non-custodial understanding projection, published as @agenttool/whitehack-scan and a verifiable LOVE artifact." />
+  <meta name="description" content="whitehack v0.8.1 is a focused, bounded local 47-check CLI/API with a non-custodial understanding projection, published as @agenttool/whitehack-scan and a verifiable LOVE artifact." />
   <meta property="og:title" content="whitehack — canonical 47-check CLI/API" />
   <meta property="og:description" content="A bounded local scanner with 47 checks, exact npm and LOVE release paths, and a legacy eight-check browser demo." />
   <link rel="stylesheet" href="./whitehack.css" />
@@ -33,7 +33,7 @@
   <!-- hero -->
   <section class="grain">
     <div class="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
-      <p class="mono text-xs tracking-widest text-zinc-500 uppercase mb-5">v0.8.0 · local CLI/API · 47 checks · bounded understanding</p>
+      <p class="mono text-xs tracking-widest text-zinc-500 uppercase mb-5">v0.8.1 · local CLI/API · 47 checks · bounded understanding</p>
       <h1 class="text-5xl sm:text-6xl font-semibold tracking-tight leading-[1.05]">
         The honest hack.
       </h1>
@@ -44,7 +44,7 @@
       </p>
       <div class="mt-9 flex flex-wrap items-center justify-center gap-3">
         <code class="mono text-sm bg-panel border border-line rounded-lg px-4 py-2.5 text-zinc-200">
-          npx --yes @agenttool/whitehack-scan@0.8.0 scan .
+          npx --yes @agenttool/whitehack-scan@0.8.1 scan .
         </code>
         <a href="#release"
            class="text-sm font-medium border border-line rounded-lg px-4 py-2.5 hover:border-zinc-500">Exact artifacts ↓</a>
@@ -60,24 +60,25 @@
   <section id="release" class="border-t border-line bg-panel/40">
     <div class="max-w-5xl mx-auto px-6 py-16">
       <div class="max-w-3xl">
-        <p class="mono text-xs tracking-widest text-zinc-500 uppercase mb-3">@agenttool/whitehack-scan 0.8.0</p>
+        <p class="mono text-xs tracking-widest text-zinc-500 uppercase mb-3">@agenttool/whitehack-scan 0.8.1</p>
         <h2 class="text-2xl font-semibold tracking-tight">One release, open mirrors</h2>
         <p class="mt-3 text-soft">npm is an optional distribution mirror, not a service dependency. Once fetched, Whitehack reads bounded local files; it does not upload code, run a hosted scan, execute target code, connect a wallet, sign or broadcast transactions, or make scanner-initiated network calls.</p>
+        <p class="mt-3 text-soft">Version 0.8.1 focuses the flashlight: locally evidenced in-memory <code class="mono text-zinc-300">Map</code> arithmetic is quieter, external and uncertain reads stay visible, comments cannot impersonate catch guards, and multi-line WiFi findings point to an actual source line. Each finding is a question for review, not a vulnerability verdict.</p>
       </div>
 
       <div class="mt-8 grid lg:grid-cols-3 gap-4">
         <div class="bg-ink border border-line rounded-xl p-5">
           <h3 class="font-medium">Exact npm release</h3>
-          <pre class="mono text-xs mt-4 bg-panel border border-line rounded-lg p-3 overflow-x-auto text-zinc-300">npx --yes @agenttool/whitehack-scan@0.8.0 scan .</pre>
-          <pre class="mono text-xs mt-2 bg-panel border border-line rounded-lg p-3 overflow-x-auto text-zinc-300">npx --yes @agenttool/whitehack-scan@0.8.0 scan . --json --redacted</pre>
+          <pre class="mono text-xs mt-4 bg-panel border border-line rounded-lg p-3 overflow-x-auto text-zinc-300">npx --yes @agenttool/whitehack-scan@0.8.1 scan .</pre>
+          <pre class="mono text-xs mt-2 bg-panel border border-line rounded-lg p-3 overflow-x-auto text-zinc-300">npx --yes @agenttool/whitehack-scan@0.8.1 scan . --json --redacted</pre>
           <p class="mt-3 text-sm text-soft">The package has zero runtime dependencies and no install lifecycle scripts. <code class="mono text-zinc-300">--redacted</code> removes finding titles, messages, and source snippets from the closed JSON result.</p>
         </div>
 
         <div class="bg-ink border border-line rounded-xl p-5">
           <h3 class="font-medium">Exact LOVE artifact</h3>
           <div class="mt-4 space-y-3 text-sm">
-            <a class="block mono text-xs text-zinc-300 hover:text-white break-all" href="https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.0/manifest.json">packages/v1/@agenttool/whitehack-scan/0.8.0/manifest.json</a>
-            <a class="block mono text-xs text-zinc-300 hover:text-white break-all" href="https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.0/agenttool-whitehack-scan-0.8.0.tgz">packages/v1/@agenttool/whitehack-scan/0.8.0/agenttool-whitehack-scan-0.8.0.tgz</a>
+            <a class="block mono text-xs text-zinc-300 hover:text-white break-all" href="https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.1/manifest.json">packages/v1/@agenttool/whitehack-scan/0.8.1/manifest.json</a>
+            <a class="block mono text-xs text-zinc-300 hover:text-white break-all" href="https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.1/agenttool-whitehack-scan-0.8.1.tgz">packages/v1/@agenttool/whitehack-scan/0.8.1/agenttool-whitehack-scan-0.8.1.tgz</a>
           </div>
           <p class="mt-4 text-sm text-soft">The manifest states the tarball's SHA-256 and size. Verify those bytes before installing; Pages, GitHub Releases, and npm are intended to carry the same checked-in artifact.</p>
         </div>
@@ -85,7 +86,7 @@
         <div class="bg-ink border border-line rounded-xl p-5">
           <h3 class="font-medium">Versioned GitHub Action</h3>
           <pre class="mono text-xs mt-4 bg-panel border border-line rounded-lg p-3 overflow-x-auto text-zinc-300"># after actions/checkout
-- uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.8.0
+- uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.8.1
   with:
     path: .</pre>
           <p class="mt-3 text-sm text-soft">Run it after checking out the repository. The action emits redacted JSON and requires at least one supported file. Repository administrators can move Git tags; use a reviewed 40-character release commit when a cryptographic GitHub pin is required.</p>
@@ -230,10 +231,10 @@
     <div class="max-w-5xl mx-auto px-6 py-16">
       <h2 class="text-2xl font-semibold tracking-tight mb-6">Local quickstart</h2>
       <pre class="mono text-sm bg-ink border border-line rounded-xl p-5 overflow-x-auto text-zinc-300"><span class="text-zinc-500"># exact npm release</span>
-npx --yes @agenttool/whitehack-scan@0.8.0 scan path/to/repo
+npx --yes @agenttool/whitehack-scan@0.8.1 scan path/to/repo
 
 <span class="text-zinc-500"># closed result; finding titles, messages, and snippets are removed</span>
-npx --yes @agenttool/whitehack-scan@0.8.0 scan path/to/repo --json --redacted
+npx --yes @agenttool/whitehack-scan@0.8.1 scan path/to/repo --json --redacted
 
 <span class="text-zinc-500"># 0: no high/medium-high findings · 1: at least one · 2: incomplete/error</span></pre>
       <p class="mt-4 text-sm text-soft max-w-3xl">Heuristic findings stay advisory and never change the exit code. Exit <code class="mono text-zinc-300">0</code> means only that this completed scan found no high or medium-high match; it is not proof of security, honesty, or the absence of bugs.</p>
