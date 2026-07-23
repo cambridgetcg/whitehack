@@ -1,6 +1,6 @@
 {
   "name": "@agenttool/whitehack-scan",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "The honest hack — scan a codebase (incl. Solidity & financial code) for the places it lies about its own state.",
   "type": "module",
   "main": "./src/scan.js",

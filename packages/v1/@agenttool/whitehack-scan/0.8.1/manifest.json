@@ -1,0 +1,51 @@
+{
+  "protocol": "love-package/v1",
+  "document_type": "package-manifest",
+  "name": "@agenttool/whitehack-scan",
+  "version": "0.8.1",
+  "description": "The honest hack — a bounded local scanner with focused attention signals and a non-custodial understanding projection for caller-presented Agent Wallet assertions",
+  "license": "MIT",
+  "artifact": {
+    "format": "npm-tarball",
+    "filename": "agenttool-whitehack-scan-0.8.1.tgz",
+    "sha256": "f02079aa5ee38cca3522141da012f1fbe2c3f3399c29710c0692a8f78fc24df8",
+    "size": 79779,
+    "media_type": "application/gzip",
+    "mirrors": [
+      {
+        "url": "https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.1/agenttool-whitehack-scan-0.8.1.tgz"
+      },
+      {
+        "url": "https://github.com/cambridgetcg/whitehack/releases/download/whitehack-v0.8.1/agenttool-whitehack-scan-0.8.1.tgz"
+      },
+      {
+        "url": "https://registry.npmjs.org/@agenttool/whitehack-scan/-/whitehack-scan-0.8.1.tgz"
+      }
+    ]
+  },
+  "runtime": {
+    "kind": "javascript",
+    "engines": {
+      "node": ">=18"
+    }
+  },
+  "install": {
+    "format": "npm-tarball",
+    "specifier": "https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.1/agenttool-whitehack-scan-0.8.1.tgz"
+  },
+  "source": {
+    "repository": "https://github.com/cambridgetcg/whitehack.git",
+    "revision": "fdd2260efd7a11e5d52c12c53d8016d1f5e7d23a",
+    "path": "."
+  },
+  "reproducibility": {
+    "canonical_platform": "linux",
+    "node": "24.18.0",
+    "npm": "11.17.0",
+    "cross_platform_comparison": "uncompressed-tar-sha256"
+  },
+  "dependency_resolution": {
+    "mode": "package_manifest",
+    "self_contained": true
+  }
+}

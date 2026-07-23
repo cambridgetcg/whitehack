@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
           version="$(node --input-type=module --eval "import p from './package.json' with { type: 'json' }; process.stdout.write(p.version)")"
-          test "$version" = '0.8.0'
+          test "$version" = '0.8.1'
           tag="whitehack-v${version}"
           filename="agenttool-whitehack-scan-${version}.tgz"
           artifact="packages/v1/@agenttool/whitehack-scan/${version}/${filename}"

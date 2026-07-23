@@ -15,7 +15,7 @@
     },
     {
       "name": "@agenttool/whitehack-scan",
-      "latest": "0.8.0",
+      "latest": "0.8.1",
       "versions": [
         {
           "version": "0.7.1",
@@ -24,6 +24,10 @@
         {
           "version": "0.8.0",
           "manifest_url": "https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.0/manifest.json"
+        },
+        {
+          "version": "0.8.1",
+          "manifest_url": "https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.1/manifest.json"
         }
       ]
     }

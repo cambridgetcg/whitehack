@@ -11,13 +11,13 @@ it were live, the score shown to a person with no way to ask *why*. These usuall
 aren't bugs in the ordinary sense. The code runs fine. It just isn't honest about
 its own state — and someone downstream trusts it anyway.
 
-## what it checks (v0.8.0 — 47 checks)
+## what it checks (v0.8.1 — 47 checks)
 
 **General honesty (JS / TS / JSX):**
 
 | check | the lie it catches | doctrine | confidence |
 |-------|--------------------|----------|-----------|
-| `silent-failure` | a read that fails silently to a falsy default (`catch { return 0 }`, `?? 0` over a fetch) so "could not read" becomes a confident wrong value | substrate honesty | medium-high |
+| `silent-failure` | an external or unproven read that fails silently to a falsy default (`catch { return 0 }`, `?? 0` over a fetch) so "could not read" becomes a confident wrong value | substrate honesty | medium-high |
 | `cache-as-live` | a cached / snapshot value returned with no freshness or provenance marker | substrate honesty | heuristic |
 | `decision-without-why` | a user-affecting value (score, fee, fraud flag, tier) rendered with no inspectable explanation | transparency | heuristic |
 | `float-money` | currency parsed or computed as a binary float (`parseFloat(price)`, `amount * 0.029`) so an "exact" amount silently loses cents | substrate honesty | medium-high |
@@ -108,6 +108,26 @@ Each check declares the languages it understands, so a Solidity check never runs
 its regexes over JavaScript (or vice versa) and report noise about a language it
 cannot read.
 
+### 0.8.1 focus — point the flashlight, do not pronounce a verdict
+
+A finding is a location and a review question, not a vulnerability verdict.
+Version 0.8.1 narrows `silent-failure` so a numeric identity default used in
+arithmetic through a non-reassigned binding to a locally constructed in-memory
+`Map` is not mistaken for a failed external read. Awaited reads, unknown
+`.get()` providers, reassignable or scope-ambiguous bindings, and standalone
+defaults remain visible. Catch guards are now read from executable code, so
+comments and quoted examples cannot hide a swallowed falsy return.
+Multi-line WiFi credential matches now identify the actual matched line instead
+of using a file-level line-zero sentinel.
+
+This remains bounded text analysis, not proof of runtime object identity. It
+rejects visible reassignment and direct `.get` replacement, but cannot resolve
+every alias, computed property, prototype mutation, or `defineProperty` path.
+
+For each finding, review the actual execution path, the trust boundary or
+invariant involved, and the regression test that records the intended
+behaviour. Whitehack supplies attention; the reviewer supplies context.
+
 ## conformance to the Clear Standard
 
 whitehack is the conformance linter for [the Clear Standard](https://github.com/cambridgetcg/clear-standard) —
@@ -129,10 +149,10 @@ standard makes the linter principled; the linter makes the standard checkable.
 ## usage
 
 ```sh
-npx --yes @agenttool/whitehack-scan@0.8.0 scan path/to/repo
+npx --yes @agenttool/whitehack-scan@0.8.1 scan path/to/repo
 
 # closed output; redaction removes finding titles, messages, and snippets
-npx --yes @agenttool/whitehack-scan@0.8.0 scan . --json --redacted
+npx --yes @agenttool/whitehack-scan@0.8.1 scan . --json --redacted
 
 npm run selftest   # diagnostic scan; planted confident findings intentionally exit 1
 npm test           # deterministic scanner and crypto-awareness fixtures
@@ -148,10 +168,10 @@ does not break a CI gate. An exit `0` is not a security or honesty guarantee.
 ### npm — exact public release
 
 ```sh
-npx --yes @agenttool/whitehack-scan@0.8.0 scan .
+npx --yes @agenttool/whitehack-scan@0.8.1 scan .
 
 # or keep the exact tool in a project
-npm install --save-dev --save-exact @agenttool/whitehack-scan@0.8.0
+npm install --save-dev --save-exact @agenttool/whitehack-scan@0.8.1
 npm exec -- whitehack scan .
 ```
 
@@ -163,8 +183,8 @@ does not contact a registry, a chain, a wallet, or the Whitehack maintainers.
 
 The same release tarball and its SHA-256 manifest are available at:
 
-- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.0/manifest.json`
-- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.0/agenttool-whitehack-scan-0.8.0.tgz`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.1/manifest.json`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.1/agenttool-whitehack-scan-0.8.1.tgz`
 
 Read and verify the manifest before installing the tarball. The GitHub release,
 GitHub Pages, and npm copies are intended to be byte-for-byte mirrors of that
@@ -183,7 +203,7 @@ steps:
   - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
     with:
       node-version: 24.18.0
-  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.8.0
+  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.8.1
     with:
       path: .
 ```
@@ -328,7 +348,7 @@ release tag, or reviewed commit instead.
 - **jsDelivr CDN** → https://cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/LEARN.md
 - **GitHub** → https://github.com/cambridgetcg/whitehack
 
-The Node CLI and imported APIs are the canonical v0.8 implementation
+The Node CLI and imported APIs are the canonical v0.8.1 implementation
 with 47 checks. The client-only browser playground deliberately preserves the
 original eight-check demo; it is useful for learning, but it is not feature
 parity and does not include the protocol or crypto-awareness pack.
@@ -358,7 +378,7 @@ whitehack lives on every resistance-free channel:
 | GitHub raw | raw.githubusercontent.com/cambridgetcg/whitehack/main/ | no |
 | npm / npx exact release | npmjs.com/package/@agenttool/whitehack-scan | no |
 | LOVE exact artifact + manifest | cambridgetcg.github.io/whitehack/packages/v1/ | no |
-| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.8.0 | no |
+| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.8.1 | no |
 | curl install | raw.githubusercontent.com/.../install.sh | no |
 
 npm is an optional mirror, not a gate: the exact tarball is also available over
