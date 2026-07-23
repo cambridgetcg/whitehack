@@ -113,9 +113,10 @@ export const wifiProtocol = {
     }
 
     // Multi-line: hardcoded SSID + password pair
-    if (HARDCODED_SSID_PASS.test(content)) {
+    const credentialPair = HARDCODED_SSID_PASS.exec(content)
+    if (credentialPair) {
       hits.push({
-        line: 0,
+        line: content.slice(0, credentialPair.index).split('\n').length,
         message: 'Hardcoded SSID + password pair — the entire WiFi credential set is in the source. Not a secret. Not security. Theater.',
         snippet: SENSITIVE_SNIPPET,
       })
