@@ -54,10 +54,11 @@ jobs:
           ')
           test "${package_identity[0]}" = '@agenttool/whitehack-scan'
           test "${package_identity[1]}" = '0.8.0'
-          version="${package_identity[1]}"
           test "$tag" = 'whitehack-v0.8.0'
           test "$(git cat-file -t "refs/tags/$tag")" = tag
           tag_commit="$(git rev-list -n 1 "refs/tags/$tag")"
+          test "$GITHUB_REF" = "refs/tags/$tag"
+          test "$GITHUB_SHA" = "$tag_commit"
           test "$(git rev-parse HEAD)" = "$tag_commit"
           git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
           git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main
@@ -156,7 +157,9 @@ jobs:
           version="$(node --input-type=module --eval "import p from './package.json' with { type: 'json' }; process.stdout.write(p.version)")"
           artifact="packages/v1/@agenttool/whitehack-scan/${version}/agenttool-whitehack-scan-${version}.tgz"
           registry_dir="$(mktemp -d)"
-          trap 'rm -rf "$registry_dir"' EXIT
+          audit_dir="$(mktemp -d)"
+          trap 'rm -rf "$registry_dir" "$audit_dir"' EXIT
+          mirror_verified=false
           for attempt in $(seq 1 90); do
             if published="$(npm --userconfig=/dev/null --registry=https://registry.npmjs.org --prefer-online view "@agenttool/whitehack-scan@${version}" version 2>/dev/null)" \
               && latest="$(npm --userconfig=/dev/null --registry=https://registry.npmjs.org --prefer-online view "@agenttool/whitehack-scan" dist-tags.latest 2>/dev/null)" \
@@ -179,7 +182,8 @@ jobs:
                     if (attestations?.provenance?.predicateType !== "https://slsa.dev/provenance/v1") process.exit(1);
                     if (typeof attestations?.url !== "string" || !attestations.url.startsWith("https://registry.npmjs.org/-/npm/v1/attestations/")) process.exit(1);
                   '; then
-                    exit 0
+                    mirror_verified=true
+                    break
                   fi
                 fi
               fi
@@ -190,6 +194,23 @@ jobs:
             fi
             sleep 5
           done
+          test "$mirror_verified" = true
+
+          pushd "$audit_dir" >/dev/null
+          node --input-type=module --eval '
+            import { writeFileSync } from "node:fs";
+            writeFileSync("package.json", `${JSON.stringify({
+              name: "whitehack-release-audit",
+              version: "0.0.0",
+              private: true,
+            }, null, 2)}\n`);
+          '
+          npm --userconfig=/dev/null --registry=https://registry.npmjs.org --prefer-online \
+            install --ignore-scripts --no-audit --no-fund --save-exact \
+            "@agenttool/whitehack-scan@${version}"
+          npm --userconfig=/dev/null --registry=https://registry.npmjs.org --prefer-online \
+            audit signatures
+          popd >/dev/null
       - name: Publish or verify exact GitHub release mirror
         shell: bash
         env:
@@ -209,16 +230,26 @@ jobs:
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${tag}")"
           case "$release_status" in
             200)
-              asset_count="$(gh release view "$tag" --json assets --jq ".assets | map(select(.name == \"$filename\")) | length")"
+              release_json="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName,name,assets)"
+              RELEASE_JSON="$release_json" EXPECTED_TAG="$tag" \
+                EXPECTED_NAME="@agenttool/whitehack-scan@${version}" \
+                EXPECTED_ASSET="$filename" node --input-type=module --eval '
+                  const release = JSON.parse(process.env.RELEASE_JSON);
+                  if (release.isDraft !== false || release.isPrerelease !== false) process.exit(1);
+                  if (release.tagName !== process.env.EXPECTED_TAG) process.exit(1);
+                  if (release.name !== process.env.EXPECTED_NAME) process.exit(1);
+                  if (release.assets.some(({ name }) => name !== process.env.EXPECTED_ASSET)) process.exit(1);
+                  if (release.assets.length > 1) process.exit(1);
+                '
+              asset_count="$(RELEASE_JSON="$release_json" node --input-type=module --eval '
+                process.stdout.write(String(JSON.parse(process.env.RELEASE_JSON).assets.length));
+              ')"
               case "$asset_count" in
                 0)
-                  gh release upload "$tag" "$artifact"
+                  gh release upload "$tag" "$artifact" --repo "$GITHUB_REPOSITORY"
                   ;;
                 1)
-                  mirror_dir="$(mktemp -d)"
-                  trap 'rm -rf "$mirror_dir"' EXIT
-                  gh release download "$tag" --pattern "$filename" --dir "$mirror_dir"
-                  cmp --silent "$artifact" "$mirror_dir/$filename"
+                  :
                   ;;
                 *)
                   echo "GitHub release $tag has ambiguous $filename assets; refusing mutation." >&2
@@ -228,16 +259,49 @@ jobs:
               ;;
             404)
               gh release create "$tag" "$artifact#$filename" \
+                --repo "$GITHUB_REPOSITORY" \
                 --verify-tag \
                 --title "@agenttool/whitehack-scan@${version}" \
                 --notes "Whitehack 0.8 keeps the canonical 47-check CLI/API and adds the pure whitehack-understanding/v1 projection.
 
-          The attached tarball is byte-identical to the checked-in LOVE artifact and the verified public npm package. The new understanding subpath accepts manifest-consistent finding claims plus a closed enum-only projection of locally verified Agent Wallet evidence, while retaining explicit unknowns for provenance, freshness, subject binding, consent, custody, live state, and execution.
+          The attached tarball is byte-identical to the checked-in LOVE artifact and the verified public npm package. The new understanding subpath accepts manifest-consistent finding claims plus a closed enum-only projection of caller-presented Agent Wallet assertions, while retaining explicit unknowns for provenance, freshness, subject binding, consent, custody, live state, and execution.
 
-          Whitehack remains a heuristic local tool. This path does not read keys, connect wallets, call RPC, sign, broadcast, authorize execution, bind a wallet subject, or prove security, honesty, consent, custody, freshness, or readiness. The immutable 0.7.0 and 0.7.1 release roots remain historical."
+          The Agent Wallet projection consists of caller assertions intended to come from a separate local verifier; Whitehack does not verify the source records or bind them to a wallet subject. This understanding path has no direct key-store, wallet, RPC, simulation, signing, broadcast, or authorization capability. It does not prove security, honesty, consent, custody, freshness, or readiness. Retained file values are untrusted caller labels and may be sensitive. The immutable 0.7.0 and 0.7.1 release roots remain historical."
               ;;
             *)
               echo "GitHub API returned HTTP ${release_status}; refusing to infer release absence." >&2
               exit 1
               ;;
           esac
+
+          release_json="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName,name,assets)"
+          RELEASE_JSON="$release_json" EXPECTED_TAG="$tag" \
+            EXPECTED_NAME="@agenttool/whitehack-scan@${version}" \
+            EXPECTED_ASSET="$filename" node --input-type=module --eval '
+              const release = JSON.parse(process.env.RELEASE_JSON);
+              if (release.isDraft !== false || release.isPrerelease !== false) process.exit(1);
+              if (release.tagName !== process.env.EXPECTED_TAG) process.exit(1);
+              if (release.name !== process.env.EXPECTED_NAME) process.exit(1);
+              if (release.assets.length !== 1) process.exit(1);
+              if (release.assets[0].name !== process.env.EXPECTED_ASSET) process.exit(1);
+            '
+          mirror_dir="$(mktemp -d)"
+          trap 'rm -rf "$mirror_dir"' EXIT
+          public_mirror_verified=false
+          for attempt in $(seq 1 30); do
+            if curl --fail --location --silent --show-error \
+              --proto '=https' --proto-redir '=https' \
+              --connect-timeout 10 --max-time 60 \
+              --output "$mirror_dir/$filename" \
+              "https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/${filename}" \
+              && cmp --silent "$artifact" "$mirror_dir/$filename"; then
+              public_mirror_verified=true
+              break
+            fi
+            if [ "$attempt" = 30 ]; then
+              echo "The exact public GitHub release asset was unavailable during the verification retry window." >&2
+              exit 1
+            fi
+            sleep 2
+          done
+          test "$public_mirror_verified" = true

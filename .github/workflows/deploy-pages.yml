@@ -1,13 +1,29 @@
 name: deploy pages
+
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: ["Publish Whitehack"]
+    types: [completed]
+  workflow_dispatch:
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
+concurrency:
+  group: whitehack-pages
+  cancel-in-progress: false
+
 jobs:
   deploy:
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.event == 'workflow_dispatch' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.repository.full_name == github.repository) ||
+      (github.event_name == 'workflow_dispatch' &&
+       github.ref == 'refs/heads/main')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment:
@@ -16,6 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -25,17 +42,89 @@ jobs:
         run: npm install --global --ignore-scripts npm@11.17.0
       - name: verify exact immutable LOVE artifacts
         shell: bash
-        env:
-          BASE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
-          node scripts/verify-love-packages.mjs --base "$BASE_SHA"
+          node scripts/verify-love-packages.mjs --base d4048dc172deb87852b385adbc5d427104b8eda3
+      - name: verify exact public release mirrors
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="$(node --input-type=module --eval "import p from './package.json' with { type: 'json' }; process.stdout.write(p.version)")"
+          test "$version" = '0.8.0'
+          tag="whitehack-v${version}"
+          filename="agenttool-whitehack-scan-${version}.tgz"
+          artifact="packages/v1/@agenttool/whitehack-scan/${version}/${filename}"
+
+          published="$(npm --userconfig=/dev/null --registry=https://registry.npmjs.org --prefer-online view "@agenttool/whitehack-scan@${version}" version)"
+          latest="$(npm --userconfig=/dev/null --registry=https://registry.npmjs.org --prefer-online view "@agenttool/whitehack-scan" dist-tags.latest)"
+          test "$published" = "$version"
+          test "$latest" = "$version"
+
+          registry_dir="$(mktemp -d)"
+          release_dir="$(mktemp -d)"
+          audit_dir="$(mktemp -d)"
+          trap 'rm -rf "$registry_dir" "$release_dir" "$audit_dir"' EXIT
+          curl --fail --silent --show-error --location \
+            --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --connect-timeout 10 --max-time 60 \
+            --output "$registry_dir/whitehack-scan-${version}.tgz" \
+            "https://registry.npmjs.org/@agenttool/whitehack-scan/-/whitehack-scan-${version}.tgz"
+          cmp --silent "$artifact" "$registry_dir/whitehack-scan-${version}.tgz"
+
+          pushd "$audit_dir" >/dev/null
+          node --input-type=module --eval '
+            import { writeFileSync } from "node:fs";
+            writeFileSync("package.json", `${JSON.stringify({
+              name: "whitehack-pages-release-audit",
+              version: "0.0.0",
+              private: true,
+            }, null, 2)}\n`);
+          '
+          npm --userconfig=/dev/null --registry=https://registry.npmjs.org --prefer-online \
+            install --ignore-scripts --no-audit --no-fund --save-exact \
+            "@agenttool/whitehack-scan@${version}"
+          npm --userconfig=/dev/null --registry=https://registry.npmjs.org --prefer-online \
+            audit signatures
+          popd >/dev/null
+
+          release_json="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json isDraft,isPrerelease,tagName,name,assets)"
+          RELEASE_JSON="$release_json" EXPECTED_TAG="$tag" \
+            EXPECTED_NAME="@agenttool/whitehack-scan@${version}" \
+            EXPECTED_ASSET="$filename" node --input-type=module --eval '
+              const release = JSON.parse(process.env.RELEASE_JSON);
+              if (release.isDraft !== false || release.isPrerelease !== false) process.exit(1);
+              if (release.tagName !== process.env.EXPECTED_TAG) process.exit(1);
+              if (release.name !== process.env.EXPECTED_NAME) process.exit(1);
+              if (release.assets.length !== 1) process.exit(1);
+              if (release.assets[0].name !== process.env.EXPECTED_ASSET) process.exit(1);
+            '
+          curl --fail --location --silent --show-error \
+            --proto '=https' --proto-redir '=https' \
+            --connect-timeout 10 --max-time 60 \
+            --output "$release_dir/$filename" \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/${filename}"
+          cmp --silent "$artifact" "$release_dir/$filename"
+      - name: verify static site boundary
+        run: |
+          node --input-type=module --eval '
+            import { readFileSync } from "node:fs";
+            const html = readFileSync("index.html", "utf8");
+            const css = readFileSync("whitehack.css", "utf8");
+            const csp = "default-src \x27none\x27; style-src \x27self\x27; img-src \x27self\x27 data:; font-src \x27self\x27; connect-src \x27none\x27; script-src \x27none\x27; object-src \x27none\x27; base-uri \x27none\x27; form-action \x27none\x27";
+            if (!html.includes(`Content-Security-Policy" content="${csp}"`)) process.exit(1);
+            if (!html.includes(`rel="stylesheet" href="./whitehack.css"`)) process.exit(1);
+            if (/<script\b|<style\b|\sstyle\s*=/iu.test(html)) process.exit(1);
+            if (/url\(\s*["\x27]?https?:/iu.test(css)) process.exit(1);
+          '
       - name: build site
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p _site
           cp index.html _site/index.html
+          cp whitehack.css _site/whitehack.css
           cp playground.html _site/playground.html
           cp learn.html _site/learn.html
           cp LEARN.md _site/LEARN.md

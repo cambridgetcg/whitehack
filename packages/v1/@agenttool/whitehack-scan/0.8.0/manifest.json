@@ -3,13 +3,13 @@
   "document_type": "package-manifest",
   "name": "@agenttool/whitehack-scan",
   "version": "0.8.0",
-  "description": "The honest hack — a bounded local scanner with a non-custodial understanding projection for Agent Wallet evidence",
+  "description": "The honest hack — a bounded local scanner with a non-custodial understanding projection for caller-presented Agent Wallet assertions",
   "license": "MIT",
   "artifact": {
     "format": "npm-tarball",
     "filename": "agenttool-whitehack-scan-0.8.0.tgz",
-    "sha256": "71e9c22a8a95c8d34e52922dbbe8535be4a8a844cfaeda682342f8c11e2bc2c3",
-    "size": 76737,
+    "sha256": "f33c822170f1a256d4a8dc183e99a69862ef6af8cc3c08bcb4195dc8a01abb2e",
+    "size": 77236,
     "media_type": "application/gzip",
     "mirrors": [
       {
@@ -35,7 +35,7 @@
   },
   "source": {
     "repository": "https://github.com/cambridgetcg/whitehack.git",
-    "revision": "bddedb9f3baeb9c05098baf020243be3bb021b1f",
+    "revision": "e82e6fc7952d536d356fb201e71f548e262feac9",
     "path": "."
   },
   "reproducibility": {
