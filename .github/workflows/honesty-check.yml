@@ -105,8 +105,11 @@ jobs:
             },
           })
           assert.equal(understanding.document_type, 'whitehack-understanding/v1')
-          assert.equal(understanding.boundaries.authorized_execution, false)
-          assert.equal(understanding.boundaries.bound_to_wallet_subject, false)
+          assert.equal(
+            understanding.boundaries.direct_capabilities.authorization,
+            false,
+          )
+          assert.equal(understanding.boundaries.wallet_subject_bound, false)
 
           const schemaUrl = import.meta.resolve('@agenttool/whitehack-scan/schema.json')
           const schema = JSON.parse(await readFile(fileURLToPath(schemaUrl), 'utf8'))

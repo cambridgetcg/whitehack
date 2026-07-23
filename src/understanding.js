@@ -128,14 +128,25 @@ const PERMANENT_UNKNOWNS = Object.freeze([
 ])
 
 const BOUNDARIES = Object.freeze({
-  performed_io: false,
-  invoked_input_accessors: false,
-  hostile_proxy_safe: false,
-  read_keys: false,
-  signed: false,
-  called_rpc: false,
-  authorized_execution: false,
-  bound_to_wallet_subject: false,
+  direct_capabilities: Object.freeze({
+    filesystem: false,
+    process: false,
+    network: false,
+    wallet: false,
+    clock: false,
+    key_access: false,
+    signing: false,
+    rpc: false,
+    simulation: false,
+    broadcast: false,
+    authorization: false,
+  }),
+  input_inspection: Object.freeze({
+    ordinary_accessors_invoked: false,
+    caller_proxy_traps_may_run: true,
+    sandboxed: false,
+  }),
+  wallet_subject_bound: false,
 })
 
 function fail(message) {
@@ -179,15 +190,14 @@ function snapshotFields(value, keys, label) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     fail(`${label} must be an object`)
   }
-  let descriptors
-  try {
-    descriptors = Object.getOwnPropertyDescriptors(value)
-  } catch {
-    fail(`${label} properties could not be inspected safely`)
-  }
   const snapshot = {}
   for (const key of keys) {
-    const descriptor = descriptors[key]
+    let descriptor
+    try {
+      descriptor = Object.getOwnPropertyDescriptor(value, key)
+    } catch {
+      fail(`${label}.${key} could not be inspected safely`)
+    }
     if (!descriptor?.enumerable || !('value' in descriptor)) {
       fail(`${label}.${key} must be an enumerable data property`)
     }
@@ -261,6 +271,9 @@ function requireSafeString(value, pattern, label) {
 
 function requireFile(value, label) {
   requireSafeString(value, undefined, label)
+  if (value.length > MAX_FILE_BYTES) {
+    fail(`${label} exceeds the ${MAX_FILE_BYTES}-code-unit limit`)
+  }
   if (new TextEncoder().encode(value).length > MAX_FILE_BYTES) {
     fail(`${label} exceeds the ${MAX_FILE_BYTES}-byte limit`)
   }
@@ -596,16 +609,17 @@ function contextUnknowns(context) {
 }
 
 /**
- * Build a deterministic, source-text-redacted understanding document from
+ * Build a deterministic, fixed-field understanding document from
  * scanner finding claims and a closed caller-supplied Whitehack projection of
  * Agent Wallet evidence.
  *
- * This function performs no filesystem, process, network, wallet, clock, key,
- * signing, RPC, simulation, or broadcast I/O. Context values remain explicitly
- * labelled as caller assertions; the function does not verify wallet records,
- * freshness, subject binding, consent, authorization, or execution readiness.
- * File locations are retained with unknown sensitivity. Ordinary accessors are
- * rejected, but hostile Proxy traps can still run during object inspection.
+ * Whitehack itself has no filesystem, process, network, wallet, clock, key,
+ * signing, RPC, simulation, broadcast, or authorization capability here.
+ * Context values remain explicitly labelled as caller assertions; the function
+ * does not verify wallet records, freshness, subject binding, consent,
+ * authorization, or execution readiness. The caller's `file` label is retained
+ * with unknown sensitivity. Ordinary accessors are rejected, but hostile Proxy
+ * traps can still run during object inspection; this API is not a sandbox.
  */
 export function createUnderstanding(options) {
   const input = snapshotRecord(options, ['findings', 'context'], 'options')
@@ -628,10 +642,18 @@ export function createUnderstanding(options) {
     document_type: UNDERSTANDING_DOCUMENT_TYPE,
     complete: true,
     redaction: {
-      profile: 'whitehack-source-text/v1',
-      source_text_removed: true,
-      file_locations_retained: true,
-      file_location_sensitivity: 'unknown',
+      profile: 'whitehack-finding-field-allowlist/v1',
+      retained_finding_fields: [
+        'file',
+        'line',
+        'check',
+        'confidence',
+        'doctrine',
+        'principle',
+      ],
+      other_finding_fields_removed: true,
+      caller_file_label_retained: true,
+      caller_file_label_sensitivity: 'unknown',
     },
     presented_evidence: {
       finding_claims: findings,

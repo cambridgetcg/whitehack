@@ -295,14 +295,16 @@ records again atomically at sign time. `complete: true` means this bounded
 transformation completed; it does not mean the wallet operation is complete,
 safe, approved, authorized, or ready to execute.
 
-The function has no filesystem, process, network, wallet, clock, key, signing,
-RPC, simulation, or broadcast I/O. It does not execute scanned source or
-invoke ordinary input accessors. Source text, titles, messages, and snippets are
-removed; file locations are retained for local review and their sensitivity is
-explicitly `unknown`, so callers must not put credentials or personal data in
-paths. Ordinary JavaScript Proxy traps can still run while an object is
-inspected, so same-process input is not a sandbox. Import its closed output
-schema as
+Whitehack itself has no direct filesystem, process, network, wallet, clock, key,
+signing, RPC, simulation, broadcast, or authorization capability in this
+function. It does not execute scanned source or invoke ordinary input
+accessors. The output retains exactly `file`, `line`, `check`, `confidence`,
+`doctrine`, and `principle` from each finding; every other finding field is
+removed. `file` is an untrusted caller label, not a proven path, and its
+sensitivity is explicitly `unknown`, so callers must not put credentials or
+personal data there. Ordinary JavaScript Proxy traps can still run while an
+object is inspected, and pre-existing hostile object graphs are not a resource
+sandbox. Import the closed output schema as
 `@agenttool/whitehack-scan/understanding-schema.json`.
 
 ### development snapshot — moving GitHub main

@@ -21,15 +21,26 @@
       "additionalProperties": false,
       "required": [
         "profile",
-        "source_text_removed",
-        "file_locations_retained",
-        "file_location_sensitivity"
+        "retained_finding_fields",
+        "other_finding_fields_removed",
+        "caller_file_label_retained",
+        "caller_file_label_sensitivity"
       ],
       "properties": {
-        "profile": { "const": "whitehack-source-text/v1" },
-        "source_text_removed": { "const": true },
-        "file_locations_retained": { "const": true },
-        "file_location_sensitivity": { "const": "unknown" }
+        "profile": { "const": "whitehack-finding-field-allowlist/v1" },
+        "retained_finding_fields": {
+          "const": [
+            "file",
+            "line",
+            "check",
+            "confidence",
+            "doctrine",
+            "principle"
+          ]
+        },
+        "other_finding_fields_removed": { "const": true },
+        "caller_file_label_retained": { "const": true },
+        "caller_file_label_sensitivity": { "const": "unknown" }
       }
     },
     "presented_evidence": {
@@ -187,24 +198,56 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "performed_io",
-        "invoked_input_accessors",
-        "hostile_proxy_safe",
-        "read_keys",
-        "signed",
-        "called_rpc",
-        "authorized_execution",
-        "bound_to_wallet_subject"
+        "direct_capabilities",
+        "input_inspection",
+        "wallet_subject_bound"
       ],
       "properties": {
-        "performed_io": { "const": false },
-        "invoked_input_accessors": { "const": false },
-        "hostile_proxy_safe": { "const": false },
-        "read_keys": { "const": false },
-        "signed": { "const": false },
-        "called_rpc": { "const": false },
-        "authorized_execution": { "const": false },
-        "bound_to_wallet_subject": { "const": false }
+        "direct_capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "filesystem",
+            "process",
+            "network",
+            "wallet",
+            "clock",
+            "key_access",
+            "signing",
+            "rpc",
+            "simulation",
+            "broadcast",
+            "authorization"
+          ],
+          "properties": {
+            "filesystem": { "const": false },
+            "process": { "const": false },
+            "network": { "const": false },
+            "wallet": { "const": false },
+            "clock": { "const": false },
+            "key_access": { "const": false },
+            "signing": { "const": false },
+            "rpc": { "const": false },
+            "simulation": { "const": false },
+            "broadcast": { "const": false },
+            "authorization": { "const": false }
+          }
+        },
+        "input_inspection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ordinary_accessors_invoked",
+            "caller_proxy_traps_may_run",
+            "sandboxed"
+          ],
+          "properties": {
+            "ordinary_accessors_invoked": { "const": false },
+            "caller_proxy_traps_may_run": { "const": true },
+            "sandboxed": { "const": false }
+          }
+        },
+        "wallet_subject_bound": { "const": false }
       }
     }
   },

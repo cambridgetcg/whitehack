@@ -70,7 +70,7 @@ function assertDeepFrozen(value) {
   for (const child of Object.values(value)) assertDeepFrozen(child)
 }
 
-test('creates deterministic schema-valid understanding without source-text fields', async () => {
+test('creates deterministic schema-valid understanding with only allowlisted finding fields', async () => {
   const secret = 'secret-marker-that-must-not-cross'
   const finding = {
     ...scanText('eval(userInput)\n', { file: 'src/example.js' })[0],
@@ -91,19 +91,29 @@ test('creates deterministic schema-valid understanding without source-text field
     first.presented_evidence.context_assertions.source_protocol,
     UNDERSTANDING_SOURCE_PROTOCOL,
   )
-  assert.equal(first.redaction.profile, 'whitehack-source-text/v1')
-  assert.equal(first.redaction.source_text_removed, true)
-  assert.equal(first.redaction.file_locations_retained, true)
-  assert.equal(first.redaction.file_location_sensitivity, 'unknown')
+  assert.equal(first.redaction.profile, 'whitehack-finding-field-allowlist/v1')
+  assert.deepEqual(first.redaction.retained_finding_fields, [
+    'file',
+    'line',
+    'check',
+    'confidence',
+    'doctrine',
+    'principle',
+  ])
+  assert.equal(first.redaction.other_finding_fields_removed, true)
+  assert.equal(first.redaction.caller_file_label_retained, true)
+  assert.equal(first.redaction.caller_file_label_sensitivity, 'unknown')
   assert.equal(JSON.stringify(first).includes(secret), false)
-  assert.equal(first.boundaries.performed_io, false)
-  assert.equal(first.boundaries.invoked_input_accessors, false)
-  assert.equal(first.boundaries.hostile_proxy_safe, false)
-  assert.equal(first.boundaries.read_keys, false)
-  assert.equal(first.boundaries.signed, false)
-  assert.equal(first.boundaries.called_rpc, false)
-  assert.equal(first.boundaries.authorized_execution, false)
-  assert.equal(first.boundaries.bound_to_wallet_subject, false)
+  assert.equal(first.boundaries.direct_capabilities.filesystem, false)
+  assert.equal(first.boundaries.direct_capabilities.network, false)
+  assert.equal(first.boundaries.direct_capabilities.key_access, false)
+  assert.equal(first.boundaries.direct_capabilities.signing, false)
+  assert.equal(first.boundaries.direct_capabilities.rpc, false)
+  assert.equal(first.boundaries.direct_capabilities.authorization, false)
+  assert.equal(first.boundaries.input_inspection.ordinary_accessors_invoked, false)
+  assert.equal(first.boundaries.input_inspection.caller_proxy_traps_may_run, true)
+  assert.equal(first.boundaries.input_inspection.sandboxed, false)
+  assert.equal(first.boundaries.wallet_subject_bound, false)
   assert.equal(inference(first, 'source-attention').status, 'supported')
   assert.equal(inference(first, 'caller-declared-record-chain-consistency').status, 'supported')
   assert.equal(inference(first, 'caller-declared-static-policy-consistency').status, 'supported')
@@ -126,6 +136,20 @@ test('creates deterministic schema-valid understanding without source-text field
   assert.equal(typeof first.unknowns['subject-binding'], 'string')
   assert.equal(typeof first.unknowns['durable-usage-reservation'], 'string')
   assertDeepFrozen(first)
+
+  const callerFileMarker = 'const privateKey = "caller-file-label-marker"'
+  const retainedFileLabel = createUnderstanding({
+    findings: [{ ...finding, file: callerFileMarker }],
+    context: context(),
+  })
+  assert.equal(
+    retainedFileLabel.presented_evidence.finding_claims[0].file,
+    callerFileMarker,
+  )
+  assert.equal(
+    retainedFileLabel.redaction.caller_file_label_sensitivity,
+    'unknown',
+  )
 
   const schema = JSON.parse(
     await readFile(new URL('../schema/understanding-v1.schema.json', import.meta.url), 'utf8'),
