@@ -1,0 +1,51 @@
+{
+  "protocol": "love-package/v1",
+  "document_type": "package-manifest",
+  "name": "@agenttool/whitehack-scan",
+  "version": "0.8.0",
+  "description": "The honest hack — a bounded local scanner with a non-custodial understanding projection for Agent Wallet evidence",
+  "license": "MIT",
+  "artifact": {
+    "format": "npm-tarball",
+    "filename": "agenttool-whitehack-scan-0.8.0.tgz",
+    "sha256": "71e9c22a8a95c8d34e52922dbbe8535be4a8a844cfaeda682342f8c11e2bc2c3",
+    "size": 76737,
+    "media_type": "application/gzip",
+    "mirrors": [
+      {
+        "url": "https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.0/agenttool-whitehack-scan-0.8.0.tgz"
+      },
+      {
+        "url": "https://github.com/cambridgetcg/whitehack/releases/download/whitehack-v0.8.0/agenttool-whitehack-scan-0.8.0.tgz"
+      },
+      {
+        "url": "https://registry.npmjs.org/@agenttool/whitehack-scan/-/whitehack-scan-0.8.0.tgz"
+      }
+    ]
+  },
+  "runtime": {
+    "kind": "javascript",
+    "engines": {
+      "node": ">=18"
+    }
+  },
+  "install": {
+    "format": "npm-tarball",
+    "specifier": "https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.0/agenttool-whitehack-scan-0.8.0.tgz"
+  },
+  "source": {
+    "repository": "https://github.com/cambridgetcg/whitehack.git",
+    "revision": "bddedb9f3baeb9c05098baf020243be3bb021b1f",
+    "path": "."
+  },
+  "reproducibility": {
+    "canonical_platform": "linux",
+    "node": "24.18.0",
+    "npm": "11.17.0",
+    "cross_platform_comparison": "uncompressed-tar-sha256"
+  },
+  "dependency_resolution": {
+    "mode": "package_manifest",
+    "self_contained": true
+  }
+}

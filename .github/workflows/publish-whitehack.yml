@@ -53,9 +53,9 @@ jobs:
             console.log(packageJson.version);
           ')
           test "${package_identity[0]}" = '@agenttool/whitehack-scan'
-          test "${package_identity[1]}" = '0.7.1'
+          test "${package_identity[1]}" = '0.8.0'
           version="${package_identity[1]}"
-          test "$tag" = 'whitehack-v0.7.1'
+          test "$tag" = 'whitehack-v0.8.0'
           test "$(git cat-file -t "refs/tags/$tag")" = tag
           tag_commit="$(git rev-list -n 1 "refs/tags/$tag")"
           test "$(git rev-parse HEAD)" = "$tag_commit"
@@ -66,7 +66,7 @@ jobs:
       - name: Gate the package
         run: npm test --ignore-scripts
       - name: Verify the complete LOVE package tree
-        run: node scripts/verify-love-packages.mjs
+        run: node scripts/verify-love-packages.mjs --base d4048dc172deb87852b385adbc5d427104b8eda3
       - name: Verify exact artifact identity and source ancestry
         shell: bash
         run: |
@@ -97,7 +97,7 @@ jobs:
           git cat-file -e "${identity[5]}^{commit}"
           git merge-base --is-ancestor "${identity[5]}" HEAD
           git diff --quiet "${identity[5]}" HEAD -- \
-            package.json package-lock.json bin/whitehack.js src schema README.md LICENSE
+            package.json package-lock.json bin/whitehack.js src schema README.md LICENSE test
 
           repack_dir="$(mktemp -d)"
           trap 'rm -rf "$repack_dir"' EXIT
@@ -230,11 +230,11 @@ jobs:
               gh release create "$tag" "$artifact#$filename" \
                 --verify-tag \
                 --title "@agenttool/whitehack-scan@${version}" \
-                --notes "First public npm release for the canonical 47-check Whitehack CLI/API.
+                --notes "Whitehack 0.8 keeps the canonical 47-check CLI/API and adds the pure whitehack-understanding/v1 projection.
 
-          The attached tarball is byte-identical to the checked-in LOVE artifact and the verified public npm package. It includes the pure scanText core, bounded local traversal, closed/redactable whitehack-scan/v1 JSON, exact package schema, and a fail-closed redacted GitHub Action.
+          The attached tarball is byte-identical to the checked-in LOVE artifact and the verified public npm package. The new understanding subpath accepts manifest-consistent finding claims plus a closed enum-only projection of locally verified Agent Wallet evidence, while retaining explicit unknowns for provenance, freshness, subject binding, consent, custody, live state, and execution.
 
-          Whitehack remains a heuristic local scanner: it does not prove security or honesty, execute target code, connect wallets, or provide a hosted scanning service. The immutable whitehack-v0.7.0 LOVE/GitHub release records the unscoped npm-name rejection; no whitehack@0.7.0 package exists. The older v1.0.0 GitHub release also predates this npm line."
+          Whitehack remains a heuristic local tool. This path does not read keys, connect wallets, call RPC, sign, broadcast, authorize execution, bind a wallet subject, or prove security, honesty, consent, custody, freshness, or readiness. The immutable 0.7.0 and 0.7.1 release roots remain historical."
               ;;
             *)
               echo "GitHub API returned HTTP ${release_status}; refusing to infer release absence." >&2
