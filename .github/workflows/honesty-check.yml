@@ -45,7 +45,7 @@ jobs:
           set -euo pipefail
           pack_dir=$(mktemp -d)
           trap 'rm -rf "$pack_dir"' EXIT
-          archive=$(npm pack --silent --pack-destination "$pack_dir")
+          archive=$(npm pack --ignore-scripts --silent --pack-destination "$pack_dir")
           tar -xzf "$pack_dir/$archive" -C "$pack_dir"
           cd "$pack_dir/package"
           node --input-type=module <<'NODE'
@@ -56,6 +56,7 @@ jobs:
           import { scan, scanDetailed } from '@agenttool/whitehack-scan'
           import { CHECK_MANIFEST, scanText } from '@agenttool/whitehack-scan/core'
           import { createScanResult } from '@agenttool/whitehack-scan/result'
+          import { createUnderstanding } from '@agenttool/whitehack-scan/understanding'
 
           const findings = scanText('eval(userInput)\n', { file: 'smoke.js' })
           assert.ok(findings.some(({ check }) => check === 'unsafe-eval'))
@@ -63,10 +64,63 @@ jobs:
           assert.equal(typeof scan, 'function')
           assert.equal(typeof scanDetailed, 'function')
           assert.equal(typeof createScanResult, 'function')
+          const understanding = createUnderstanding({
+            findings,
+            context: {
+              profile: 'whitehack-agent-wallet-projection/v1',
+              source_protocol: 'agent-wallet/0.1',
+              records: {
+                descriptor: 'unverified',
+                capability: 'unverified',
+                intent: 'unverified',
+                simulation: 'unverified',
+                continuity: 'absent',
+              },
+              relations: {
+                'descriptor-capability': 'unknown',
+                'capability-intent': 'unknown',
+                delegate: 'unknown',
+                chain: 'unknown',
+                source: 'unknown',
+                'intent-simulation': 'unknown',
+                revocation: 'unknown',
+              },
+              policy: {
+                calls: 'unknown',
+                spend: 'unknown',
+                fee: 'unknown',
+                expiry: 'unknown',
+                use: 'unknown',
+                approvals: 'unknown',
+              },
+              simulation: {
+                execution: 'not-run',
+                effects: 'unknown',
+                fee: 'unknown',
+              },
+              custody: {
+                'descriptor-mode': 'unknown',
+                'signer-exportability': 'unknown',
+              },
+            },
+          })
+          assert.equal(understanding.document_type, 'whitehack-understanding/v1')
+          assert.equal(understanding.boundaries.authorized_execution, false)
+          assert.equal(understanding.boundaries.bound_to_wallet_subject, false)
 
           const schemaUrl = import.meta.resolve('@agenttool/whitehack-scan/schema.json')
           const schema = JSON.parse(await readFile(fileURLToPath(schemaUrl), 'utf8'))
           assert.equal(schema.properties.document_type.const, 'whitehack-scan/v1')
+          const understandingSchemaUrl = import.meta.resolve(
+            '@agenttool/whitehack-scan/understanding-schema.json',
+          )
+          const understandingSchema = JSON.parse(
+            await readFile(fileURLToPath(understandingSchemaUrl), 'utf8'),
+          )
+          assert.equal(
+            understandingSchema.properties.document_type.const,
+            'whitehack-understanding/v1',
+          )
           NODE
 
           printf 'eval(userInput)\n' > smoke.js
