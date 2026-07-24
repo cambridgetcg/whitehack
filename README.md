@@ -11,7 +11,7 @@ it were live, the score shown to a person with no way to ask *why*. These usuall
 aren't bugs in the ordinary sense. The code runs fine. It just isn't honest about
 its own state — and someone downstream trusts it anyway.
 
-## what it checks (v0.8.1 — 47 checks)
+## what it checks (v0.9.0 — 47 checks)
 
 **General honesty (JS / TS / JSX):**
 
@@ -108,6 +108,11 @@ Each check declares the languages it understands, so a Solidity check never runs
 its regexes over JavaScript (or vice versa) and report noise about a language it
 cannot read.
 
+### 0.9.0 — public-minimal evidence
+
+This release adds a deterministic capsule transform and exact-byte parser for
+encrypted or explicitly public evidence exchange.
+
 ### 0.8.1 focus — point the flashlight, do not pronounce a verdict
 
 A finding is a location and a review question, not a vulnerability verdict.
@@ -150,10 +155,10 @@ the standard checkable.
 ## usage
 
 ```sh
-npx --yes @agenttool/whitehack-scan@0.8.1 scan path/to/repo
+npx --yes @agenttool/whitehack-scan@0.9.0 scan path/to/repo
 
 # closed output; redaction removes finding titles, messages, and snippets
-npx --yes @agenttool/whitehack-scan@0.8.1 scan . --json --redacted
+npx --yes @agenttool/whitehack-scan@0.9.0 scan . --json --redacted
 
 npm run selftest   # diagnostic scan; planted confident findings intentionally exit 1
 npm test           # deterministic scanner and crypto-awareness fixtures
@@ -169,10 +174,10 @@ does not break a CI gate. An exit `0` is not a security or honesty guarantee.
 ### npm — exact public release
 
 ```sh
-npx --yes @agenttool/whitehack-scan@0.8.1 scan .
+npx --yes @agenttool/whitehack-scan@0.9.0 scan .
 
 # or keep the exact tool in a project
-npm install --save-dev --save-exact @agenttool/whitehack-scan@0.8.1
+npm install --save-dev --save-exact @agenttool/whitehack-scan@0.9.0
 npm exec -- whitehack scan .
 ```
 
@@ -184,8 +189,8 @@ does not contact a registry, a chain, a wallet, or the Whitehack maintainers.
 
 The same release tarball and its SHA-256 manifest are available at:
 
-- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.1/manifest.json`
-- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.8.1/agenttool-whitehack-scan-0.8.1.tgz`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.9.0/manifest.json`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.9.0/agenttool-whitehack-scan-0.9.0.tgz`
 
 Read and verify the manifest before installing the tarball. The GitHub release,
 GitHub Pages, and npm copies are intended to be byte-for-byte mirrors of that
@@ -204,7 +209,7 @@ steps:
   - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
     with:
       node-version: 24.18.0
-  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.8.1
+  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.9.0
     with:
       path: .
 ```
@@ -245,6 +250,73 @@ serializable rule inventory.
 Machine consumers can import the closed result schema as
 `@agenttool/whitehack-scan/schema.json`. JSON CLI output uses `whitehack-scan/v1`; prefer
 `--redacted` when logs cross a trust boundary.
+
+### public-minimal evidence capsules (development surface)
+
+The moving source tree can turn a completed local scan into canonical
+`whitehack-evidence-capsule/v1` bytes:
+
+```sh
+node bin/whitehack.js capsule path/to/repo --require-files > capsule.json
+```
+
+`capsule` exits `0` after a complete transformation even when the scan found
+review prompts. It exits `2` and writes no partial capsule to stdout when
+argument parsing, scanning, or capsule construction fails. The output has no
+trailing newline, so `capsule.json` is the exact byte sequence addressed by the
+API.
+
+The public-minimal profile removes the requested target, file paths, line
+numbers, titles, messages, snippets, source text, scan-scope counters, and all
+other caller-controlled text. It retains only canonical aggregate groups of
+bundled check ID, confidence, doctrine, Clear Standard principle, and count,
+plus fixed scanner and epistemic metadata. Different finding locations with the
+same aggregate check metadata therefore create identical capsules.
+
+```js
+import {
+  addressEvidenceCapsule,
+  canonicalizeEvidenceCapsule,
+  createEvidenceCapsule,
+  encodeEvidenceCapsule,
+  parseEvidenceCapsuleBytes,
+} from '@agenttool/whitehack-scan/evidence-capsule'
+
+const capsule = createEvidenceCapsule(completeScanResult)
+const json = canonicalizeEvidenceCapsule(capsule)
+const bytes = encodeEvidenceCapsule(capsule)
+const parsed = parseEvidenceCapsuleBytes(bytes)
+const address = addressEvidenceCapsule(capsule) // sha256:<64 lowercase hex>
+```
+
+`createEvidenceCapsule()` accepts only a complete, closed
+`whitehack-scan/v1` document. It checks scanner identity, bundled check count,
+and each check's doctrine, principle, and confidence against the installed
+manifest before aggregation. Import the closed schema as
+`@agenttool/whitehack-scan/evidence-capsule-schema.json`.
+The JSON Schema is a structural interoperability aid; JSON Schema alone cannot
+enforce the installed check/doctrine tuple or canonical group order. At a trust
+boundary, bound the bytes and use `parseEvidenceCapsuleBytes()`: it performs
+fatal UTF-8 decoding, runtime semantic validation, canonical re-encoding, and
+exact input-byte comparison.
+
+The module performs no filesystem, process, network, storage, wallet, clock,
+key-store, signing, encryption, or authorization action. The capsule records
+`capability_subject: "evidence-capsule-transform"` to make that subject
+machine-readable. The CLI separately reads local files in order to scan them,
+but it does not upload the resulting capsule.
+
+A SHA-256 address identifies the canonical plaintext bytes; it does not prove
+who created them, which source was scanned, whether the scan was complete enough
+for a particular purpose, or whether publication is authorized. It is also not
+a confidentiality commitment: publishing the address can equality-link scans
+and may reveal aggregate check/count patterns through offline guessing. Keep the
+address local or inside an encrypted envelope whenever those patterns are
+confidential. An empty capsule means no bundled check matched, not that the
+source is secure. Public sharing remains an explicit caller decision.
+
+This API first appears in `0.9.0`; immutable earlier artifacts remain
+historical and unchanged.
 
 ### understanding without custody
 
@@ -349,8 +421,8 @@ release tag, or reviewed commit instead.
 - **jsDelivr CDN** → https://cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/LEARN.md
 - **GitHub** → https://github.com/cambridgetcg/whitehack
 
-The Node CLI and imported APIs are the canonical v0.8.1 implementation
-with 47 checks. The client-only browser playground deliberately preserves the
+The Node CLI and imported APIs are the canonical v0.9.0 release with 47 checks.
+The client-only browser playground deliberately preserves the
 original eight-check demo; it is useful for learning, but it is not feature
 parity and does not include the protocol or crypto-awareness pack.
 
@@ -379,7 +451,7 @@ whitehack lives on every resistance-free channel:
 | GitHub raw | raw.githubusercontent.com/cambridgetcg/whitehack/main/ | no |
 | npm / npx exact release | npmjs.com/package/@agenttool/whitehack-scan | no |
 | LOVE exact artifact + manifest | cambridgetcg.github.io/whitehack/packages/v1/ | no |
-| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.8.1 | no |
+| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.9.0 | no |
 | curl install | raw.githubusercontent.com/.../install.sh | no |
 
 npm is an optional mirror, not a gate: the exact tarball is also available over

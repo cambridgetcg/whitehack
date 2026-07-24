@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 import { CHECKS, ScanError, scanDetailed } from '../src/scan.js'
+import {
+  canonicalizeEvidenceCapsule,
+  createEvidenceCapsule,
+} from '../src/evidence-capsule.js'
 import { report, VERSION } from '../src/report.js'
 import { escapeTerminal, stringifyJsonSafe } from '../src/output-text.js'
 import {
@@ -12,12 +16,17 @@ const HELP = `whitehack ${VERSION} — make software tell the truth about itself
 
 usage:
   whitehack scan [path] [--json] [--redacted] [--require-files]
+  whitehack capsule [path] [--require-files]
 
 options:
   --json       emit one closed whitehack-scan/v1 JSON document
   --redacted   emit JSON with finding title, message, and snippet removed
   --require-files
                fail with exit 2 when no supported regular files were scanned
+
+capsule emits exact canonical whitehack-evidence-capsule/v1 JSON bytes. It
+retains aggregate bundled-check metadata only: no target, paths, lines, source,
+messages, snippets, scan scope, or other caller text. It performs no upload.
 
 whitehack flags where code lies about its own state — a failed read that
 silently becomes 0, a cached value served as if live, or a score shown with
@@ -77,6 +86,30 @@ function parseScanArguments(args) {
   return { target: target ?? '.', json, redacted, requireFiles }
 }
 
+function parseCapsuleArguments(args) {
+  let target
+  let requireFiles = false
+  let positionalOnly = false
+
+  for (const arg of args) {
+    if (!positionalOnly && arg === '--') {
+      positionalOnly = true
+      continue
+    }
+    if (!positionalOnly && arg === '--require-files') {
+      requireFiles = true
+      continue
+    }
+    if (!positionalOnly && arg.startsWith('-')) {
+      throw new CliUsageError(`unknown option: ${JSON.stringify(arg)}`)
+    }
+    if (target !== undefined) throw new CliUsageError('capsule accepts at most one path')
+    target = arg
+  }
+
+  return { target: target ?? '.', requireFiles }
+}
+
 function writeJson(document) {
   process.stdout.write(`${stringifyJsonSafe(document)}\n`)
 }
@@ -99,6 +132,38 @@ async function run(argv) {
   if (command === undefined || command === '--help' || command === '-h') {
     process.stdout.write(`${HELP}\n`)
     return 0
+  }
+
+  if (command === 'capsule') {
+    let parsed
+    try {
+      parsed = parseCapsuleArguments(argv.slice(1))
+    } catch (error) {
+      process.stderr.write(`whitehack: capsule failed: ${errorCode(error)}\n`)
+      return 2
+    }
+
+    try {
+      const scanned = await scanDetailed(parsed.target)
+      if (parsed.requireFiles && scanned.scope.files_scanned === 0) {
+        throw new ScanError('scan_empty_scope', 'no supported regular files were scanned')
+      }
+      const scanResult = createScanResult({
+        version: VERSION.slice(1),
+        checkCount: CHECKS.length,
+        target: parsed.target,
+        findings: scanned.findings,
+        scope: scanned.scope,
+        redacted: true,
+      })
+      const capsule = createEvidenceCapsule(scanResult)
+      const bytes = canonicalizeEvidenceCapsule(capsule)
+      process.stdout.write(bytes)
+      return 0
+    } catch (error) {
+      process.stderr.write(`whitehack: capsule failed: ${errorCode(error)}\n`)
+      return 2
+    }
   }
 
   const jsonRequested = argv.includes('--json') || argv.includes('--redacted')
