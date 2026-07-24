@@ -143,8 +143,9 @@ enforces a specific principle, and every finding cites it (`CS#n`):
 | **#5 — honest names** | `wifi-evil-twin` |
 | **#6 — labelled certainty** | *whitehack **embodies** this — it labels its own confidence rather than checking yours* |
 
-So a finding isn't an arbitrary nag — it names the principle the code broke. The
-standard makes the linter principled; the linter makes the standard checkable.
+So a finding isn't an arbitrary nag — it names the principle the check asks a
+reviewer to examine. The standard makes the linter principled; the linter makes
+the standard checkable.
 
 ## usage
 

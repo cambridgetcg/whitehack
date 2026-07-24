@@ -138,6 +138,16 @@ test('fails closed when the requested scan root does not exist', async () => {
 
 test('README inventory stays aligned with registered check metadata', async () => {
   const readme = await readFile(new URL('../README.md', import.meta.url), 'utf8')
+  assert.doesNotMatch(
+    readme,
+    /principle the code broke/,
+    'a heuristic finding must not claim that the code broke a principle',
+  )
+  assert.match(
+    readme,
+    /principle the check asks a\s+reviewer to examine/,
+    'README must frame a finding as an attention question',
+  )
   const rows = new Map()
   for (const line of readme.split('\n')) {
     const cells = line.split('|').map((cell) => cell.trim())
