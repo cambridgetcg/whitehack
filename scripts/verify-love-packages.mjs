@@ -75,6 +75,12 @@ const LOVE_PACKAGE_CATALOG = Object.freeze([
         npmTarballBasename: "whitehack-scan-0.8.1.tgz",
         githubTag: "whitehack-v0.8.1",
       }),
+      Object.freeze({
+        version: "0.9.0",
+        checkedInPackBasename: "agenttool-whitehack-scan-0.9.0.tgz",
+        npmTarballBasename: "whitehack-scan-0.9.0.tgz",
+        githubTag: "whitehack-v0.9.0",
+      }),
     ]),
   }),
 ]);

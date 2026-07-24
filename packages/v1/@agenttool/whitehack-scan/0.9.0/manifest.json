@@ -1,0 +1,51 @@
+{
+  "protocol": "love-package/v1",
+  "document_type": "package-manifest",
+  "name": "@agenttool/whitehack-scan",
+  "version": "0.9.0",
+  "description": "The honest hack — a bounded local 47-check scanner with deterministic public-minimal evidence capsules and a strict exact-byte parser",
+  "license": "MIT",
+  "artifact": {
+    "format": "npm-tarball",
+    "filename": "agenttool-whitehack-scan-0.9.0.tgz",
+    "sha256": "b7d004947bc3c7619daa38f002d9ddde731e2865644af0d0e609c8dd86528d3c",
+    "size": 87196,
+    "media_type": "application/gzip",
+    "mirrors": [
+      {
+        "url": "https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.9.0/agenttool-whitehack-scan-0.9.0.tgz"
+      },
+      {
+        "url": "https://github.com/cambridgetcg/whitehack/releases/download/whitehack-v0.9.0/agenttool-whitehack-scan-0.9.0.tgz"
+      },
+      {
+        "url": "https://registry.npmjs.org/@agenttool/whitehack-scan/-/whitehack-scan-0.9.0.tgz"
+      }
+    ]
+  },
+  "runtime": {
+    "kind": "javascript",
+    "engines": {
+      "node": ">=18"
+    }
+  },
+  "install": {
+    "format": "npm-tarball",
+    "specifier": "https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.9.0/agenttool-whitehack-scan-0.9.0.tgz"
+  },
+  "source": {
+    "repository": "https://github.com/cambridgetcg/whitehack.git",
+    "revision": "424c6e85601cd0ac031d1b28940c3f88b99b0a1d",
+    "path": "."
+  },
+  "reproducibility": {
+    "canonical_platform": "linux",
+    "node": "24.18.0",
+    "npm": "11.17.0",
+    "cross_platform_comparison": "uncompressed-tar-sha256"
+  },
+  "dependency_resolution": {
+    "mode": "package_manifest",
+    "self_contained": true
+  }
+}

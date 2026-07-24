@@ -53,8 +53,8 @@ jobs:
             console.log(packageJson.version);
           ')
           test "${package_identity[0]}" = '@agenttool/whitehack-scan'
-          test "${package_identity[1]}" = '0.8.1'
-          test "$tag" = 'whitehack-v0.8.1'
+          test "${package_identity[1]}" = '0.9.0'
+          test "$tag" = 'whitehack-v0.9.0'
           test "$(git cat-file -t "refs/tags/$tag")" = tag
           tag_commit="$(git rev-list -n 1 "refs/tags/$tag")"
           test "$GITHUB_REF" = "refs/tags/$tag"
@@ -285,11 +285,11 @@ jobs:
                 --repo "$GITHUB_REPOSITORY" \
                 --verify-tag \
                 --title "@agenttool/whitehack-scan@${version}" \
-                --notes "Whitehack 0.8.1 focuses the canonical 47-check CLI/API as an attention flashlight rather than a vulnerability verdict.
+                --notes "Whitehack 0.9.0 keeps the canonical 47-check CLI/API as an attention flashlight rather than a vulnerability verdict and adds the public-minimal evidence capsule.
 
-          The attached tarball is byte-identical to the checked-in LOVE artifact and the verified public npm package. This patch narrows silent-failure noise for locally evidenced in-memory Map arithmetic while retaining external, awaited, reassignable, scope-ambiguous, and standalone defaults. Comments and quoted examples no longer impersonate catch guards, and multi-line WiFi credential matches carry their actual source line.
+          The attached tarball is byte-identical to the checked-in LOVE artifact and the verified public npm package. The new pure transform removes target, locations, source text, scan scope, messages, and other caller text; retains only fixed scanner metadata plus canonical aggregate check/confidence/doctrine/principle/count groups; and exposes a bounded exact-byte parser. The separate capsule CLI scans locally and emits canonical bytes without uploading them.
 
-          Whitehack remains bounded text analysis, not proof of security or vulnerability. Its understanding projection remains a pure transformation of caller-presented assertions: it does not verify source records, bind a wallet subject, retrieve keys, connect a wallet, call RPC, simulate, sign, broadcast, authorize execution, or prove consent, custody, freshness, or readiness. Retained file values are untrusted caller labels and may be sensitive. Earlier release roots remain immutable and historical."
+          Whitehack remains bounded text analysis, not proof of security or vulnerability. A capsule hash is a plaintext identity, not a confidentiality commitment; publishing it can equality-link scans and permit offline guessing of check/count patterns. The capsule transform does not upload, store, retrieve keys, connect a wallet, call RPC, simulate, sign, broadcast, authorize publication, or prove source provenance, consent, custody, freshness, or readiness. Earlier release roots remain immutable and historical."
               ;;
             *)
               echo "GitHub API returned HTTP ${release_status}; refusing to infer release absence." >&2

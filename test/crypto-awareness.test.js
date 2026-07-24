@@ -126,7 +126,7 @@ test('CLI help and version are successful introspection commands', () => {
   const cli = fileURLToPath(new URL('../bin/whitehack.js', import.meta.url))
   const version = execFileSync(process.execPath, [cli, '--version'], { encoding: 'utf8' })
   const help = execFileSync(process.execPath, [cli, '--help'], { encoding: 'utf8' })
-  assert.equal(version.trim(), 'v0.8.1')
+  assert.equal(version.trim(), 'v0.9.0')
   assert.match(help, /usage:/)
   assert.match(help, /47|bounded crypto-awareness/i)
 })

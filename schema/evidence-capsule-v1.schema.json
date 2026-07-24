@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cambridgetcg/whitehack/schema/evidence-capsule-v1.schema.json",
+  "title": "Whitehack public-minimal evidence capsule v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document_type",
+    "complete",
+    "disclosure",
+    "scanner",
+    "finding_groups",
+    "epistemic",
+    "boundaries"
+  ],
+  "properties": {
+    "document_type": { "const": "whitehack-evidence-capsule/v1" },
+    "complete": { "const": true },
+    "disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "scan_metadata_retained",
+        "finding_group_fields",
+        "target_retained",
+        "locations_retained",
+        "source_text_retained",
+        "scope_retained",
+        "caller_text_retained"
+      ],
+      "properties": {
+        "profile": { "const": "whitehack-public-minimal/v1" },
+        "scan_metadata_retained": {
+          "const": ["scanner"]
+        },
+        "finding_group_fields": {
+          "const": [
+            "check",
+            "confidence",
+            "doctrine",
+            "principle",
+            "count"
+          ]
+        },
+        "target_retained": { "const": false },
+        "locations_retained": { "const": false },
+        "source_text_retained": { "const": false },
+        "scope_retained": { "const": false },
+        "caller_text_retained": { "const": false }
+      }
+    },
+    "scanner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "check_count"],
+      "properties": {
+        "name": { "const": "whitehack" },
+        "version": { "const": "0.9.0" },
+        "check_count": { "const": 47 }
+      }
+    },
+    "finding_groups": {
+      "type": "array",
+      "maxItems": 10000,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/finding_group" }
+    },
+    "epistemic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "basis",
+        "finding_semantics",
+        "empty_semantics",
+        "provenance",
+        "coverage",
+        "content_address",
+        "complete_semantics"
+      ],
+      "properties": {
+        "basis": { "const": "scanner-output-claim" },
+        "finding_semantics": {
+          "const": "review-prompt-not-vulnerability-verdict"
+        },
+        "empty_semantics": {
+          "const": "no-bundled-match-not-security-proof"
+        },
+        "provenance": { "const": "unverified" },
+        "coverage": { "const": "bounded-heuristic" },
+        "content_address": {
+          "const": "canonical-bytes-identity-not-authenticity"
+        },
+        "complete_semantics": {
+          "const": "capsule-transformation-complete"
+        }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_subject",
+        "direct_capabilities",
+        "input_inspection",
+        "publication_authority",
+        "storage_receipt_included"
+      ],
+      "properties": {
+        "capability_subject": {
+          "const": "evidence-capsule-transform"
+        },
+        "direct_capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "filesystem",
+            "process",
+            "network",
+            "storage",
+            "wallet",
+            "clock",
+            "key_store_access",
+            "signing",
+            "encryption",
+            "authorization"
+          ],
+          "properties": {
+            "filesystem": { "const": false },
+            "process": { "const": false },
+            "network": { "const": false },
+            "storage": { "const": false },
+            "wallet": { "const": false },
+            "clock": { "const": false },
+            "key_store_access": { "const": false },
+            "signing": { "const": false },
+            "encryption": { "const": false },
+            "authorization": { "const": false }
+          }
+        },
+        "input_inspection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ordinary_accessors_invoked",
+            "caller_proxy_traps_may_run",
+            "sandboxed"
+          ],
+          "properties": {
+            "ordinary_accessors_invoked": { "const": false },
+            "caller_proxy_traps_may_run": { "const": true },
+            "sandboxed": { "const": false }
+          }
+        },
+        "publication_authority": { "const": "external" },
+        "storage_receipt_included": { "const": false }
+      }
+    }
+  },
+  "$defs": {
+    "finding_group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "check",
+        "confidence",
+        "doctrine",
+        "principle",
+        "count"
+      ],
+      "properties": {
+        "check": {
+          "enum": [
+            "silent-failure",
+            "cache-as-live",
+            "decision-without-why",
+            "stale-oracle",
+            "unchecked-transfer",
+            "spot-price-as-fair",
+            "silent-revert",
+            "float-money",
+            "hardcoded-secret",
+            "exposed-config",
+            "unsafe-eval",
+            "performed-ignorance",
+            "trust-by-authority",
+            "api-status-lie",
+            "api-missing-versioning",
+            "api-error-without-shape",
+            "api-missing-rate-limit",
+            "api-bare-fetch",
+            "wifi-protocol-flaws",
+            "bluetooth-protocol-flaws",
+            "bluetooth-protocol",
+            "insecure-protocol",
+            "disabled-cert-verification",
+            "weak-crypto",
+            "cors-wildcard",
+            "cookie-insecure",
+            "sql-injection",
+            "protocol-surface",
+            "dns-plaintext",
+            "password-auth",
+            "bluetooth-paired-stranger",
+            "wpa2-krack",
+            "weak-wifi-encryption",
+            "wifi-deauth-accept",
+            "wifi-evil-twin",
+            "wifi-pmk-exposure",
+            "wifi-krack-vulnerable",
+            "wifi-protocol",
+            "static-aead-nonce",
+            "signature-fail-open",
+            "webhook-reencoded-body",
+            "signed-webhook-without-replay-guard",
+            "wallet-key-egress",
+            "wallet-direct-request-signing",
+            "wallet-capability-unbounded",
+            "wallet-broadcast-auto-retry",
+            "unlimited-token-approval"
+          ]
+        },
+        "confidence": {
+          "enum": ["high", "medium-high", "medium", "heuristic"]
+        },
+        "doctrine": {
+          "enum": [
+            "substrate-honesty",
+            "transparency",
+            "trust-protocol"
+          ]
+        },
+        "principle": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        }
+      }
+    }
+  }
+}

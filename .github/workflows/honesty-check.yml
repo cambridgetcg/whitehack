@@ -55,6 +55,10 @@ jobs:
 
           import { scan, scanDetailed } from '@agenttool/whitehack-scan'
           import { CHECK_MANIFEST, scanText } from '@agenttool/whitehack-scan/core'
+          import {
+            createEvidenceCapsule,
+            parseEvidenceCapsuleBytes,
+          } from '@agenttool/whitehack-scan/evidence-capsule'
           import { createScanResult } from '@agenttool/whitehack-scan/result'
           import { createUnderstanding } from '@agenttool/whitehack-scan/understanding'
 
@@ -64,6 +68,8 @@ jobs:
           assert.equal(typeof scan, 'function')
           assert.equal(typeof scanDetailed, 'function')
           assert.equal(typeof createScanResult, 'function')
+          assert.equal(typeof createEvidenceCapsule, 'function')
+          assert.equal(typeof parseEvidenceCapsuleBytes, 'function')
           const understanding = createUnderstanding({
             findings,
             context: {
@@ -124,6 +130,16 @@ jobs:
             understandingSchema.properties.document_type.const,
             'whitehack-understanding/v1',
           )
+          const evidenceSchemaUrl = import.meta.resolve(
+            '@agenttool/whitehack-scan/evidence-capsule-schema.json',
+          )
+          const evidenceSchema = JSON.parse(
+            await readFile(fileURLToPath(evidenceSchemaUrl), 'utf8'),
+          )
+          assert.equal(
+            evidenceSchema.properties.document_type.const,
+            'whitehack-evidence-capsule/v1',
+          )
           NODE
 
           printf 'eval(userInput)\n' > smoke.js
@@ -134,6 +150,14 @@ jobs:
             import { readFileSync } from "node:fs";
             const result = JSON.parse(readFileSync("result.json", "utf8"));
             if (result.document_type !== "whitehack-scan/v1" || result.complete !== true || result.redacted !== true) process.exit(1);
+          '
+          node bin/whitehack.js capsule smoke.js --require-files > capsule.json
+          node --input-type=module --eval '
+            import { readFileSync } from "node:fs";
+            import { parseEvidenceCapsuleBytes } from "@agenttool/whitehack-scan/evidence-capsule";
+            const bytes = readFileSync("capsule.json");
+            const capsule = parseEvidenceCapsuleBytes(bytes);
+            if (capsule.document_type !== "whitehack-evidence-capsule/v1") process.exit(1);
           '
       - name: verify fixtures still trigger
         run: |
