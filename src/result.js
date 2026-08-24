@@ -2,7 +2,7 @@ export const RESULT_DOCUMENT_TYPE = 'whitehack-scan/v1'
 
 const GATING_CONFIDENCE = new Set(['high', 'medium-high'])
 const CONFIDENCE = new Set(['high', 'medium-high', 'medium', 'heuristic'])
-const SEMVER = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/u
+const SEMVER = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-(?:(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/u
 const CHECK_ID = /^[a-z][a-z0-9-]{0,63}$/u
 const ERROR_CODE = /^[a-z][a-z0-9_]{0,63}$/u
 const SCOPE_COUNTERS = [

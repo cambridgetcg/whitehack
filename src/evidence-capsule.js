@@ -1,19 +1,41 @@
 import { createHash } from 'node:crypto'
 
 import { CHECK_MANIFEST } from './core.js'
+import { evidenceCapsuleScannerProfile } from './evidence-capsule-profiles.js'
 import { RESULT_DOCUMENT_TYPE } from './result.js'
 
 export const EVIDENCE_CAPSULE_DOCUMENT_TYPE = 'whitehack-evidence-capsule/v1'
 export const EVIDENCE_CAPSULE_DISCLOSURE_PROFILE = 'whitehack-public-minimal/v1'
 export const EVIDENCE_CAPSULE_MEDIA_TYPE = 'application/vnd.whitehack.evidence-capsule.v1+json'
 export const EVIDENCE_CAPSULE_ADDRESS_ALGORITHM = 'sha256'
-export const EVIDENCE_CAPSULE_SCANNER_VERSION = '0.9.0'
+export const EVIDENCE_CAPSULE_SCANNER_VERSION = '0.10.0-dev.0'
+export const EVIDENCE_CAPSULE_SUPPORTED_SCANNER_VERSIONS = Object.freeze([
+  '0.9.0',
+  EVIDENCE_CAPSULE_SCANNER_VERSION,
+])
 export const MAX_EVIDENCE_CAPSULE_BYTES = 64 * 1024
 
 const MAX_FINDINGS = 10_000
 const CONFIDENCE = new Set(['high', 'medium-high', 'medium', 'heuristic'])
 const GATING_CONFIDENCE = new Set(['high', 'medium-high'])
-const CHECK_BY_ID = new Map(CHECK_MANIFEST.map((check) => [check.id, check]))
+const SUPPORTED_SCANNER_VERSIONS = new Set(EVIDENCE_CAPSULE_SUPPORTED_SCANNER_VERSIONS)
+
+const CURRENT_SCANNER_PROFILE = evidenceCapsuleScannerProfile(EVIDENCE_CAPSULE_SCANNER_VERSION)
+if (
+  !CURRENT_SCANNER_PROFILE
+  || CURRENT_SCANNER_PROFILE.check_count !== CHECK_MANIFEST.length
+  || CHECK_MANIFEST.some((check, index) => {
+    const tuple = CURRENT_SCANNER_PROFILE.tuples[index]
+    return !tuple || (
+      tuple[0] !== check.id
+      || tuple[1] !== check.confidence
+      || tuple[2] !== check.doctrine
+      || tuple[3] !== check.principle
+    )
+  })
+) {
+  throw new Error('current scanner manifest does not match its capsule protocol profile')
+}
 
 const SCAN_FIELDS = Object.freeze([
   'document_type',
@@ -245,16 +267,16 @@ function requireConstArray(value, expected, label) {
 function serializeScanner(value, label) {
   const scanner = snapshotRecord(value, SCANNER_FIELDS, label)
   requireExact(scanner.name, 'whitehack', `${label}.name`)
-  requireExact(
-    scanner.version,
-    EVIDENCE_CAPSULE_SCANNER_VERSION,
-    `${label}.version`,
-  )
-  requireExact(scanner.check_count, CHECK_MANIFEST.length, `${label}.check_count`)
+  if (!SUPPORTED_SCANNER_VERSIONS.has(scanner.version)) {
+    fail(`${label}.version is not a supported capsule scanner version`)
+  }
+  const profile = evidenceCapsuleScannerProfile(scanner.version)
+  if (!profile) fail(`${label}.version has no capsule protocol profile`)
+  requireExact(scanner.check_count, profile.check_count, `${label}.check_count`)
   return {
     name: 'whitehack',
-    version: EVIDENCE_CAPSULE_SCANNER_VERSION,
-    check_count: CHECK_MANIFEST.length,
+    version: scanner.version,
+    check_count: profile.check_count,
   }
 }
 
@@ -289,7 +311,7 @@ function validateScope(value) {
   }
 }
 
-function serializeFinding(value, index, redacted) {
+function serializeFinding(value, index, redacted, profile) {
   const label = `scan.findings[${index}]`
   const finding = snapshotRecord(value, FINDING_FIELDS, label)
   requireString(finding.file, `${label}.file`)
@@ -298,16 +320,16 @@ function serializeFinding(value, index, redacted) {
   if (!CONFIDENCE.has(finding.confidence)) fail(`${label}.confidence is invalid`)
   const doctrine = requireString(finding.doctrine, `${label}.doctrine`)
   const principle = requireInteger(finding.principle, 1, 6, `${label}.principle`)
-  const manifest = CHECK_BY_ID.get(check)
-  if (!manifest) fail(`${label}.check is not in the bundled check manifest`)
+  const manifest = profile.checks[check]
+  if (!manifest) fail(`${label}.check is not in the selected scanner profile`)
   if (doctrine !== manifest.doctrine) {
-    fail(`${label}.doctrine does not match the bundled check manifest`)
+    fail(`${label}.doctrine does not match the selected scanner profile`)
   }
   if (principle !== manifest.principle) {
-    fail(`${label}.principle does not match the bundled check manifest`)
+    fail(`${label}.principle does not match the selected scanner profile`)
   }
   if (finding.confidence !== manifest.confidence && finding.confidence !== 'heuristic') {
-    fail(`${label}.confidence does not match the bundled check manifest`)
+    fail(`${label}.confidence does not match the selected scanner profile`)
   }
 
   if (redacted) {
@@ -361,9 +383,12 @@ function validateCompleteScan(value) {
   requireString(scan.target, 'scan.target')
   const redacted = requireBoolean(scan.redacted, 'scan.redacted')
   const scanner = serializeScanner(scan.scanner, 'scan.scanner')
+  const profile = evidenceCapsuleScannerProfile(scanner.version)
   validateScope(scan.scope)
   const values = snapshotDenseArray(scan.findings, 'scan.findings', MAX_FINDINGS)
-  const findings = values.map((finding, index) => serializeFinding(finding, index, redacted))
+  const findings = values.map(
+    (finding, index) => serializeFinding(finding, index, redacted, profile),
+  )
   validateSummary(scan.summary, findings)
   return { scanner, findings }
 }
@@ -444,7 +469,7 @@ function serializeDisclosure(value) {
   }
 }
 
-function serializeGroup(value, index) {
+function serializeGroup(value, index, profile) {
   const label = `capsule.finding_groups[${index}]`
   const group = snapshotRecord(value, GROUP_FIELDS, label)
   const check = requireString(group.check, `${label}.check`)
@@ -452,13 +477,13 @@ function serializeGroup(value, index) {
   const doctrine = requireString(group.doctrine, `${label}.doctrine`)
   const principle = requireInteger(group.principle, 1, 6, `${label}.principle`)
   const count = requireInteger(group.count, 1, MAX_FINDINGS, `${label}.count`)
-  const manifest = CHECK_BY_ID.get(check)
-  if (!manifest) fail(`${label}.check is not in the bundled check manifest`)
+  const manifest = profile.checks[check]
+  if (!manifest) fail(`${label}.check is not in the selected scanner profile`)
   if (doctrine !== manifest.doctrine || principle !== manifest.principle) {
-    fail(`${label} does not match the bundled check manifest`)
+    fail(`${label} does not match the selected scanner profile`)
   }
   if (group.confidence !== manifest.confidence && group.confidence !== 'heuristic') {
-    fail(`${label}.confidence does not match the bundled check manifest`)
+    fail(`${label}.confidence does not match the selected scanner profile`)
   }
   return { check, confidence: group.confidence, doctrine, principle, count }
 }
@@ -541,11 +566,13 @@ function serializeCapsule(value) {
     'capsule.document_type',
   )
   requireExact(capsule.complete, true, 'capsule.complete')
+  const scanner = serializeScanner(capsule.scanner, 'capsule.scanner')
+  const profile = evidenceCapsuleScannerProfile(scanner.version)
   const groups = snapshotDenseArray(
     capsule.finding_groups,
     'capsule.finding_groups',
     MAX_FINDINGS,
-  ).map(serializeGroup)
+  ).map((group, index) => serializeGroup(group, index, profile))
   let total = 0
   for (let index = 0; index < groups.length; index += 1) {
     total += groups[index].count
@@ -561,7 +588,7 @@ function serializeCapsule(value) {
     document_type: EVIDENCE_CAPSULE_DOCUMENT_TYPE,
     complete: true,
     disclosure: serializeDisclosure(capsule.disclosure),
-    scanner: serializeScanner(capsule.scanner, 'capsule.scanner'),
+    scanner,
     finding_groups: groups,
     epistemic: serializeFixedRecord(capsule.epistemic, EPISTEMIC, 'capsule.epistemic'),
     boundaries: serializeBoundaries(capsule.boundaries),

@@ -192,7 +192,7 @@ test('JSON CLI is closed, redactable, deterministic, and preserves exit 0/1/2', 
     assert.equal(result.document_type, 'whitehack-scan/v1')
     assert.equal(result.status, 'complete')
     assert.equal(result.complete, true)
-    assert.equal(result.scanner.version, '0.9.0')
+    assert.equal(result.scanner.version, '0.10.0-dev.0')
     assert.equal(result.redacted, true)
     assert.equal(result.findings[0].title, null)
     assert.equal(result.findings[0].message, null)
@@ -271,7 +271,7 @@ test('schema, package allowlist, and composite action keep authority surfaces se
   const action = await readFile(new URL('../action-for-anyone/action.yml', import.meta.url), 'utf8')
 
   assert.equal(packageJson.name, '@agenttool/whitehack-scan')
-  assert.equal(packageJson.version, '0.9.0')
+  assert.equal(packageJson.version, '0.10.0-dev.0')
   assert.deepEqual(packageJson.bin, { whitehack: 'bin/whitehack.js' })
   assert.deepEqual(packageJson.files, [
     'bin/whitehack.js',
@@ -280,15 +280,24 @@ test('schema, package allowlist, and composite action keep authority surfaces se
     'README.md',
     'LICENSE',
   ])
-  assert.equal(packageJson.exports['./core'], './src/core.js')
+  assert.deepEqual(packageJson.exports['./core'], {
+    types: './src/core.d.ts',
+    default: './src/core.js',
+  })
   assert.equal(packageJson.exports['./schema.json'], './schema/scan-result-v1.schema.json')
-  assert.equal(packageJson.exports['./understanding'], './src/understanding.js')
+  assert.deepEqual(packageJson.exports['./understanding'], {
+    types: './src/understanding.d.ts',
+    default: './src/understanding.js',
+  })
   assert.equal(
     packageJson.exports['./understanding-schema.json'],
     './schema/understanding-v1.schema.json',
   )
   assert.equal(packageJson.dependencies, undefined)
-  assert.deepEqual(packageJson.devDependencies, { ajv: '8.17.1' })
+  assert.deepEqual(packageJson.devDependencies, {
+    ajv: '8.17.1',
+    typescript: '5.9.3',
+  })
   assert.deepEqual(packageJson.publishConfig, {
     access: 'public',
     registry: 'https://registry.npmjs.org/',

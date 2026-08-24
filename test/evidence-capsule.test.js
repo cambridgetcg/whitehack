@@ -14,6 +14,7 @@ import {
   EVIDENCE_CAPSULE_DISCLOSURE_PROFILE,
   EVIDENCE_CAPSULE_DOCUMENT_TYPE,
   EVIDENCE_CAPSULE_SCANNER_VERSION,
+  EVIDENCE_CAPSULE_SUPPORTED_SCANNER_VERSIONS,
   MAX_EVIDENCE_CAPSULE_BYTES,
   addressEvidenceCapsule,
   canonicalizeEvidenceCapsule,
@@ -24,6 +25,8 @@ import {
 import { createScanResult } from '../src/result.js'
 
 const CLI = fileURLToPath(new URL('../bin/whitehack.js', import.meta.url))
+const LEGACY_0_9_EMPTY_ADDRESS = 'sha256:89d5d914b05c0fb4f61f6f9310f893813fe98726c4a1d44d1f35d1ca485e782f'
+const LEGACY_0_9_EMPTY_CANONICAL = '{"boundaries":{"capability_subject":"evidence-capsule-transform","direct_capabilities":{"authorization":false,"clock":false,"encryption":false,"filesystem":false,"key_store_access":false,"network":false,"process":false,"signing":false,"storage":false,"wallet":false},"input_inspection":{"caller_proxy_traps_may_run":true,"ordinary_accessors_invoked":false,"sandboxed":false},"publication_authority":"external","storage_receipt_included":false},"complete":true,"disclosure":{"caller_text_retained":false,"finding_group_fields":["check","confidence","doctrine","principle","count"],"locations_retained":false,"profile":"whitehack-public-minimal/v1","scan_metadata_retained":["scanner"],"scope_retained":false,"source_text_retained":false,"target_retained":false},"document_type":"whitehack-evidence-capsule/v1","epistemic":{"basis":"scanner-output-claim","complete_semantics":"capsule-transformation-complete","content_address":"canonical-bytes-identity-not-authenticity","coverage":"bounded-heuristic","empty_semantics":"no-bundled-match-not-security-proof","finding_semantics":"review-prompt-not-vulnerability-verdict","provenance":"unverified"},"finding_groups":[],"scanner":{"check_count":47,"name":"whitehack","version":"0.9.0"}}'
 
 function scope(overrides = {}) {
   const base = {
@@ -82,7 +85,7 @@ function finding(check, overrides = {}) {
 
 function scanResult(findings, overrides = {}) {
   return createScanResult({
-    version: '0.9.0',
+    version: overrides.version ?? EVIDENCE_CAPSULE_SCANNER_VERSION,
     checkCount: CHECK_MANIFEST.length,
     target: overrides.target ?? '.',
     findings,
@@ -212,6 +215,9 @@ test('creates a deterministic schema-valid public-minimal capsule and exact addr
     schema.$id,
     'https://github.com/cambridgetcg/whitehack/schema/evidence-capsule-v1.schema.json',
   )
+  assert.deepEqual(schema.properties.scanner.properties.version, {
+    enum: ['0.9.0', '0.10.0-dev.0'],
+  })
 
   const canonical = canonicalizeEvidenceCapsule(first)
   assert.equal(canonical.startsWith('{"boundaries":'), true)
@@ -278,6 +284,33 @@ test('an empty completed scan produces a bounded empty capsule, not a security c
   assert.match(addressEvidenceCapsule(capsule), /^sha256:[0-9a-f]{64}$/u)
 })
 
+test('preserves exact 0.9 capsule scanner identity without promotion to the dev version', () => {
+  assert.deepEqual(EVIDENCE_CAPSULE_SUPPORTED_SCANNER_VERSIONS, [
+    '0.9.0',
+    '0.10.0-dev.0',
+  ])
+  const legacy = createEvidenceCapsule(scanResult([], {
+    version: '0.9.0',
+    scope: scope({
+      files_scanned: 0,
+      bytes_scanned: 0,
+      entries_observed: 0,
+      unsupported_files: 0,
+    }),
+  }))
+  assert.equal(legacy.scanner.version, '0.9.0')
+  const bytes = encodeEvidenceCapsule(legacy)
+  assert.equal(new TextDecoder().decode(bytes), LEGACY_0_9_EMPTY_CANONICAL)
+  assert.equal(addressEvidenceCapsule(legacy), LEGACY_0_9_EMPTY_ADDRESS)
+  assert.equal(parseEvidenceCapsuleBytes(bytes).scanner.version, '0.9.0')
+  assert.equal(createEvidenceCapsule(scanResult([])).scanner.version, '0.10.0-dev.0')
+  const parsedAfterDevSelection = parseEvidenceCapsuleBytes(
+    new TextEncoder().encode(LEGACY_0_9_EMPTY_CANONICAL),
+  )
+  assert.equal(parsedAfterDevSelection.scanner.version, '0.9.0')
+  assert.equal(addressEvidenceCapsule(parsedAfterDevSelection), LEGACY_0_9_EMPTY_ADDRESS)
+})
+
 test('rejects incomplete, open, inconsistent, or non-manifest scan documents', () => {
   const valid = scanResult([finding('unsafe-eval')])
 
@@ -299,7 +332,7 @@ test('rejects incomplete, open, inconsistent, or non-manifest scan documents', (
 
   const inventedCheck = structuredClone(valid)
   inventedCheck.findings[0].check = 'invented-check'
-  assert.throws(() => createEvidenceCapsule(inventedCheck), /bundled check manifest/)
+  assert.throws(() => createEvidenceCapsule(inventedCheck), /selected scanner profile/)
 
   const wrongDoctrine = structuredClone(valid)
   wrongDoctrine.findings[0].doctrine = 'transparency'
@@ -489,11 +522,14 @@ test('package exposes one capsule API and its exact closed schema under a new re
   const packageJson = JSON.parse(
     await readFile(new URL('../package.json', import.meta.url), 'utf8'),
   )
-  assert.equal(packageJson.version, '0.9.0')
+  assert.equal(packageJson.version, '0.10.0-dev.0')
   assert.equal(packageJson.version, EVIDENCE_CAPSULE_SCANNER_VERSION)
-  assert.equal(
+  assert.deepEqual(
     packageJson.exports['./evidence-capsule'],
-    './src/evidence-capsule.js',
+    {
+      types: './src/evidence-capsule.d.ts',
+      default: './src/evidence-capsule.js',
+    },
   )
   assert.equal(
     packageJson.exports['./evidence-capsule-schema.json'],

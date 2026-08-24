@@ -2,6 +2,10 @@
 
 > the honest hack — scan a codebase for the places it lies about its own state.
 
+The moving source tree currently identifies itself as unpublished
+`0.10.0-dev.0`. Exact npm, LOVE, and action commands below remain pinned to the
+released `0.9.0`; no `0.10` artifact has been published.
+
 Most "hacks" make a system do something it shouldn't. A **white** hack does the
 opposite: it makes a system tell *more* truth, not less.
 
@@ -251,6 +255,13 @@ Machine consumers can import the closed result schema as
 `@agenttool/whitehack-scan/schema.json`. JSON CLI output uses `whitehack-scan/v1`; prefer
 `--redacted` when logs cross a trust boundary.
 
+Every JavaScript package entry point has an adjacent exact TypeScript
+declaration selected by the package export map. JSON schema and package
+subpaths remain importable JSON. These declarations describe the accepted and
+returned shapes; the runtime validators remain authoritative for byte limits,
+closed records, canonical ordering, manifest/profile consistency, and other
+constraints TypeScript cannot prove.
+
 ### public-minimal evidence capsules (development surface)
 
 The moving source tree can turn a completed local scan into canonical
@@ -290,9 +301,13 @@ const address = addressEvidenceCapsule(capsule) // sha256:<64 lowercase hex>
 ```
 
 `createEvidenceCapsule()` accepts only a complete, closed
-`whitehack-scan/v1` document. It checks scanner identity, bundled check count,
-and each check's doctrine, principle, and confidence against the installed
-manifest before aggregation. Import the closed schema as
+`whitehack-scan/v1` document. It checks scanner identity, check count, and each
+check's doctrine, principle, and confidence against the immutable protocol
+profile selected by `scanner.version` before aggregation. Capsule v1 accepts
+the exact `0.9.0` and `0.10.0-dev.0` profiles; it never promotes one identity to
+the other. The current dev manifest is checked against its own snapshotted
+47-tuple profile at module load, while stored 0.9 bytes remain verifiable if a
+future detector registry changes. Import the closed schema as
 `@agenttool/whitehack-scan/evidence-capsule-schema.json`.
 The JSON Schema is a structural interoperability aid; JSON Schema alone cannot
 enforce the installed check/doctrine tuple or canonical group order. At a trust
@@ -317,6 +332,121 @@ source is secure. Public sharing remains an explicit caller decision.
 
 This API first appears in `0.9.0`; immutable earlier artifacts remain
 historical and unchanged.
+
+### exact mathematical evidence projection (unreleased 0.10 development surface)
+
+`createMathEvidence()` makes a deterministic `whitehack-math-evidence/v1`
+projection from one exact evidence capsule plus six explicitly caller-supplied
+axes: `observation`, `hypothesis`, `reproduction`, `impact`, `provenance`, and
+`authorization`.
+
+```js
+import {
+  addressMathEvidence,
+  createMathEvidence,
+  encodeMathEvidence,
+  parseMathEvidenceBytes,
+} from '@agenttool/whitehack-scan/math-evidence'
+
+const unassessed = (note = null) => ({
+  disposition: 'unknown',
+  claim: null,
+  support: [],
+  refute: [],
+  quantities: [],
+  note,
+})
+
+const mathEvidence = createMathEvidence({
+  capsule,
+  axes: {
+    observation: {
+      disposition: 'assessed',
+      claim: 'Caller-supplied observation.',
+      support: [{ id: 'urn:evidence:observation:1', digest: null }],
+      refute: [],
+      quantities: [{
+        name: 'sample-rate',
+        value: { kind: 'rational', numerator: '1', denominator: '2' },
+        unit: 'sample/second',
+        scale: {
+          base_unit: 'sample/second',
+          numerator: '1',
+          denominator: '1',
+        },
+      }],
+      note: null,
+    },
+    hypothesis: unassessed(),
+    reproduction: unassessed(),
+    impact: unassessed('No impact assessment was supplied.'),
+    provenance: unassessed(),
+    authorization: {
+      disposition: 'refused',
+      claim: null,
+      support: [],
+      refute: [],
+      quantities: [],
+      note: null,
+    },
+  },
+})
+
+const bytes = encodeMathEvidence(mathEvidence)
+const parsed = parseMathEvidenceBytes(bytes)
+const address = addressMathEvidence(parsed) // sha256:<64 lowercase hex>
+```
+
+The source capsule is retained as its exact canonical bytes using canonical
+base64, together with its SHA-256 address. Its sparse finding groups project
+one-for-one to exact decimal-string counts. `signal_basis.coordinate_fields`
+fixes each coordinate as the ordered `(check, confidence, doctrine, principle)`
+tuple; the value is a `finding` count at scale `1/1`. There is no total, risk
+score, severity, probability, training weight, or implicit ordering of axes.
+Scanner confidence remains a label and is never converted to probability or
+severity.
+
+Each assessed axis keeps separate bounded `support` and `refute` reference
+lists. Their non-emptiness derives the four topology states `support-only`,
+`refute-only`, `both`, and `neither`; this is not a truth, confidence, or weight
+calculation. A reference ID used on both sides must carry the same digest.
+`unknown` and `refused` are explicit dispositions with no claim, references, or
+quantities. Their note may be `null`, so refusal never requires an explanation.
+
+Quantity values are canonical integer strings or reduced rational strings.
+Rationals with denominator `1` must use the integer form, preventing two byte
+identities for the same exact value. Scale means `base value = value × numerator
+÷ denominator`. Unit, quantity-name, reference-ID, claim, and note strings are
+opaque caller labels: there is no registry or Unicode normalization, and
+unpaired surrogates and unsafe control/bidirectional characters are rejected.
+The runtime bounds each polarity list and quantity list to 16 entries per axis,
+caller text to the documented field limits, and the complete canonical document
+to 256 KiB.
+
+Axes are whole-document caller assertions and are not implicitly bound to any
+signal coordinate. In particular, the authorization axis has no bound subject,
+action, or scope and cannot establish authorization. The transform performs no
+emotion, personhood, consciousness, consent, permission, rights, standing, or
+authorization inference and has no such effect. It performs no filesystem,
+process, network, storage, wallet, clock, key-store, signing, or encryption I/O.
+It likewise creates no training, reward, ranking, or fitness weight. A separately
+governed downstream adapter may consume the evidence, but weighting policy and
+authority remain external to this artifact.
+
+Unlike its embedded public-minimal capsule, the math document retains caller
+claims, notes, reference IDs, and quantity labels. Its disclosure profile marks
+publication safety unknown and publication authority external. A content
+address identifies exact plaintext bytes only: it proves no authenticity,
+confidentiality, consent, permission, rights, standing, or authorization, and
+sharing it may equality-link documents or support offline guessing.
+
+Import the closed structural schema as
+`@agenttool/whitehack-scan/math-evidence-schema.json`. The schema cannot prove
+reduced fractions, cross-polarity digest agreement, embedded-capsule semantics,
+derived signal equality, canonical order, or exact input bytes. At a trust
+boundary, use `parseMathEvidenceBytes()`, which applies the bounded runtime
+validator, fatal UTF-8 decoding, semantic recomputation, canonical re-encoding,
+and exact-byte comparison.
 
 ### understanding without custody
 
@@ -421,7 +551,9 @@ release tag, or reviewed commit instead.
 - **jsDelivr CDN** → https://cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/LEARN.md
 - **GitHub** → https://github.com/cambridgetcg/whitehack
 
-The Node CLI and imported APIs are the canonical v0.9.0 release with 47 checks.
+The exact public Node CLI and imported APIs remain the canonical v0.9.0 release
+with 47 checks. This moving source tree is the unpublished v0.10.0-dev.0
+development candidate described above.
 The client-only browser playground deliberately preserves the
 original eight-check demo; it is useful for learning, but it is not feature
 parity and does not include the protocol or crypto-awareness pack.

@@ -1,17 +1,41 @@
 {
   "name": "@agenttool/whitehack-scan",
-  "version": "0.9.0",
+  "version": "0.10.0-dev.0",
   "description": "The honest hack — scan a codebase (incl. Solidity & financial code) for the places it lies about its own state.",
   "type": "module",
   "main": "./src/scan.js",
+  "types": "./src/scan.d.ts",
   "exports": {
-    ".": "./src/scan.js",
-    "./core": "./src/core.js",
-    "./evidence-capsule": "./src/evidence-capsule.js",
-    "./report": "./src/report.js",
-    "./result": "./src/result.js",
-    "./understanding": "./src/understanding.js",
+    ".": {
+      "types": "./src/scan.d.ts",
+      "default": "./src/scan.js"
+    },
+    "./core": {
+      "types": "./src/core.d.ts",
+      "default": "./src/core.js"
+    },
+    "./evidence-capsule": {
+      "types": "./src/evidence-capsule.d.ts",
+      "default": "./src/evidence-capsule.js"
+    },
+    "./math-evidence": {
+      "types": "./src/math-evidence.d.ts",
+      "default": "./src/math-evidence.js"
+    },
+    "./report": {
+      "types": "./src/report.d.ts",
+      "default": "./src/report.js"
+    },
+    "./result": {
+      "types": "./src/result.d.ts",
+      "default": "./src/result.js"
+    },
+    "./understanding": {
+      "types": "./src/understanding.d.ts",
+      "default": "./src/understanding.js"
+    },
     "./evidence-capsule-schema.json": "./schema/evidence-capsule-v1.schema.json",
+    "./math-evidence-schema.json": "./schema/math-evidence-v1.schema.json",
     "./schema.json": "./schema/scan-result-v1.schema.json",
     "./understanding-schema.json": "./schema/understanding-v1.schema.json",
     "./package.json": "./package.json"
@@ -22,7 +46,8 @@
   "scripts": {
     "scan": "node bin/whitehack.js scan .",
     "selftest": "node bin/whitehack.js scan examples",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js && npm run test:types",
+    "test:types": "tsc -p tsconfig.types.json"
   },
   "keywords": [
     "honesty",
@@ -63,6 +88,7 @@
     "LICENSE"
   ],
   "devDependencies": {
-    "ajv": "8.17.1"
+    "ajv": "8.17.1",
+    "typescript": "5.9.3"
   }
 }
