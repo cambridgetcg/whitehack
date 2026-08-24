@@ -541,7 +541,7 @@ test('package exposes typed math API and closed schema without changing 0.9 caps
   const packageJson = JSON.parse(
     await readFile(new URL('../package.json', import.meta.url), 'utf8'),
   )
-  assert.equal(packageJson.version, '0.10.0-dev.0')
+  assert.equal(packageJson.version, '0.10.0')
   assert.equal(packageJson.types, './src/scan.d.ts')
   assert.deepEqual(packageJson.exports['./math-evidence'], {
     types: './src/math-evidence.d.ts',

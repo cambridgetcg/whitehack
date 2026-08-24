@@ -142,7 +142,7 @@ const scope: WhitehackScanScope = {
   },
 }
 const complete = createScanResult({
-  version: '0.10.0-dev.0',
+  version: '0.10.0',
   checkCount: core.CHECK_MANIFEST.length,
   target: '.',
   findings,
@@ -150,7 +150,7 @@ const complete = createScanResult({
 })
 const unredactedTitle: string = complete.findings[0]!.title
 const redacted = createScanResult({
-  version: '0.10.0-dev.0',
+  version: '0.10.0',
   checkCount: core.CHECK_MANIFEST.length,
   target: '.',
   findings,
@@ -159,7 +159,7 @@ const redacted = createScanResult({
 })
 const redactedTitle: null = redacted.findings[0]!.title
 const failed = createScanErrorResult({
-  version: '0.10.0-dev.0',
+  version: '0.10.0',
   checkCount: core.CHECK_MANIFEST.length,
   target: '.',
   code: 'scan_read_failed',
@@ -171,7 +171,7 @@ const capsule: EvidenceCapsule = createEvidenceCapsule(complete)
 const capsuleBytes: Uint8Array = encodeEvidenceCapsule(capsule)
 const parsedCapsule: EvidenceCapsule = parseEvidenceCapsuleBytes(capsuleBytes)
 const capsuleAddress: `sha256:${string}` = addressEvidenceCapsule(parsedCapsule)
-const supportedVersions: readonly ['0.9.0', '0.10.0-dev.0'] =
+const supportedVersions: readonly ['0.9.0', '0.10.0-dev.0', '0.10.0'] =
   EVIDENCE_CAPSULE_SUPPORTED_SCANNER_VERSIONS
 
 const emptyAxis = {

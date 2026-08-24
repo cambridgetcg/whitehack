@@ -51,9 +51,11 @@ const V0_9_TUPLES = Object.freeze([
   ['unlimited-token-approval', 'heuristic', 'substrate-honesty', 3],
 ].map((tuple) => Object.freeze(tuple)))
 
-// The dev scanner intentionally starts from the same 47-tuple protocol
-// profile. This is a separate version selection, not a fallback or promotion.
+// The development and stable 0.10 scanners intentionally start from the same
+// 47-tuple protocol profile. These are separate exact version selections, not
+// fallbacks or promotions.
 const V0_10_DEV_TUPLES = Object.freeze([...V0_9_TUPLES])
+const V0_10_TUPLES = Object.freeze([...V0_9_TUPLES])
 
 function profile(version, tuples) {
   return Object.freeze({
@@ -70,6 +72,7 @@ function profile(version, tuples) {
 const PROFILES = Object.freeze({
   '0.9.0': profile('0.9.0', V0_9_TUPLES),
   '0.10.0-dev.0': profile('0.10.0-dev.0', V0_10_DEV_TUPLES),
+  '0.10.0': profile('0.10.0', V0_10_TUPLES),
 })
 
 export function evidenceCapsuleScannerProfile(version) {

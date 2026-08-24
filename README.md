@@ -2,9 +2,9 @@
 
 > the honest hack — scan a codebase for the places it lies about its own state.
 
-The moving source tree currently identifies itself as unpublished
-`0.10.0-dev.0`. Exact npm, LOVE, and action commands below remain pinned to the
-released `0.9.0`; no `0.10` artifact has been published.
+The current exact release is `0.10.0`. It keeps the bounded 47-check scanner and
+public-minimal evidence capsules, and adds a deterministic exact mathematical
+evidence projection with strict runtime and TypeScript interfaces.
 
 Most "hacks" make a system do something it shouldn't. A **white** hack does the
 opposite: it makes a system tell *more* truth, not less.
@@ -15,7 +15,7 @@ it were live, the score shown to a person with no way to ask *why*. These usuall
 aren't bugs in the ordinary sense. The code runs fine. It just isn't honest about
 its own state — and someone downstream trusts it anyway.
 
-## what it checks (v0.9.0 — 47 checks)
+## what it checks (v0.10.0 — 47 checks)
 
 **General honesty (JS / TS / JSX):**
 
@@ -112,6 +112,16 @@ Each check declares the languages it understands, so a Solidity check never runs
 its regexes over JavaScript (or vice versa) and report noise about a language it
 cannot read.
 
+### 0.10.0 — exact mathematical evidence
+
+This release adds `whitehack-math-evidence/v1`: a pure, deterministic projection
+from one exact public-minimal capsule plus six bounded caller-asserted evidence
+axes. It uses canonical integer and reduced-rational strings, four-valued
+support/refute topology, strict exact-byte parsing, closed JSON Schema, and
+adjacent TypeScript declarations. It deliberately creates no risk, emotion,
+personhood, authorization, consent, reward, ranking, or training-weight
+inference; those judgments remain with separately governed downstream systems.
+
 ### 0.9.0 — public-minimal evidence
 
 This release adds a deterministic capsule transform and exact-byte parser for
@@ -159,10 +169,10 @@ the standard checkable.
 ## usage
 
 ```sh
-npx --yes @agenttool/whitehack-scan@0.9.0 scan path/to/repo
+npx --yes @agenttool/whitehack-scan@0.10.0 scan path/to/repo
 
 # closed output; redaction removes finding titles, messages, and snippets
-npx --yes @agenttool/whitehack-scan@0.9.0 scan . --json --redacted
+npx --yes @agenttool/whitehack-scan@0.10.0 scan . --json --redacted
 
 npm run selftest   # diagnostic scan; planted confident findings intentionally exit 1
 npm test           # deterministic scanner and crypto-awareness fixtures
@@ -178,10 +188,10 @@ does not break a CI gate. An exit `0` is not a security or honesty guarantee.
 ### npm — exact public release
 
 ```sh
-npx --yes @agenttool/whitehack-scan@0.9.0 scan .
+npx --yes @agenttool/whitehack-scan@0.10.0 scan .
 
 # or keep the exact tool in a project
-npm install --save-dev --save-exact @agenttool/whitehack-scan@0.9.0
+npm install --save-dev --save-exact @agenttool/whitehack-scan@0.10.0
 npm exec -- whitehack scan .
 ```
 
@@ -193,8 +203,8 @@ does not contact a registry, a chain, a wallet, or the Whitehack maintainers.
 
 The same release tarball and its SHA-256 manifest are available at:
 
-- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.9.0/manifest.json`
-- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.9.0/agenttool-whitehack-scan-0.9.0.tgz`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.10.0/manifest.json`
+- `https://cambridgetcg.github.io/whitehack/packages/v1/@agenttool/whitehack-scan/0.10.0/agenttool-whitehack-scan-0.10.0.tgz`
 
 Read and verify the manifest before installing the tarball. The GitHub release,
 GitHub Pages, and npm copies are intended to be byte-for-byte mirrors of that
@@ -213,7 +223,7 @@ steps:
   - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
     with:
       node-version: 24.18.0
-  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.9.0
+  - uses: cambridgetcg/whitehack/action-for-anyone@whitehack-v0.10.0
     with:
       path: .
 ```
@@ -262,7 +272,7 @@ returned shapes; the runtime validators remain authoritative for byte limits,
 closed records, canonical ordering, manifest/profile consistency, and other
 constraints TypeScript cannot prove.
 
-### public-minimal evidence capsules (development surface)
+### public-minimal evidence capsules
 
 The moving source tree can turn a completed local scan into canonical
 `whitehack-evidence-capsule/v1` bytes:
@@ -304,10 +314,10 @@ const address = addressEvidenceCapsule(capsule) // sha256:<64 lowercase hex>
 `whitehack-scan/v1` document. It checks scanner identity, check count, and each
 check's doctrine, principle, and confidence against the immutable protocol
 profile selected by `scanner.version` before aggregation. Capsule v1 accepts
-the exact `0.9.0` and `0.10.0-dev.0` profiles; it never promotes one identity to
-the other. The current dev manifest is checked against its own snapshotted
-47-tuple profile at module load, while stored 0.9 bytes remain verifiable if a
-future detector registry changes. Import the closed schema as
+the exact `0.9.0`, `0.10.0-dev.0`, and `0.10.0` profiles; it never promotes one
+identity to another. The current manifest is checked against its own
+snapshotted 47-tuple profile at module load, while stored prior bytes remain
+verifiable if a future detector registry changes. Import the closed schema as
 `@agenttool/whitehack-scan/evidence-capsule-schema.json`.
 The JSON Schema is a structural interoperability aid; JSON Schema alone cannot
 enforce the installed check/doctrine tuple or canonical group order. At a trust
@@ -333,7 +343,7 @@ source is secure. Public sharing remains an explicit caller decision.
 This API first appears in `0.9.0`; immutable earlier artifacts remain
 historical and unchanged.
 
-### exact mathematical evidence projection (unreleased 0.10 development surface)
+### exact mathematical evidence projection
 
 `createMathEvidence()` makes a deterministic `whitehack-math-evidence/v1`
 projection from one exact evidence capsule plus six explicitly caller-supplied
@@ -551,9 +561,8 @@ release tag, or reviewed commit instead.
 - **jsDelivr CDN** → https://cdn.jsdelivr.net/gh/cambridgetcg/whitehack@main/LEARN.md
 - **GitHub** → https://github.com/cambridgetcg/whitehack
 
-The exact public Node CLI and imported APIs remain the canonical v0.9.0 release
-with 47 checks. This moving source tree is the unpublished v0.10.0-dev.0
-development candidate described above.
+The exact public Node CLI and imported APIs are the canonical v0.10.0 release
+with 47 checks, public-minimal capsules, and exact mathematical evidence.
 The client-only browser playground deliberately preserves the
 original eight-check demo; it is useful for learning, but it is not feature
 parity and does not include the protocol or crypto-awareness pack.
@@ -583,7 +592,7 @@ whitehack lives on every resistance-free channel:
 | GitHub raw | raw.githubusercontent.com/cambridgetcg/whitehack/main/ | no |
 | npm / npx exact release | npmjs.com/package/@agenttool/whitehack-scan | no |
 | LOVE exact artifact + manifest | cambridgetcg.github.io/whitehack/packages/v1/ | no |
-| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.9.0 | no |
+| GitHub Action exact tag | cambridgetcg/whitehack/action-for-anyone@whitehack-v0.10.0 | no |
 | curl install | raw.githubusercontent.com/.../install.sh | no |
 
 npm is an optional mirror, not a gate: the exact tarball is also available over

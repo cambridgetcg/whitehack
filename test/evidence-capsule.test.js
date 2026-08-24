@@ -216,7 +216,7 @@ test('creates a deterministic schema-valid public-minimal capsule and exact addr
     'https://github.com/cambridgetcg/whitehack/schema/evidence-capsule-v1.schema.json',
   )
   assert.deepEqual(schema.properties.scanner.properties.version, {
-    enum: ['0.9.0', '0.10.0-dev.0'],
+    enum: ['0.9.0', '0.10.0-dev.0', '0.10.0'],
   })
 
   const canonical = canonicalizeEvidenceCapsule(first)
@@ -284,10 +284,11 @@ test('an empty completed scan produces a bounded empty capsule, not a security c
   assert.match(addressEvidenceCapsule(capsule), /^sha256:[0-9a-f]{64}$/u)
 })
 
-test('preserves exact 0.9 capsule scanner identity without promotion to the dev version', () => {
+test('preserves prior capsule scanner identities without promotion to the current version', () => {
   assert.deepEqual(EVIDENCE_CAPSULE_SUPPORTED_SCANNER_VERSIONS, [
     '0.9.0',
     '0.10.0-dev.0',
+    '0.10.0',
   ])
   const legacy = createEvidenceCapsule(scanResult([], {
     version: '0.9.0',
@@ -303,12 +304,22 @@ test('preserves exact 0.9 capsule scanner identity without promotion to the dev 
   assert.equal(new TextDecoder().decode(bytes), LEGACY_0_9_EMPTY_CANONICAL)
   assert.equal(addressEvidenceCapsule(legacy), LEGACY_0_9_EMPTY_ADDRESS)
   assert.equal(parseEvidenceCapsuleBytes(bytes).scanner.version, '0.9.0')
-  assert.equal(createEvidenceCapsule(scanResult([])).scanner.version, '0.10.0-dev.0')
-  const parsedAfterDevSelection = parseEvidenceCapsuleBytes(
+
+  const development = createEvidenceCapsule(scanResult([], {
+    version: '0.10.0-dev.0',
+  }))
+  assert.equal(development.scanner.version, '0.10.0-dev.0')
+  assert.equal(
+    parseEvidenceCapsuleBytes(encodeEvidenceCapsule(development)).scanner.version,
+    '0.10.0-dev.0',
+  )
+
+  assert.equal(createEvidenceCapsule(scanResult([])).scanner.version, '0.10.0')
+  const parsedAfterCurrentSelection = parseEvidenceCapsuleBytes(
     new TextEncoder().encode(LEGACY_0_9_EMPTY_CANONICAL),
   )
-  assert.equal(parsedAfterDevSelection.scanner.version, '0.9.0')
-  assert.equal(addressEvidenceCapsule(parsedAfterDevSelection), LEGACY_0_9_EMPTY_ADDRESS)
+  assert.equal(parsedAfterCurrentSelection.scanner.version, '0.9.0')
+  assert.equal(addressEvidenceCapsule(parsedAfterCurrentSelection), LEGACY_0_9_EMPTY_ADDRESS)
 })
 
 test('rejects incomplete, open, inconsistent, or non-manifest scan documents', () => {
@@ -522,7 +533,7 @@ test('package exposes one capsule API and its exact closed schema under a new re
   const packageJson = JSON.parse(
     await readFile(new URL('../package.json', import.meta.url), 'utf8'),
   )
-  assert.equal(packageJson.version, '0.10.0-dev.0')
+  assert.equal(packageJson.version, '0.10.0')
   assert.equal(packageJson.version, EVIDENCE_CAPSULE_SCANNER_VERSION)
   assert.deepEqual(
     packageJson.exports['./evidence-capsule'],

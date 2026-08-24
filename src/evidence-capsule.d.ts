@@ -10,10 +10,11 @@ export const EVIDENCE_CAPSULE_DOCUMENT_TYPE: 'whitehack-evidence-capsule/v1'
 export const EVIDENCE_CAPSULE_DISCLOSURE_PROFILE: 'whitehack-public-minimal/v1'
 export const EVIDENCE_CAPSULE_MEDIA_TYPE: 'application/vnd.whitehack.evidence-capsule.v1+json'
 export const EVIDENCE_CAPSULE_ADDRESS_ALGORITHM: 'sha256'
-export const EVIDENCE_CAPSULE_SCANNER_VERSION: '0.10.0-dev.0'
+export const EVIDENCE_CAPSULE_SCANNER_VERSION: '0.10.0'
 export const EVIDENCE_CAPSULE_SUPPORTED_SCANNER_VERSIONS: readonly [
   '0.9.0',
   '0.10.0-dev.0',
+  '0.10.0',
 ]
 export const MAX_EVIDENCE_CAPSULE_BYTES: 65_536
 
@@ -40,7 +41,7 @@ export interface EvidenceCapsule {
   }>
   readonly scanner: Readonly<{
     name: 'whitehack'
-    version: '0.9.0' | '0.10.0-dev.0'
+    version: '0.9.0' | '0.10.0-dev.0' | '0.10.0'
     check_count: 47
   }>
   readonly finding_groups: readonly EvidenceCapsuleFindingGroup[]

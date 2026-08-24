@@ -8,9 +8,10 @@ export const EVIDENCE_CAPSULE_DOCUMENT_TYPE = 'whitehack-evidence-capsule/v1'
 export const EVIDENCE_CAPSULE_DISCLOSURE_PROFILE = 'whitehack-public-minimal/v1'
 export const EVIDENCE_CAPSULE_MEDIA_TYPE = 'application/vnd.whitehack.evidence-capsule.v1+json'
 export const EVIDENCE_CAPSULE_ADDRESS_ALGORITHM = 'sha256'
-export const EVIDENCE_CAPSULE_SCANNER_VERSION = '0.10.0-dev.0'
+export const EVIDENCE_CAPSULE_SCANNER_VERSION = '0.10.0'
 export const EVIDENCE_CAPSULE_SUPPORTED_SCANNER_VERSIONS = Object.freeze([
   '0.9.0',
+  '0.10.0-dev.0',
   EVIDENCE_CAPSULE_SCANNER_VERSION,
 ])
 export const MAX_EVIDENCE_CAPSULE_BYTES = 64 * 1024

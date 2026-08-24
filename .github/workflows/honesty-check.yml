@@ -59,6 +59,10 @@ jobs:
             createEvidenceCapsule,
             parseEvidenceCapsuleBytes,
           } from '@agenttool/whitehack-scan/evidence-capsule'
+          import {
+            createMathEvidence,
+            parseMathEvidenceBytes,
+          } from '@agenttool/whitehack-scan/math-evidence'
           import { createScanResult } from '@agenttool/whitehack-scan/result'
           import { createUnderstanding } from '@agenttool/whitehack-scan/understanding'
 
@@ -70,6 +74,8 @@ jobs:
           assert.equal(typeof createScanResult, 'function')
           assert.equal(typeof createEvidenceCapsule, 'function')
           assert.equal(typeof parseEvidenceCapsuleBytes, 'function')
+          assert.equal(typeof createMathEvidence, 'function')
+          assert.equal(typeof parseMathEvidenceBytes, 'function')
           const understanding = createUnderstanding({
             findings,
             context: {
@@ -140,6 +146,16 @@ jobs:
             evidenceSchema.properties.document_type.const,
             'whitehack-evidence-capsule/v1',
           )
+          const mathSchemaUrl = import.meta.resolve(
+            '@agenttool/whitehack-scan/math-evidence-schema.json',
+          )
+          const mathSchema = JSON.parse(
+            await readFile(fileURLToPath(mathSchemaUrl), 'utf8'),
+          )
+          assert.equal(
+            mathSchema.properties.document_type.const,
+            'whitehack-math-evidence/v1',
+          )
           NODE
 
           printf 'eval(userInput)\n' > smoke.js
@@ -174,3 +190,35 @@ jobs:
             printf 'ERROR: examples should produce exactly 14 findings (7 medium-high, 7 heuristic)\n' >&2
             exit 1
           fi
+      - name: build canonical 0.10.0 release candidate
+        id: release_pack
+        if: github.repository == 'cambridgetcg/whitehack' && github.event_name == 'push' && github.ref == 'refs/heads/codex/whitehack-sdk-math-v1-20260824'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]
+          version="$(node --input-type=module --eval "import p from './package.json' with { type: 'json' }; process.stdout.write(p.version)")"
+          test "$version" = '0.10.0'
+          pack_dir="$RUNNER_TEMP/whitehack-release-$GITHUB_SHA"
+          mkdir "$pack_dir"
+          archive="$(npm pack --ignore-scripts --silent --pack-destination "$pack_dir")"
+          test "$archive" = 'agenttool-whitehack-scan-0.10.0.tgz'
+          pushd "$pack_dir" >/dev/null
+          sha256sum "$archive" > SHA256SUMS
+          size="$(stat --format=%s "$archive")"
+          digest="$(sha256sum "$archive" | cut -d ' ' -f 1)"
+          popd >/dev/null
+          printf 'canonical candidate: %s bytes, sha256:%s\n' "$size" "$digest"
+          printf 'directory=%s\n' "$pack_dir" >> "$GITHUB_OUTPUT"
+          printf 'artifact_name=whitehack-release-0.10.0-%s\n' "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+      - name: transport canonical 0.10.0 release candidate
+        if: steps.release_pack.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ steps.release_pack.outputs.artifact_name }}
+          path: ${{ steps.release_pack.outputs.directory }}
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
