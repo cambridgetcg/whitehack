@@ -59,6 +59,10 @@ jobs:
             createEvidenceCapsule,
             parseEvidenceCapsuleBytes,
           } from '@agenttool/whitehack-scan/evidence-capsule'
+          import {
+            createMathEvidence,
+            parseMathEvidenceBytes,
+          } from '@agenttool/whitehack-scan/math-evidence'
           import { createScanResult } from '@agenttool/whitehack-scan/result'
           import { createUnderstanding } from '@agenttool/whitehack-scan/understanding'
 
@@ -70,6 +74,8 @@ jobs:
           assert.equal(typeof createScanResult, 'function')
           assert.equal(typeof createEvidenceCapsule, 'function')
           assert.equal(typeof parseEvidenceCapsuleBytes, 'function')
+          assert.equal(typeof createMathEvidence, 'function')
+          assert.equal(typeof parseMathEvidenceBytes, 'function')
           const understanding = createUnderstanding({
             findings,
             context: {
@@ -139,6 +145,16 @@ jobs:
           assert.equal(
             evidenceSchema.properties.document_type.const,
             'whitehack-evidence-capsule/v1',
+          )
+          const mathSchemaUrl = import.meta.resolve(
+            '@agenttool/whitehack-scan/math-evidence-schema.json',
+          )
+          const mathSchema = JSON.parse(
+            await readFile(fileURLToPath(mathSchemaUrl), 'utf8'),
+          )
+          assert.equal(
+            mathSchema.properties.document_type.const,
+            'whitehack-math-evidence/v1',
           )
           NODE
 

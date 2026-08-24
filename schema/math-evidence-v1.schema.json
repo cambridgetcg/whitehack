@@ -1,0 +1,546 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cambridgetcg/whitehack/schema/math-evidence-v1.schema.json",
+  "title": "Whitehack exact mathematical evidence projection v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document_type",
+    "complete",
+    "disclosure",
+    "source",
+    "signal_basis",
+    "signal_vector",
+    "axes",
+    "epistemic",
+    "boundaries"
+  ],
+  "properties": {
+    "document_type": { "const": "whitehack-math-evidence/v1" },
+    "complete": { "const": true },
+    "disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "source_capsule_profile",
+        "source_capsule_profile_applies_to_math_document",
+        "caller_text_retained",
+        "reference_ids_retained",
+        "quantity_labels_retained",
+        "safe_for_publication"
+      ],
+      "properties": {
+        "profile": { "const": "whitehack-math-evidence-caller-text/v1" },
+        "source_capsule_profile": { "const": "whitehack-public-minimal/v1" },
+        "source_capsule_profile_applies_to_math_document": { "const": false },
+        "caller_text_retained": { "const": true },
+        "reference_ids_retained": { "const": true },
+        "quantity_labels_retained": { "const": true },
+        "safe_for_publication": { "const": "unknown" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capsule_media_type",
+        "capsule_encoding",
+        "capsule_bytes",
+        "capsule_address"
+      ],
+      "properties": {
+        "capsule_media_type": {
+          "const": "application/vnd.whitehack.evidence-capsule.v1+json"
+        },
+        "capsule_encoding": { "const": "base64" },
+        "capsule_bytes": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 87384,
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+        },
+        "capsule_address": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "signal_basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coordinate_fields", "value_kind", "unit", "scale"],
+      "properties": {
+        "coordinate_fields": {
+          "const": ["check", "confidence", "doctrine", "principle"]
+        },
+        "value_kind": { "const": "exact-integer-count" },
+        "unit": { "const": "finding" },
+        "scale": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["base_unit", "numerator", "denominator"],
+          "properties": {
+            "base_unit": { "const": "finding" },
+            "numerator": { "const": "1" },
+            "denominator": { "const": "1" }
+          }
+        }
+      }
+    },
+    "signal_vector": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": { "$ref": "#/$defs/signal" }
+    },
+    "axes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation",
+        "hypothesis",
+        "reproduction",
+        "impact",
+        "provenance",
+        "authorization"
+      ],
+      "properties": {
+        "observation": { "$ref": "#/$defs/axis" },
+        "hypothesis": { "$ref": "#/$defs/axis" },
+        "reproduction": { "$ref": "#/$defs/axis" },
+        "impact": { "$ref": "#/$defs/axis" },
+        "provenance": { "$ref": "#/$defs/axis" },
+        "authorization": { "$ref": "#/$defs/axis" }
+      }
+    },
+    "epistemic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "basis",
+        "axis_relation",
+        "axis_scope",
+        "authorization_axis",
+        "evidence_logic",
+        "evidence_state_semantics",
+        "finding_signal",
+        "finding_semantics",
+        "empty_semantics",
+        "coverage",
+        "quantity_semantics",
+        "scale_semantics",
+        "unit_semantics",
+        "unknown_semantics",
+        "refusal_semantics",
+        "provenance",
+        "confidence_semantics",
+        "content_address",
+        "linkability",
+        "complete_semantics"
+      ],
+      "properties": {
+        "basis": {
+          "const": "exact-evidence-capsule-plus-bounded-caller-assertions"
+        },
+        "axis_relation": {
+          "const": "separate-non-scalar-no-implicit-order"
+        },
+        "axis_scope": {
+          "const": "whole-document-not-implicitly-bound-to-any-signal-coordinate"
+        },
+        "authorization_axis": {
+          "const": "caller-assertion-without-bound-subject-action-or-scope-cannot-establish-authorization"
+        },
+        "evidence_logic": {
+          "const": "four-valued-support-and-refute"
+        },
+        "evidence_state_semantics": {
+          "const": "polarity-list-topology-not-truth-confidence-or-weight"
+        },
+        "finding_signal": {
+          "const": "sparse-exact-counts-not-risk-score"
+        },
+        "finding_semantics": {
+          "const": "review-prompt-not-vulnerability-verdict"
+        },
+        "empty_semantics": {
+          "const": "no-bundled-match-not-security-proof"
+        },
+        "coverage": { "const": "bounded-heuristic" },
+        "quantity_semantics": {
+          "const": "exact-integer-or-reduced-rational-strings"
+        },
+        "scale_semantics": {
+          "const": "base-value-equals-value-times-numerator-divided-by-denominator"
+        },
+        "unit_semantics": {
+          "const": "opaque-caller-label-no-registry-or-normalization"
+        },
+        "unknown_semantics": { "const": "unassessed-not-zero" },
+        "refusal_semantics": {
+          "const": "withheld-not-negative-evidence"
+        },
+        "provenance": { "const": "caller-asserted-unverified" },
+        "confidence_semantics": {
+          "const": "scanner-label-not-probability-or-severity"
+        },
+        "content_address": {
+          "const": "byte-identity-not-authenticity-confidentiality-or-authorization"
+        },
+        "linkability": {
+          "const": "address-may-equality-link-and-support-offline-guessing"
+        },
+        "complete_semantics": {
+          "const": "math-evidence-transformation-complete"
+        }
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_subject",
+        "direct_capabilities",
+        "input_inspection",
+        "inferences_performed",
+        "authorization_effect",
+        "consent_effect",
+        "permission_effect",
+        "rights_effect",
+        "standing_effect",
+        "downstream_weight_effect",
+        "publication_authority"
+      ],
+      "properties": {
+        "capability_subject": { "const": "math-evidence-transform" },
+        "direct_capabilities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "filesystem",
+            "process",
+            "network",
+            "storage",
+            "wallet",
+            "clock",
+            "key_store_access",
+            "signing",
+            "encryption",
+            "authorization"
+          ],
+          "properties": {
+            "filesystem": { "const": false },
+            "process": { "const": false },
+            "network": { "const": false },
+            "storage": { "const": false },
+            "wallet": { "const": false },
+            "clock": { "const": false },
+            "key_store_access": { "const": false },
+            "signing": { "const": false },
+            "encryption": { "const": false },
+            "authorization": { "const": false }
+          }
+        },
+        "input_inspection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ordinary_accessors_invoked",
+            "caller_proxy_traps_may_run",
+            "sandboxed"
+          ],
+          "properties": {
+            "ordinary_accessors_invoked": { "const": false },
+            "caller_proxy_traps_may_run": { "const": true },
+            "sandboxed": { "const": false }
+          }
+        },
+        "inferences_performed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "emotion",
+            "personhood",
+            "consciousness",
+            "consent",
+            "permission",
+            "rights",
+            "standing",
+            "authorization",
+            "confidence_to_probability",
+            "confidence_to_severity"
+          ],
+          "properties": {
+            "emotion": { "const": false },
+            "personhood": { "const": false },
+            "consciousness": { "const": false },
+            "consent": { "const": false },
+            "permission": { "const": false },
+            "rights": { "const": false },
+            "standing": { "const": false },
+            "authorization": { "const": false },
+            "confidence_to_probability": { "const": false },
+            "confidence_to_severity": { "const": false }
+          }
+        },
+        "authorization_effect": { "const": "none" },
+        "consent_effect": { "const": "none" },
+        "permission_effect": { "const": "none" },
+        "rights_effect": { "const": "none" },
+        "standing_effect": { "const": "none" },
+        "downstream_weight_effect": {
+          "const": "none-training-reward-ranking-or-fitness"
+        },
+        "publication_authority": { "const": "external" }
+      }
+    }
+  },
+  "$defs": {
+    "safe_text": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f\\u202a-\\u202e\\u2066-\\u2069]+$"
+    },
+    "integer_string": {
+      "type": "string",
+      "maxLength": 129,
+      "pattern": "^(?:0|-[1-9][0-9]{0,127}|[1-9][0-9]{0,127})$"
+    },
+    "positive_integer_string": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[1-9][0-9]{0,127}$"
+    },
+    "exact_value": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "integer"],
+          "properties": {
+            "kind": { "const": "integer" },
+            "integer": { "$ref": "#/$defs/integer_string" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "numerator", "denominator"],
+          "properties": {
+            "kind": { "const": "rational" },
+            "numerator": { "$ref": "#/$defs/integer_string" },
+            "denominator": {
+              "$ref": "#/$defs/positive_integer_string"
+            }
+          },
+          "not": {
+            "type": "object",
+            "required": ["denominator"],
+            "properties": { "denominator": { "const": "1" } }
+          }
+        }
+      ]
+    },
+    "scale": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_unit", "numerator", "denominator"],
+      "properties": {
+        "base_unit": {
+          "allOf": [
+            { "$ref": "#/$defs/safe_text" },
+            { "type": "string", "maxLength": 128 }
+          ]
+        },
+        "numerator": { "$ref": "#/$defs/positive_integer_string" },
+        "denominator": { "$ref": "#/$defs/positive_integer_string" }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "digest"],
+      "properties": {
+        "id": {
+          "allOf": [
+            { "$ref": "#/$defs/safe_text" },
+            { "type": "string", "maxLength": 256 }
+          ]
+        },
+        "digest": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          ]
+        }
+      }
+    },
+    "quantity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value", "unit", "scale"],
+      "properties": {
+        "name": {
+          "allOf": [
+            { "$ref": "#/$defs/safe_text" },
+            { "type": "string", "maxLength": 128 }
+          ]
+        },
+        "value": { "$ref": "#/$defs/exact_value" },
+        "unit": {
+          "allOf": [
+            { "$ref": "#/$defs/safe_text" },
+            { "type": "string", "maxLength": 128 }
+          ]
+        },
+        "scale": { "$ref": "#/$defs/scale" }
+      }
+    },
+    "axis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "disposition",
+        "claim",
+        "evidence_state",
+        "support",
+        "refute",
+        "quantities",
+        "note"
+      ],
+      "properties": {
+        "disposition": {
+          "enum": ["assessed", "unknown", "refused"]
+        },
+        "claim": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "allOf": [
+                { "$ref": "#/$defs/safe_text" },
+                { "type": "string", "maxLength": 2048 }
+              ]
+            }
+          ]
+        },
+        "evidence_state": {
+          "enum": ["support-only", "refute-only", "both", "neither"]
+        },
+        "support": {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/reference" }
+        },
+        "refute": {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/reference" }
+        },
+        "quantities": {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/quantity" }
+        },
+        "note": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "allOf": [
+                { "$ref": "#/$defs/safe_text" },
+                { "type": "string", "maxLength": 2048 }
+              ]
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "required": ["disposition"],
+            "properties": { "disposition": { "const": "assessed" } }
+          },
+          "then": {
+            "type": "object",
+            "properties": {
+              "claim": { "$ref": "#/$defs/safe_text" },
+              "note": { "type": "null" }
+            }
+          },
+          "else": {
+            "type": "object",
+            "properties": {
+              "claim": { "type": "null" },
+              "evidence_state": { "const": "neither" },
+              "support": { "type": "array", "maxItems": 0 },
+              "refute": { "type": "array", "maxItems": 0 },
+              "quantities": { "type": "array", "maxItems": 0 },
+              "note": {
+                "oneOf": [
+                  { "type": "null" },
+                  { "$ref": "#/$defs/safe_text" }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "check",
+        "confidence",
+        "doctrine",
+        "principle",
+        "value",
+        "unit",
+        "scale"
+      ],
+      "properties": {
+        "check": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,63}$"
+        },
+        "confidence": {
+          "enum": ["high", "medium-high", "medium", "heuristic"]
+        },
+        "doctrine": {
+          "enum": ["substrate-honesty", "transparency", "trust-protocol"]
+        },
+        "principle": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6
+        },
+        "value": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "integer"],
+          "properties": {
+            "kind": { "const": "integer" },
+            "integer": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,127}$"
+            }
+          }
+        },
+        "unit": { "const": "finding" },
+        "scale": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["base_unit", "numerator", "denominator"],
+          "properties": {
+            "base_unit": { "const": "finding" },
+            "numerator": { "const": "1" },
+            "denominator": { "const": "1" }
+          }
+        }
+      }
+    }
+  }
+}
